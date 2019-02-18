@@ -63,7 +63,7 @@ namespace Wireboy.Socket.P2PClient
                     if (count > 0)
                     {
                         //Console.WriteLine(string.Format("{0} -> {1} - 长度：{2}", inClient.Client.RemoteEndPoint, outClient.Client.RemoteEndPoint,count));
-                        ssOut.Write(bytes, 0, count);
+                        ssOut.WriteAsync(bytes, 0, count);
                     }
                 }
             }

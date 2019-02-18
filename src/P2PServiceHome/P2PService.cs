@@ -11,7 +11,7 @@ namespace P2PServiceHome
 {
     public class P2PService
     {
-        string service_IpAddress = "39.105.115.162";
+        string service_IpAddress = "39.105.116.163";
         int service_Port = 3388;
         string ServerName = "MyPC";
         List<Task> taskList = new List<Task>();
@@ -43,6 +43,7 @@ namespace P2PServiceHome
 
         public void SendHeart()
         {
+            NetworkStream ss = null;
             do
             {
                 try
@@ -50,11 +51,11 @@ namespace P2PServiceHome
                     if (heartClient == null)
                     {
                         heartClient = new TcpClient(service_IpAddress, service_Port);
+                        ss = heartClient.GetStream();
                     }
                     else
                     {
-                        //发送心跳包
-                        heartClient.Client.Send(new byte[] { 0 });
+                        ss.WriteAsync(new byte[] { 0 }, 0, 1);
                     }
                 }
                 catch (Exception ex)
@@ -111,7 +112,7 @@ namespace P2PServiceHome
         private void clientReceive(TcpClient client, Guid curGuid)
         {
             bool isLocalClient = client == inClient;
-
+            NetworkStream ss = null;
             while (client != null && curGuid == (isLocalClient ? inGuid : outGuid))
             {
                 byte[] recBytes = new byte[10240];
@@ -152,14 +153,14 @@ namespace P2PServiceHome
                         //远程桌面发送了数据
                         lastReceiveTime = DateTime.Now;
                     }
-                    ////Console.WriteLine("从{0}接收到数据,长度：{1}", client.Client.RemoteEndPoint,count);
+                    //Console.WriteLine("从{0}接收到数据,长度：{1}", client.Client.RemoteEndPoint,count);
                     TcpClient toClient = isLocalClient ? outClient : inClient;
                     if (toClient != null)
                     {
                         //转发数据
                         try
                         {
-                            NetworkStream ss = toClient.GetStream();// Client.Send(recBytes);
+                            ss = ss == null ? toClient.GetStream() : ss;// Client.Send(recBytes);
                             ss.WriteAsync(recBytes, 0, count);
                         }
                         catch (Exception ex)
