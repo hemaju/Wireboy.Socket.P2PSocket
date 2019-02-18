@@ -1,38 +1,38 @@
 # Wireboy.Socket.P2PSocket
 
-ϲ������Ŀ�ģ�����һ�����Ͻǵ�Star
+喜欢此项目的，请点击一下右上角的Star
 
-����QQȺ417159195�������߹�ͬ��������Ⱥ;������д��P2PSocket��
+加入QQ群417159195，与作者共同交流，入群途径请填写“P2PSocket”
 
-## ��������Ŀ���ܰ�
+## 先来个项目介绍吧
 
-����Ŀ����ȷ���÷����ip�󣬿�����mstsc����Զ��������ƣ��ҵ�Ŀ��Ҳ��ˣ���
+此项目在正确设置服务端ip后，可用于mstsc进行远程桌面控制（我的目的也如此）。
 
-����һ��ʹ��.NetCore����̨��Ŀ��Ϊ����ˣ�.netframework4.5��C#����̨��Ŀ��Ϊ�����뱻�ؿͻ��˵���Ŀ��
+这是一个使用.NetCore控制台项目作为服务端，.netframework4.5的C#控制台项目作为主控与被控客户端的项目。
 
-���ݴ���;���� ���ض˵���mstsc - ���ؿͻ��� - ������ - ���ؿͻ��� - ���ض˵���mstsc
+数据传输途径： 主控端电脑mstsc - 主控客户端 - 服务器 - 被控客户端 - 被控端电脑mstsc
 
-## ���ʹ�ã�
+## 如何使用？
 
-���뻷����VS2017 + .Net Framework 4.5  + .Net Core 2.1
+编译环境：VS2017 + .Net Framework 4.5  + .Net Core 2.1
 
-1.�޸���ĿWireboy.Socket.P2PHome����ĿWireboy.Socket.P2PClient�ķ�����ip��ַ��service_IpAddress��������
+### 1.修改项目Wireboy.Socket.P2PHome与项目Wireboy.Socket.P2PClient的服务器ip地址（service_IpAddress变量）。
 
 ![img1](Images/img1.png)
 
-1.������ĿWireboy.Socket.P2PService������ˣ���Wireboy.Socket.P2PHome�����ؿͻ��ˣ���Wireboy.Socket.P2PClient�����ؿͻ��ˣ�
+### 2.编译项目Wireboy.Socket.P2PService（服务端）、Wireboy.Socket.P2PHome（被控客户端）、Wireboy.Socket.P2PClient（主控客户端）
 
-2.�������P2PService.dll����ӵ�й���ip�ķ�������������
+### 3.将服务端P2PService.dll部署到拥有公网ip的服务器，并运行
 
-3.�����ض��뱻�ض�����̨��ͬ�Ļ��������У�������������ƣ��������⣬�����������뱻�ؽ���ƥ�䣩��
+### 4.将主控端与被控端在两台不同的机器上运行，输入服务器名称（名称任意，仅用于主控与被控进行匹配）。
 
-4.�����ض˵��Ե�mstsc��ʹ��ip��127.0.0.1:3388���ӱ��ؿͻ��˵��Լ��ɡ�
+### 5.打开主控端电脑的mstsc，使用ip：127.0.0.1:3388连接被控客户端电脑即可。
 
-ע�����ض˵�����Ҫ����Զ�̷�������ͼ��
+注：被控端电脑需要开启远程服务，如下图：
 
 ![img2](Images/img2.png)
 
-## ����Ч��ͼ
+## 运行效果图
 
 ![img3](Images/img3.png)
 
