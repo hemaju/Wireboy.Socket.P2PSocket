@@ -16,17 +16,17 @@
 
 编译环境：VS2017 + .Net Framework 4.5  + .Net Core 2.1
 
-### 1.修改项目Wireboy.Socket.P2PHome与项目Wireboy.Socket.P2PClient的服务器ip地址（service_IpAddress变量）。
+1.修改项目Wireboy.Socket.P2PHome与项目Wireboy.Socket.P2PClient的服务器ip地址（service_IpAddress变量）。
 
 ![img1](Images/img1.png)
 
-### 2.编译项目Wireboy.Socket.P2PService（服务端）、Wireboy.Socket.P2PHome（被控客户端）、Wireboy.Socket.P2PClient（主控客户端）
+2.编译项目Wireboy.Socket.P2PService（服务端）、Wireboy.Socket.P2PHome（被控客户端）、Wireboy.Socket.P2PClient（主控客户端）
 
-### 3.将服务端P2PService.dll部署到拥有公网ip的服务器，并运行
+3.将服务端P2PService.dll部署到拥有公网ip的服务器，并运行
 
-### 4.将主控端与被控端在两台不同的机器上运行，输入服务器名称（名称任意，仅用于主控与被控进行匹配）。
+4.将主控端与被控端在两台不同的机器上运行，输入服务器名称（名称任意，仅用于主控与被控进行匹配）。
 
-### 5.打开主控端电脑的mstsc，使用ip：127.0.0.1:3388连接被控客户端电脑即可。
+5.打开主控端电脑的mstsc，使用ip：127.0.0.1:3388连接被控客户端电脑即可。
 
 注：被控端电脑需要开启远程服务，如下图：
 
