@@ -11,7 +11,7 @@ namespace P2PServiceHome
 {
     public class P2PService
     {
-        string service_IpAddress = "39.105.116.163";
+        string service_IpAddress = "39.105.115.162";
         int service_Port = 3388;
         string ServerName = "MyPC";
         List<Task> taskList = new List<Task>();
