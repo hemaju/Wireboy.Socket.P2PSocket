@@ -25,18 +25,19 @@ namespace Wireboy.Socket.P2PClient
 
             Console.WriteLine("监听中... 端口：{0}", "3388");
 
+            Console.WriteLine("正在连接服务器...");
             TcpClient outClient = new TcpClient(service_IpAddress, service_Port);
-            //outClient.Client.Connect(service_IpAddress, service_Port);
-
-            NetworkStream ssOut = outClient.GetStream();
+            Console.WriteLine("成功连接服务器！");
 
             List<byte> sMsg = null;
 
             Console.WriteLine("请输入要连接的服务名称：");
             string str = Console.ReadLine();
+            NetworkStream ssOut = outClient.GetStream();
             sMsg = Encoding.ASCII.GetBytes(str).ToList();
             sMsg.Insert(0, 56);
             ssOut.Write(sMsg.ToArray(), 0, sMsg.ToArray().Length);
+            Console.WriteLine("当前连接的服务：{0}",str);
             //while (true)
             {
                 TcpClient inClient = tl.AcceptTcpClient();

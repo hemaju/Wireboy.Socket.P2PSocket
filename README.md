@@ -38,7 +38,7 @@
 
 ## 运行效果图
 
-![img3](Images/img3.png)
+![img3](Images/img3.gif)
 
 ## 更新日志
 
