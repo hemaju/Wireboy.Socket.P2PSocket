@@ -52,7 +52,7 @@ namespace Wireboy.Socket.P2PService
                 try
                 {
                     count = client.Client.Receive(recBytes);
-                    Console.WriteLine("接收到数据：{0} 长度：{1}",client.Client.RemoteEndPoint,count);
+                    Console.WriteLine("接收到数据：{0} 长度：{1}", client.Client.RemoteEndPoint, count);
                 }
                 catch (Exception ex)
                 {
@@ -67,7 +67,7 @@ namespace Wireboy.Socket.P2PService
                         {
                             try
                             {
-                                Console.WriteLine("转发数据到：{0} 长度：{1}", socketDic[transferClientDic[client]].Client.RemoteEndPoint,count);
+                                Console.WriteLine("转发数据到：{0} 长度：{1}", socketDic[transferClientDic[client]].Client.RemoteEndPoint, count);
                                 NetworkStream ss = socketDic[transferClientDic[client]].GetStream();// Client.Send(recBytes);
                                 ss.WriteAsync(recBytes, 0, count);
                             }
@@ -85,7 +85,7 @@ namespace Wireboy.Socket.P2PService
                             TcpClient tcpClient = transferClientDic.Where(t => t.Value == str).FirstOrDefault().Key;
                             try
                             {
-                                Console.WriteLine("转发数据到：{0} 长度：{1}", tcpClient.Client.RemoteEndPoint,count);
+                                Console.WriteLine("转发数据到：{0} 长度：{1}", tcpClient.Client.RemoteEndPoint, count);
                                 NetworkStream ss = tcpClient.GetStream();
                                 ss.WriteAsync(recBytes, 0, count);
                             }
@@ -114,7 +114,7 @@ namespace Wireboy.Socket.P2PService
                         else if (recBytes[0] == 56)
                         {
                             string str = Encoding.ASCII.GetString(recBytes, 1, count - 1).Trim();
-                            if(transferClientDic.ContainsValue(str))
+                            if (transferClientDic.ContainsValue(str))
                             {
                                 TcpClient key = transferClientDic.Where(t => t.Value == str).FirstOrDefault().Key;
                                 transferClientDic.Remove(key);
@@ -127,11 +127,15 @@ namespace Wireboy.Socket.P2PService
                             }
                             else
                             {
-                                Console.WriteLine("更新key:{0} value:{1}",client.Client.RemoteEndPoint,str);
+                                Console.WriteLine("更新key:{0} value:{1}", client.Client.RemoteEndPoint, str);
                                 transferClientDic.Add(client, str);
                             }
                         }
                     }
+                }
+                else
+                {
+                    Thread.Sleep(50);
                 }
             }
         }

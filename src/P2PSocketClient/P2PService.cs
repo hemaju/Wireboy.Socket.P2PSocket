@@ -23,9 +23,9 @@ namespace Wireboy.Socket.P2PClient
             tl.Start();
 
 
-            Console.WriteLine("监听中... 端口：{0}","3388");
+            Console.WriteLine("监听中... 端口：{0}", "3388");
 
-            TcpClient outClient = new TcpClient(service_IpAddress,service_Port);
+            TcpClient outClient = new TcpClient(service_IpAddress, service_Port);
             //outClient.Client.Connect(service_IpAddress, service_Port);
 
             NetworkStream ssOut = outClient.GetStream();
@@ -40,7 +40,7 @@ namespace Wireboy.Socket.P2PClient
             //while (true)
             {
                 TcpClient inClient = tl.AcceptTcpClient();
-                Console.WriteLine(string.Format("新联入主机：{0}",inClient.Client.RemoteEndPoint));
+                Console.WriteLine(string.Format("新联入主机：{0}", inClient.Client.RemoteEndPoint));
                 Console.WriteLine(string.Format("数据转发至：{0}", outClient.Client.RemoteEndPoint));
                 TaskFactory taskFactory = new TaskFactory();
                 List<Task> taskList = new List<Task>();
@@ -69,7 +69,7 @@ namespace Wireboy.Socket.P2PClient
             }
             catch (Exception ex)
             {
-                Console.WriteLine(string.Format("{0} - {1}",inClient.Client.RemoteEndPoint,ex.Message));
+                Console.WriteLine(string.Format("{0} - {1}", inClient.Client.RemoteEndPoint, ex.Message));
             }
         }
     }
