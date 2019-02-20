@@ -222,7 +222,7 @@ namespace P2PServiceHome
 
         private void CheckDeskConnected(Guid curGuid)
         {
-            Logger.Write("启动本地远程桌面服务通讯守护线程！");
+            Logger.Write("接收来自本地远程桌面服务的数据，启动守护线程！");
             recFromMstscTime = DateTime.Now;
             TcpClient tempClient = inClient;
             while (curGuid == inGuid && inClient != null)
@@ -246,7 +246,7 @@ namespace P2PServiceHome
 
         private void CheckServiceConnected(Guid curGuid)
         {
-            Logger.Write("启动服务器通讯守护线程！");
+            Logger.Write("接收来自服务器的数据，启动守护线程！");
             recFromServiceTime = DateTime.Now;
             TcpClient tempClient = inClient;
             while (curGuid == inGuid && inClient != null)
