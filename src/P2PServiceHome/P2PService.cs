@@ -127,9 +127,9 @@ namespace P2PServiceHome
                 Logger.Write("启动服务器数据接收线程....");
             }
             NetworkStream ss = null;
+            byte[] recBytes = new byte[10240];
             while (client != null && curGuid == (isLocalClient ? inGuid : outGuid))
             {
-                byte[] recBytes = new byte[10240];
                 int count = 0;
                 try
                 {

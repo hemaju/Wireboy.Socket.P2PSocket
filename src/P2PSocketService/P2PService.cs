@@ -45,9 +45,9 @@ namespace Wireboy.Socket.P2PService
         Dictionary<TcpClient, string> transferClientDic = new Dictionary<TcpClient, string>();
         private void clientReceive(TcpClient client)
         {
+            byte[] recBytes = new byte[10240];
             while (true)
             {
-                byte[] recBytes = new byte[10240];
                 int count = 0;
                 try
                 {

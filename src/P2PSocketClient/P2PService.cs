@@ -57,9 +57,9 @@ namespace Wireboy.Socket.P2PClient
             NetworkStream ssIn = inClient.GetStream();
             try
             {
+                byte[] bytes = new byte[10240];
                 while (true)
                 {
-                    byte[] bytes = new byte[10240];
                     int count = ssIn.Read(bytes, 0, bytes.Length);
                     if (count > 0)
                     {
