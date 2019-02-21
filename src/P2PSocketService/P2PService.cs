@@ -1,4 +1,9 @@
-﻿using System;
+﻿/*
+ * 主服务
+ * 接收心跳包、客户端与服务器的数据交流
+ * 
+ */
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -21,10 +26,10 @@ namespace Wireboy.Socket.P2PService
         {
             TcpListener listener = new TcpListener(IPAddress.Any, 3388);//这里开对方可以被你连接并且未被占用的端口  
             listener.Start();
-            //listener.BeginAcceptSocket(clientConnect, listener);
             while (true)
             {
                 TcpClient socket = listener.AcceptTcpClient();
+                Logger.Write("接收到tcp请求:{0}", socket.Client.RemoteEndPoint);
                 try
                 {
                     clientConnect(socket, listener);
@@ -69,7 +74,7 @@ namespace Wireboy.Socket.P2PService
                             {
                                 Console.WriteLine("转发数据到：{0} 长度：{1}", socketDic[transferClientDic[client]].Client.RemoteEndPoint, count);
                                 NetworkStream ss = socketDic[transferClientDic[client]].GetStream();// Client.Send(recBytes);
-                                ss.WriteAsync(recBytes, 0, count).ContinueWith(t => recBytes = null);
+                                ss.WriteAsync(recBytes, 0, count).ContinueWith(t=>recBytes = null);
                             }
                             catch (Exception ex)
                             {
