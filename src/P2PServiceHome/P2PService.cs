@@ -127,9 +127,9 @@ namespace P2PServiceHome
                 Logger.Write("启动服务器数据接收线程....");
             }
             NetworkStream ss = null;
-            byte[] recBytes = new byte[10240];
             while (client != null && curGuid == (isLocalClient ? inGuid : outGuid))
             {
+                byte[] recBytes = new byte[10240];
                 int count = 0;
                 try
                 {
@@ -183,7 +183,7 @@ namespace P2PServiceHome
                                 curOutGuid = isLocalClient ? outGuid : inGuid;
                             }
                             ss = ss == null ? toClient.GetStream() : ss;
-                            ss.WriteAsync(recBytes, 0, count);
+                            ss.WriteAsync(recBytes, 0, count).ContinueWith(t => { recBytes = null; });
                         }
                         catch (Exception ex)
                         {
@@ -207,6 +207,10 @@ namespace P2PServiceHome
                             catch { }
                         }
                     }
+                }
+                else
+                {
+                    recBytes = null;
                 }
                 client = isLocalClient ? inClient : outClient;
             }

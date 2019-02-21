@@ -37,7 +37,7 @@ namespace Wireboy.Socket.P2PClient
             sMsg = Encoding.ASCII.GetBytes(str).ToList();
             sMsg.Insert(0, 56);
             ssOut.Write(sMsg.ToArray(), 0, sMsg.ToArray().Length);
-            Console.WriteLine("当前连接的服务：{0}",str);
+            Console.WriteLine("当前连接的服务：{0}", str);
             //while (true)
             {
                 TcpClient inClient = tl.AcceptTcpClient();
@@ -57,14 +57,14 @@ namespace Wireboy.Socket.P2PClient
             NetworkStream ssIn = inClient.GetStream();
             try
             {
-                byte[] bytes = new byte[10240];
                 while (true)
                 {
+                    byte[] bytes = new byte[10240];
                     int count = ssIn.Read(bytes, 0, bytes.Length);
                     if (count > 0)
                     {
                         //Console.WriteLine(string.Format("{0} -> {1} - 长度：{2}", inClient.Client.RemoteEndPoint, outClient.Client.RemoteEndPoint,count));
-                        ssOut.WriteAsync(bytes, 0, count);
+                        ssOut.WriteAsync(bytes, 0, count).ContinueWith(t => { bytes = null; });
                     }
                 }
             }

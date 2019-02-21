@@ -45,9 +45,9 @@ namespace Wireboy.Socket.P2PService
         Dictionary<TcpClient, string> transferClientDic = new Dictionary<TcpClient, string>();
         private void clientReceive(TcpClient client)
         {
-            byte[] recBytes = new byte[10240];
             while (true)
             {
+                byte[] recBytes = new byte[10240];
                 int count = 0;
                 try
                 {
@@ -69,7 +69,7 @@ namespace Wireboy.Socket.P2PService
                             {
                                 Console.WriteLine("转发数据到：{0} 长度：{1}", socketDic[transferClientDic[client]].Client.RemoteEndPoint, count);
                                 NetworkStream ss = socketDic[transferClientDic[client]].GetStream();// Client.Send(recBytes);
-                                ss.WriteAsync(recBytes, 0, count);
+                                ss.WriteAsync(recBytes, 0, count).ContinueWith(t => recBytes = null);
                             }
                             catch (Exception ex)
                             {
@@ -87,7 +87,7 @@ namespace Wireboy.Socket.P2PService
                             {
                                 Console.WriteLine("转发数据到：{0} 长度：{1}", tcpClient.Client.RemoteEndPoint, count);
                                 NetworkStream ss = tcpClient.GetStream();
-                                ss.WriteAsync(recBytes, 0, count);
+                                ss.WriteAsync(recBytes, 0, count).ContinueWith(t => recBytes = null);
                             }
                             catch (Exception ex)
                             {
@@ -131,10 +131,12 @@ namespace Wireboy.Socket.P2PService
                                 transferClientDic.Add(client, str);
                             }
                         }
+                        recBytes = null;
                     }
                 }
                 else
                 {
+                    recBytes = null;
                     Thread.Sleep(50);
                 }
             }
