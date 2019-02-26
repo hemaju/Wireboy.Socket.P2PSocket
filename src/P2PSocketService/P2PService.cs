@@ -13,12 +13,13 @@ using System.Linq;
 using System.Threading;
 using Wireboy.Socket.P2PService.Models;
 using System.Collections.Concurrent;
+using Wireboy.Socket.P2PService.Services;
 
 namespace Wireboy.Socket.P2PService
 {
     public class P2PService
     {
-        public TcpClientMapCollection<TcpClientMap> _tcpMapList = new TcpClientMapCollection<TcpClientMap>();
+        public TcpClientMapHelper _tcpMapHelper = new TcpClientMapHelper();
         private TaskFactory _taskFactory = new TaskFactory();
         public P2PService()
         {
@@ -28,9 +29,7 @@ namespace Wireboy.Socket.P2PService
         public void Start()
         {
             //监听通讯端口
-            _taskFactory.StartNew(() => { ListenServerPort(); });
-            //监听转发端口
-            ListenTransferPort();
+            ListenServerPort();
         }
 
         /// <summary>
@@ -38,7 +37,7 @@ namespace Wireboy.Socket.P2PService
         /// </summary>
         public void ListenServerPort()
         {
-            TcpListener listener = new TcpListener(IPAddress.Any, ApplicationConfig.ServerPort);
+            TcpListener listener = new TcpListener(IPAddress.Any, ConfigServer.AppSettings.ServerPort);
             while (true)
             {
                 TcpClient tcpClient = listener.AcceptTcpClient();
@@ -46,22 +45,6 @@ namespace Wireboy.Socket.P2PService
                 _taskFactory.StartNew(() =>
                 {
                     RecieveClientTcp(tcpClient);
-                });
-            }
-        }
-        /// <summary>
-        /// 监听数据转发端口
-        /// </summary>
-        public void ListenTransferPort()
-        {
-            TcpListener listener = new TcpListener(IPAddress.Any, ApplicationConfig.TransferPort);
-            while (true)
-            {
-                TcpClient tcpClient = listener.AcceptTcpClient();
-                Logger.Write("转发端口：接收到来自{0}的tcp接入", tcpClient.Client.RemoteEndPoint);
-                _taskFactory.StartNew(() =>
-                {
-                    //处理数据转发
                 });
             }
         }
@@ -76,7 +59,6 @@ namespace Wireboy.Socket.P2PService
                 tcpResult.ResetReadBuffer();
             }
         }
-        ConcurrentDictionary<TcpClient, byte[]> _socketTempDic = new ConcurrentDictionary<TcpClient, byte[]>();
         public void DoRecieveClientTcp(IAsyncResult asyncResult)
         {
             TcpResult tcpResult = (TcpResult)asyncResult.AsyncState;
@@ -91,25 +73,43 @@ namespace Wireboy.Socket.P2PService
             }
         }
 
-        public void ReievedTcpDataCallBack(byte[] data,TcpResult tcpResult)
+        public void ReievedTcpDataCallBack(byte[] data, TcpResult tcpResult)
         {
-            switch(data[0])
+            switch (data[0])
             {
-                case 0:
-                    //心跳包
+                case (byte)MsgType.心跳包:
                     ; break;
-                case 1:
-                    //账号密码
+                case (byte)MsgType.身份验证:
                     ; break;
-                case 3:
-                    //本地服务名称
-                    ;break;
-                case 5:
-                    //要连接的服务名称
-                    ;break;
-                case 7:
-                    //中断数据转发
-                    ;break;
+                case (byte)MsgType.主控服务名:
+                    {
+                        string key = BitConverter.ToString(data, 1);
+                        _tcpMapHelper.SetToClient(tcpResult.ReadTcp, key);
+                        Logger.Write("设置被控端 ip:{0} key:{1}", tcpResult.ReadTcp.Client.RemoteEndPoint, key);
+                    }
+                    break;
+                case (byte)MsgType.被控服务名:
+                    {
+                        string key = BitConverter.ToString(data, 1);
+                        _tcpMapHelper.SetFromClient(tcpResult.ReadTcp, key);
+                        Logger.Write("设置主控端 ip:{0} key:{1}", tcpResult.ReadTcp.Client.RemoteEndPoint, key);
+                    }
+                    break;
+                case (byte)MsgType.数据转发:
+                    TcpClient toClient = _tcpMapHelper[tcpResult.ReadTcp];
+                    if (toClient != null)
+                    {
+                        try
+                        {
+                            toClient.WriteAsync(data, MsgType.数据转发);
+                        }
+                        catch(Exception ex)
+                        {
+                            Logger.Write("数据转发异常：{0}",ex);
+                            _tcpMapHelper[tcpResult.ReadTcp] = null;
+                        }
+                    }
+                    break;
             }
         }
     }

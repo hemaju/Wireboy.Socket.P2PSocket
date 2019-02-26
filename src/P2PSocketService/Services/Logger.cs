@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Wireboy.Socket.P2PService.Models;
+using Wireboy.Socket.P2PService.Services;
 
 namespace Wireboy.Socket.P2PService
 {
@@ -92,7 +93,7 @@ namespace Wireboy.Socket.P2PService
             try
             {
 
-                string filePath = ApplicationConfig.LogFile;
+                string filePath = ConfigServer.LogFile;
                 StreamWriter fileStream = new StreamWriter(filePath, true);
                 try
                 {

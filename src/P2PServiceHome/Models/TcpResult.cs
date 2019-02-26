@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Sockets;
 using System.Text;
-using System.Linq;
+using System.Threading.Tasks;
 
-namespace Wireboy.Socket.P2PService.Models
+namespace Wireboy.Socket.P2PHome.Models
 {
-
     public delegate void RecievedTcpDataHander(byte[] data, TcpResult tcpResult);
     public enum StickyType
     {
@@ -54,11 +54,16 @@ namespace Wireboy.Socket.P2PService.Models
             RecievedTcpDataCallBack = recievedTcpDataCallBack;
         }
 
+        /// <summary>
+        /// 清空数据缓存区
+        /// </summary>
         public void ResetReadBuffer()
         {
             Readbuffer = new byte[1024];
         }
-
+        /// <summary>
+        /// 重置粘包缓存数据
+        /// </summary>
         public void ResetStickyState()
         {
             DataLength = 0;
@@ -93,7 +98,7 @@ namespace Wireboy.Socket.P2PService.Models
                     if (ReadData(streamLength, ref curIndex, this.DataLength - this.RecievedLength, out countBytes))
                     {
                         byte[] curBytes = MergeData(this.StickeyPackageData, countBytes);
-                        this.DataLength = BitConverter.ToInt16(curBytes);
+                        this.DataLength = BitConverter.ToInt16(curBytes,0);
                         SetStickyProp(null, StickyType.None, 0);
                         //读取包数据
                         byte[] dataBytes;
@@ -141,7 +146,7 @@ namespace Wireboy.Socket.P2PService.Models
                 this.DataLength = 2;
                 if (ReadData(streamLength, ref curIndex, this.DataLength, out countBytes))
                 {
-                    this.DataLength = BitConverter.ToInt16(countBytes);
+                    this.DataLength = BitConverter.ToInt16(countBytes,0);
                     byte[] dataBytes;
                     if (ReadData(streamLength, ref curIndex, this.DataLength, out dataBytes))
                     {
@@ -186,7 +191,7 @@ namespace Wireboy.Socket.P2PService.Models
             {
                 RecievedTcpDataCallBack?.Invoke(bytes, this);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Logger.Write("{0}", ex);
             }
