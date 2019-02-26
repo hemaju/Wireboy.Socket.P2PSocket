@@ -9,7 +9,7 @@ namespace Wireboy.Socket.P2PService.Models
         /// <summary>
         /// 服务器通讯端口号
         /// </summary>
-        public int ServerPort { get; set; } = 3388;
+        public int ServerPort { get; set; } = 3488;
 
     }
 }

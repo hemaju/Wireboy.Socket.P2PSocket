@@ -60,7 +60,7 @@ namespace P2PServiceHome
             bool isReconnect = false;
             while (true)
             {
-                while (ServerTcp == null)
+                if(ServerTcp == null)
                 {
                     try
                     {
@@ -68,31 +68,33 @@ namespace P2PServiceHome
                         ServerTcp = new TcpClient(ConfigServer.AppSettings.ServerIp, ConfigServer.AppSettings.ServerPort);
                         isReconnect = true;
                         _taskFactory.StartNew(() => { RecieveServerTcp(); });
+
+                        if (ServerTcp != null && ServerTcp.Connected)
+                        {
+                            Console.WriteLine("成功连接服务器！");
+                            while (string.IsNullOrEmpty(ConfigServer.AppSettings.ServerName))
+                            {
+                                Console.WriteLine("请输入服务名称：");
+                                ConfigServer.AppSettings.ServerName = Console.ReadLine();
+                            }
+                            Console.WriteLine(string.Format("当前服务名称：{0}", ConfigServer.AppSettings.ServerName));
+                            Logger.Write("当前服务名称：{0}", ConfigServer.AppSettings.ServerName);
+                            try
+                            {
+                                ServerTcp.WriteAsync(Encoding.ASCII.GetBytes(ConfigServer.AppSettings.ServerName), MsgType.本地服务名);
+                            }
+                            catch (Exception ex)
+                            {
+                                ServerTcp = null;
+                                Logger.Write("{0}", ex);
+                            }
+                        }
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine("{0}", ex);
                         Logger.Write("{0}", ex);
                         ServerTcp = null;
-                    }
-                }
-                if (isReconnect)
-                {
-                    Console.WriteLine("成功连接服务器！");
-                    while (string.IsNullOrEmpty(ConfigServer.AppSettings.ServerName))
-                    {
-                        Console.WriteLine("请输入服务名称：");
-                        ConfigServer.AppSettings.ServerName = Console.ReadLine();
-                    }
-                    Console.WriteLine(string.Format("当前服务名称：{0}", ConfigServer.AppSettings.ServerName));
-                    Logger.Write("当前服务名称：{0}", ConfigServer.AppSettings.ServerName);
-                    try
-                    {
-                        ServerTcp.WriteAsync(Encoding.ASCII.GetBytes(ConfigServer.AppSettings.ServerName), MsgType.被控服务名);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Write("{0}", ex);
                     }
                 }
                 Thread.Sleep(1000);

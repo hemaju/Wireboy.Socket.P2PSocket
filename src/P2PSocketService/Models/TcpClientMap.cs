@@ -14,18 +14,18 @@ namespace Wireboy.Socket.P2PService.Models
     public class TcpClientMap
     {
         //public TcpClient[] TcpClients { set; get; }
-        public TcpClient ToClient { set; get; }
-        public TcpClient FromClient { set; get; }
+        public TcpClient HomeClient { set; get; }
+        public TcpClient ControlClient { set; get; }
         public string Key { set; get; }
         public TcpClientMap()
         {
-            ToClient = null;
-            FromClient = null;
+            HomeClient = null;
+            ControlClient = null;
         }
 
         public bool IsMatch(TcpClient tcpClient)
         {
-            return ToClient == tcpClient || FromClient == tcpClient;
+            return HomeClient == tcpClient || ControlClient == tcpClient;
         }
 
     }

@@ -38,6 +38,7 @@ namespace Wireboy.Socket.P2PService
         public void ListenServerPort()
         {
             TcpListener listener = new TcpListener(IPAddress.Any, ConfigServer.AppSettings.ServerPort);
+            listener.Start();
             while (true)
             {
                 TcpClient tcpClient = listener.AcceptTcpClient();
@@ -53,16 +54,21 @@ namespace Wireboy.Socket.P2PService
         {
             NetworkStream readStream = readTcp.GetStream();
             TcpResult tcpResult = new TcpResult(readStream, readTcp, ReievedTcpDataCallBack);
-            while (true)
+            while (readTcp.Connected)
             {
-                IAsyncResult asyncResult = readStream.BeginRead(tcpResult.Readbuffer, 0, tcpResult.Readbuffer.Length, new AsyncCallback(DoRecieveClientTcp), tcpResult);
-                tcpResult.ResetReadBuffer();
+                try
+                {
+                   int length = readStream.Read(tcpResult.Readbuffer, 0, tcpResult.Readbuffer.Length);
+                    DoRecieveClientTcp(tcpResult, length);
+                    tcpResult.ResetReadBuffer();
+                }catch(Exception ex)
+                {
+                    Logger.Write("P2PService -> RecieveClientTcp: {0}", ex);
+                }
             }
         }
-        public void DoRecieveClientTcp(IAsyncResult asyncResult)
+        public void DoRecieveClientTcp(TcpResult tcpResult,int length)
         {
-            TcpResult tcpResult = (TcpResult)asyncResult.AsyncState;
-            int length = tcpResult.ReadStream.EndRead(asyncResult);
             if (length > 0)
             {
                 int curReadIndex = 0;
@@ -81,18 +87,18 @@ namespace Wireboy.Socket.P2PService
                     ; break;
                 case (byte)MsgType.身份验证:
                     ; break;
-                case (byte)MsgType.主控服务名:
+                case (byte)MsgType.本地服务名:
                     {
                         string key = BitConverter.ToString(data, 1);
-                        _tcpMapHelper.SetToClient(tcpResult.ReadTcp, key);
-                        Logger.Write("设置被控端 ip:{0} key:{1}", tcpResult.ReadTcp.Client.RemoteEndPoint, key);
+                        _tcpMapHelper.SetHomeClient(tcpResult.ReadTcp, key);
+                        Logger.Write("设置本地服务名 ip:{0} key:{1}", tcpResult.ReadTcp.Client.RemoteEndPoint, key);
                     }
                     break;
-                case (byte)MsgType.被控服务名:
+                case (byte)MsgType.远程服务名:
                     {
                         string key = BitConverter.ToString(data, 1);
-                        _tcpMapHelper.SetFromClient(tcpResult.ReadTcp, key);
-                        Logger.Write("设置主控端 ip:{0} key:{1}", tcpResult.ReadTcp.Client.RemoteEndPoint, key);
+                        _tcpMapHelper.SetControlClient(tcpResult.ReadTcp, key);
+                        Logger.Write("设置远程服务名 ip:{0} key:{1}", tcpResult.ReadTcp.Client.RemoteEndPoint, key);
                     }
                     break;
                 case (byte)MsgType.数据转发:

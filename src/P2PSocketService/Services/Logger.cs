@@ -46,6 +46,7 @@ namespace Wireboy.Socket.P2PService
         public static void Write(string log)
         {
             log = string.Format(_logFormate, DateTime.Now, log);
+            _logList.Enqueue(log);
             if (_curTask == null)
             {
                 lock (_lockObj)
@@ -54,15 +55,7 @@ namespace Wireboy.Socket.P2PService
                     {
                         _curTask = _taskFactory.StartNew(() => DoWrite());
                     }
-                    else
-                    {
-                        _logList.Enqueue(log);
-                    }
                 }
-            }
-            else
-            {
-                _logList.Enqueue(log);
             }
         }
         /// <summary>
@@ -113,8 +106,9 @@ namespace Wireboy.Socket.P2PService
                 }
                 fileStream.Close();
             }
-            catch
+            catch(Exception ex)
             {
+                Console.WriteLine("{0}",ex);
             }
             _curTask = null;
         }

@@ -15,13 +15,13 @@ namespace Wireboy.Socket.P2PService.Models
             set
             {
                 TcpClientMap retClientMap = _mapList.Where(t => t.IsMatch(tcpClient)).FirstOrDefault();
-                if(retClientMap.FromClient == tcpClient)
+                if(retClientMap.ControlClient == tcpClient)
                 {
-                    retClientMap.ToClient = value;
+                    retClientMap.HomeClient = value;
                 }
-                else if(retClientMap.ToClient == tcpClient)
+                else if(retClientMap.HomeClient == tcpClient)
                 {
-                    retClientMap.FromClient = value;
+                    retClientMap.ControlClient = value;
                 }
             }
             get
@@ -31,13 +31,13 @@ namespace Wireboy.Socket.P2PService.Models
                 {
                     return null;
                 }
-                else if(retClientMap.FromClient == tcpClient)
+                else if(retClientMap.ControlClient == tcpClient)
                 {
-                    return retClientMap.ToClient;
+                    return retClientMap.HomeClient;
                 }
-                else if(retClientMap.ToClient == tcpClient)
+                else if(retClientMap.HomeClient == tcpClient)
                 {
-                    return retClientMap.FromClient;
+                    return retClientMap.ControlClient;
                 }
                 else
                 {
@@ -58,51 +58,51 @@ namespace Wireboy.Socket.P2PService.Models
             }
         }
 
-        public bool ContainsToClient(TcpClient toClient)
+        public bool ContainsControlClient(TcpClient homeClient)
         {
-            return _mapList.Where(t => t.ToClient == toClient).FirstOrDefault() != null;
+            return _mapList.Where(t => t.HomeClient == homeClient).FirstOrDefault() != null;
         }
 
-        public bool ContainsFromClient(TcpClient fromClient)
+        public bool ContainsHomeClient(TcpClient fromClient)
         {
-            return _mapList.Where(t => t.ToClient == fromClient).Count() > 0;
+            return _mapList.Where(t => t.HomeClient == fromClient).Count() > 0;
         }
 
-        public void SetFromClient(TcpClient fromClient, string key)
+        public void SetControlClient(TcpClient controlClient, string key)
         {
-            if(ContainsFromClient(fromClient))
+            if(ContainsHomeClient(controlClient))
             {
-                _mapList.Where(t => t.FromClient == fromClient).FirstOrDefault().FromClient = null;
+                _mapList.Where(t => t.ControlClient == controlClient).FirstOrDefault().ControlClient = null;
             }
-            this[key].FromClient = fromClient;
+            this[key].ControlClient = controlClient;
         }
 
-        public void SetToClient(TcpClient toClient, string key)
+        public void SetHomeClient(TcpClient homeClient, string key)
         {
-            if (ContainsFromClient(toClient))
+            if (ContainsHomeClient(homeClient))
             {
-                _mapList.Where(t => t.ToClient == toClient).FirstOrDefault().ToClient = null;
+                _mapList.Where(t => t.HomeClient == homeClient).FirstOrDefault().HomeClient = null;
             }
-            this[key].ToClient = toClient;
+            this[key].HomeClient = homeClient;
         }
 
-        public TcpClient GetToClient(TcpClient fromClient)
+        public TcpClient GetHomeClient(TcpClient ControlClient)
         {
-            TcpClientMap clientMap = _mapList.Where(t => t.FromClient == fromClient).FirstOrDefault();
+            TcpClientMap clientMap = _mapList.Where(t => t.ControlClient == ControlClient).FirstOrDefault();
             if (clientMap != null)
             {
-                return clientMap.ToClient;
+                return clientMap.HomeClient;
             }
             else
                 return null;
         }
 
-        public TcpClient GetFromClient(TcpClient toClient)
+        public TcpClient GetControlClient(TcpClient homeClient)
         {
-            TcpClientMap clientMap = _mapList.Where(t => t.ToClient == toClient).FirstOrDefault();
+            TcpClientMap clientMap = _mapList.Where(t => t.HomeClient == homeClient).FirstOrDefault();
             if (clientMap != null)
             {
-                return clientMap.FromClient;
+                return clientMap.ControlClient;
             }
             else
                 return null;
