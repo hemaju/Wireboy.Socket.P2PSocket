@@ -11,6 +11,7 @@ namespace Wireboy.Socket.P2PService.Models
         身份验证 = 1,
         主控服务名 = 2,
         被控服务名 = 3,
-        数据转发 = 4
+        数据转发 = 4,
+        连接断开 = 5
     }
 }

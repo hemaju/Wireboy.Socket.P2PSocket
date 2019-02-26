@@ -53,7 +53,7 @@ namespace Wireboy.Socket.P2PService
         {
             NetworkStream readStream = readTcp.GetStream();
             TcpResult tcpResult = new TcpResult(readStream, readTcp, ReievedTcpDataCallBack);
-            while (readStream.CanRead)
+            while (true)
             {
                 IAsyncResult asyncResult = readStream.BeginRead(tcpResult.Readbuffer, 0, tcpResult.Readbuffer.Length, new AsyncCallback(DoRecieveClientTcp), tcpResult);
                 tcpResult.ResetReadBuffer();
@@ -96,17 +96,20 @@ namespace Wireboy.Socket.P2PService
                     }
                     break;
                 case (byte)MsgType.数据转发:
-                    TcpClient toClient = _tcpMapHelper[tcpResult.ReadTcp];
-                    if (toClient != null)
+                case (byte)MsgType.连接断开:
                     {
-                        try
+                        TcpClient toClient = _tcpMapHelper[tcpResult.ReadTcp];
+                        if (toClient != null)
                         {
-                            toClient.WriteAsync(data, MsgType.数据转发);
-                        }
-                        catch(Exception ex)
-                        {
-                            Logger.Write("数据转发异常：{0}",ex);
-                            _tcpMapHelper[tcpResult.ReadTcp] = null;
+                            try
+                            {
+                                toClient.WriteAsync(data, MsgType.数据转发);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Write("数据转发异常：{0}", ex);
+                                _tcpMapHelper[tcpResult.ReadTcp] = null;
+                            }
                         }
                     }
                     break;
