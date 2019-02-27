@@ -57,16 +57,14 @@ namespace P2PServiceHome
         /// </summary>
         public void Start()
         {
-            bool isReconnect = false;
             while (true)
             {
-                if(ServerTcp == null)
+                if (ServerTcp == null)
                 {
                     try
                     {
                         Console.WriteLine("正在连接服务器...");
                         ServerTcp = new TcpClient(ConfigServer.AppSettings.ServerIp, ConfigServer.AppSettings.ServerPort);
-                        isReconnect = true;
                         _taskFactory.StartNew(() => { RecieveServerTcp(); });
 
                         if (ServerTcp != null && ServerTcp.Connected)
@@ -97,6 +95,18 @@ namespace P2PServiceHome
                         ServerTcp = null;
                     }
                 }
+                else
+                {
+                    try
+                    {
+                        ServerTcp.WriteAsync(new byte[] { 0 }, MsgType.心跳包);
+                    }
+                    catch (Exception ex)
+                    {
+                        ServerTcp = null;
+                        Logger.Write("发送心跳包失败：{0}", ex);
+                    }
+                }
                 Thread.Sleep(1000);
             }
         }
@@ -110,7 +120,8 @@ namespace P2PServiceHome
             TcpResult tcpResult = new TcpResult(readStream, ServerTcp, ReievedServiceTcpCallBack);
             while (true)
             {
-                IAsyncResult asyncResult = readStream.BeginRead(tcpResult.Readbuffer, 0, tcpResult.Readbuffer.Length, new AsyncCallback(DoRecieveClientTcp), tcpResult);
+                int length = readStream.Read(tcpResult.Readbuffer, 0, tcpResult.Readbuffer.Length);
+                DoRecieveClientTcp(tcpResult, length);
                 tcpResult.ResetReadBuffer();
             }
         }
@@ -119,10 +130,8 @@ namespace P2PServiceHome
         /// 接收服务器数据回调方法
         /// </summary>
         /// <param name="asyncResult"></param>
-        public void DoRecieveClientTcp(IAsyncResult asyncResult)
+        public void DoRecieveClientTcp(TcpResult tcpResult, int length)
         {
-            TcpResult tcpResult = (TcpResult)asyncResult.AsyncState;
-            int length = tcpResult.ReadStream.EndRead(asyncResult);
             if (length > 0)
             {
                 int curReadIndex = 0;
@@ -187,7 +196,8 @@ namespace P2PServiceHome
             TcpResult tcpResult = new TcpResult(readStream, LocalTcp, null);
             while (true)
             {
-                IAsyncResult asyncResult = readStream.BeginRead(tcpResult.Readbuffer, 0, tcpResult.Readbuffer.Length, new AsyncCallback(DoRecieveLocalClientTcp), tcpResult);
+                int length = readStream.Read(tcpResult.Readbuffer, 0, tcpResult.Readbuffer.Length);
+                DoRecieveLocalClientTcp(tcpResult, length);
                 tcpResult.ResetReadBuffer();
             }
         }
@@ -196,10 +206,8 @@ namespace P2PServiceHome
         /// 本地端口数据接收回调
         /// </summary>
         /// <param name="asyncResult"></param>
-        public void DoRecieveLocalClientTcp(IAsyncResult asyncResult)
+        public void DoRecieveLocalClientTcp(TcpResult tcpResult, int length)
         {
-            TcpResult tcpResult = (TcpResult)asyncResult.AsyncState;
-            int length = tcpResult.ReadStream.EndRead(asyncResult);
             if (length > 0)
             {
                 try
@@ -208,8 +216,18 @@ namespace P2PServiceHome
                 }
                 catch (Exception ex)
                 {
-                    ServerTcp = null;
                     Logger.Write("向服务器发送数据错误：{0}", ex);
+                    ServerTcp = null;
+                    try
+                    {
+                        LocalTcp.Close();
+                    }
+                    catch(Exception ex1)
+                    {
+
+                    }
+                    Logger.Write("断开本地服务Tcp");
+                    LocalTcp = null;
                 }
             }
         }
@@ -217,16 +235,16 @@ namespace P2PServiceHome
         /// <summary>
         /// 向指定tcp发送连接断开信息
         /// </summary>
-        /// <param name="toClient"></param>
-        public void SendSocketBreak(TcpClient toClient)
+        /// <param name="serverClient"></param>
+        public void SendSocketBreak(TcpClient serverClient)
         {
             try
             {
-                toClient.WriteAsync(new byte[] { 0 }, MsgType.连接断开);
+                serverClient.WriteAsync(new byte[] { 0 }, MsgType.连接断开);
             }
             catch (Exception ex)
             {
-                toClient = null;
+                serverClient = null;
             }
         }
     }

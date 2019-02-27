@@ -37,8 +37,19 @@ namespace Wireboy.Socket.P2PService
         /// </summary>
         public void ListenServerPort()
         {
-            TcpListener listener = new TcpListener(IPAddress.Any, ConfigServer.AppSettings.ServerPort);
-            listener.Start();
+            Logger.Write("监听本地端口：{0}", ConfigServer.AppSettings.ServerPort);
+            TcpListener listener = null;
+            try
+            {
+                listener = new TcpListener(IPAddress.Any, ConfigServer.AppSettings.ServerPort);
+                listener.Start();
+            }
+            catch(Exception ex)
+            {
+                Logger.Write("监听端口错误：{0}", ex);
+                Thread.Sleep(2000);
+                return;
+            }
             while (true)
             {
                 TcpClient tcpClient = listener.AcceptTcpClient();
