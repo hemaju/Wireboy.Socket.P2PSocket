@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.27703.2042
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wireboy.Socket.P2PService", "P2PSocketService\Wireboy.Socket.P2PService.csproj", "{54C91442-8833-4008-8102-AACD90EF0661}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wireboy.Socket.P2PClient", "P2PServiceClient\Wireboy.Socket.P2PClient.csproj", "{ACCF9BDB-E119-4F07-AC83-E3809AD1D5EF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wireboy.Socket.P2PClient", "P2PSocketClient\Wireboy.Socket.P2PClient.csproj", "{ACCF9BDB-E119-4F07-AC83-E3809AD1D5EF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
