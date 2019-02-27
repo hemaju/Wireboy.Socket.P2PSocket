@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{ACCF9BDB-E119-4F07-AC83-E3809AD1D5EF}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Wireboy.Socket.P2PHome</RootNamespace>
-    <AssemblyName>Wireboy.Socket.P2PHome</AssemblyName>
+    <RootNamespace>Wireboy.Socket.P2PClient</RootNamespace>
+    <AssemblyName>Wireboy.Socket.P2PClient</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>

@@ -6,9 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Threading;
-using Wireboy.Socket.P2PHome;
-using Wireboy.Socket.P2PHome.Services;
-using Wireboy.Socket.P2PHome.Models;
+using Wireboy.Socket.P2PClient;
+using Wireboy.Socket.P2PClient.Models;
 
 namespace P2PServiceHome
 {
@@ -23,6 +22,7 @@ namespace P2PServiceHome
         /// </summary>
         TcpClient _localTcp = null;
         object _lockLocalTcp = new object();
+        bool LocalTcpIsNull { get { return _localTcp == null; } }
         TcpClient LocalTcp
         {
             set { _localTcp = value; }
@@ -33,8 +33,8 @@ namespace P2PServiceHome
                     {
                         try
                         {
-                            if (_localTcp == null) _localTcp = new TcpClient("127.0.0.1", ConfigServer.AppSettings.LocalPort);
-                            _taskFactory.StartNew(() => { ListenLocalPort(); });
+                            if (_localTcp == null) _localTcp = new TcpClient("127.0.0.1", ConfigServer.AppSettings.OtherServerPort);
+                            _taskFactory.StartNew(() => { ListenOtherServerPort(); });
                         }
                         catch (Exception ex)
                         {
@@ -57,6 +57,7 @@ namespace P2PServiceHome
         /// </summary>
         public void Start()
         {
+            _taskFactory.StartNew(() => { ListenLocalPort(); });
             while (true)
             {
                 if (ServerTcp == null)
@@ -64,12 +65,14 @@ namespace P2PServiceHome
                     try
                     {
                         Console.WriteLine("正在连接服务器...");
+                        Logger.Write("正在连接服务器...");
                         ServerTcp = new TcpClient(ConfigServer.AppSettings.ServerIp, ConfigServer.AppSettings.ServerPort);
                         _taskFactory.StartNew(() => { RecieveServerTcp(); });
 
                         if (ServerTcp != null && ServerTcp.Connected)
                         {
                             Console.WriteLine("成功连接服务器！");
+                            Logger.Write("成功连接服务器！");
                             while (string.IsNullOrEmpty(ConfigServer.AppSettings.ServerName))
                             {
                                 Console.WriteLine("请输入服务名称：");
@@ -108,6 +111,28 @@ namespace P2PServiceHome
                     }
                 }
                 Thread.Sleep(1000);
+            }
+        }
+
+        public void ListenLocalPort()
+        {
+            try
+            {
+                Logger.Write("正在监听本地端口：{0}", ConfigServer.AppSettings.LocalListenPort);
+                TcpListener tcpListener = new TcpListener(IPAddress.Any, ConfigServer.AppSettings.LocalListenPort);
+                tcpListener.Start();
+                while (true)
+                {
+                    TcpClient tcpClient = tcpListener.AcceptTcpClient();
+                    if(LocalTcpIsNull && !LocalTcp.Connected)
+                    {
+                        LocalTcp = tcpClient;
+                        _taskFactory.StartNew(() => { ListenOtherServerPort(); });
+                    }
+                }
+            }catch(Exception ex)
+            {
+                Logger.Write("监听本地端口失败：{0}",ex);
             }
         }
 
@@ -156,7 +181,7 @@ namespace P2PServiceHome
                     ; break;
                 case (byte)MsgType.数据转发:
                     {
-                        if (LocalTcp != null)
+                        if (!LocalTcpIsNull)
                         {
                             try
                             {
@@ -175,7 +200,7 @@ namespace P2PServiceHome
                     {
                         try
                         {
-                            if (LocalTcp != null)
+                            if (!LocalTcpIsNull)
                                 LocalTcp.Close();
                             LocalTcp = null;
                         }
@@ -188,25 +213,25 @@ namespace P2PServiceHome
             }
         }
         /// <summary>
-        /// 监听本地端口
+        /// 接收主动连接的其它服务端口数据
         /// </summary>
-        public void ListenLocalPort()
+        public void ListenOtherServerPort()
         {
             NetworkStream readStream = LocalTcp.GetStream();
             TcpResult tcpResult = new TcpResult(readStream, LocalTcp, null);
             while (true)
             {
                 int length = readStream.Read(tcpResult.Readbuffer, 0, tcpResult.Readbuffer.Length);
-                DoRecieveLocalClientTcp(tcpResult, length);
+                DoRecieveOtherServerTcp(tcpResult, length);
                 tcpResult.ResetReadBuffer();
             }
         }
 
         /// <summary>
-        /// 本地端口数据接收回调
+        /// 主动连接的其它服务端口数据接收回调
         /// </summary>
         /// <param name="asyncResult"></param>
-        public void DoRecieveLocalClientTcp(TcpResult tcpResult, int length)
+        public void DoRecieveOtherServerTcp(TcpResult tcpResult, int length)
         {
             if (length > 0)
             {
@@ -226,7 +251,7 @@ namespace P2PServiceHome
                     {
 
                     }
-                    Logger.Write("断开本地服务Tcp");
+                    Logger.Write("断开本地其它服务Tcp");
                     LocalTcp = null;
                 }
             }

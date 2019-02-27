@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Wireboy.Socket.P2PHome
+namespace Wireboy.Socket.P2PClient
 {
     public static class Logger
     {
@@ -19,6 +19,7 @@ namespace Wireboy.Socket.P2PHome
         public static void Write(string log)
         {
             log = string.Format("[{0:yyyy-MM-dd HH:mm:ss}]{1}", DateTime.Now, log);
+            logList.Enqueue(log);
             if (_curTask == null)
             {
                 lock (obj)
@@ -27,15 +28,7 @@ namespace Wireboy.Socket.P2PHome
                     {
                         _curTask = _taskFactory.StartNew(() => DoWrite());
                     }
-                    else
-                    {
-                        logList.Enqueue(log);
-                    }
                 }
-            }
-            else
-            {
-                logList.Enqueue(log);
             }
         }
         public static void Write(string log, object arg0)
@@ -70,9 +63,9 @@ namespace Wireboy.Socket.P2PHome
                 } while (logList.Count > 0);
                 fileStream.Close();
             }
-            catch
+            catch(Exception ex)
             {
-
+                Console.WriteLine("{0}", ex);
             }
             _curTask = null;
         }

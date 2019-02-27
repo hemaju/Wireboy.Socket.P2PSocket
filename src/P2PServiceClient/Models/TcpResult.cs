@@ -5,7 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Wireboy.Socket.P2PHome.Models
+namespace Wireboy.Socket.P2PClient.Models
 {
     public delegate void RecievedTcpDataHander(byte[] data, TcpResult tcpResult);
     public enum StickyType

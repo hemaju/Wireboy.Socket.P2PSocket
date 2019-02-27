@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Wireboy.Socket.P2PHome.Models
+namespace Wireboy.Socket.P2PClient.Models
 {
     public enum MsgType
     {

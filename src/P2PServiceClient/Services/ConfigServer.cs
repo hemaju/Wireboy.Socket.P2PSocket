@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Wireboy.Socket.P2PHome.Models;
+using Wireboy.Socket.P2PClient.Models;
 
-namespace Wireboy.Socket.P2PHome.Services
+namespace Wireboy.Socket.P2PClient
 {
     public static class ConfigServer
     {
