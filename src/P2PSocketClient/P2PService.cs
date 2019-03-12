@@ -55,9 +55,10 @@ namespace P2PServiceHome
         /// <summary>
         /// 启动服务
         /// </summary>
+        [Obsolete]
         public void Start()
         {
-            _taskFactory.StartNew(() => { ListenLocalPort(); });
+            _taskFactory.StartNew(() => { ListenClientPort(); });
             while (true)
             {
                 if (ServerTcp == null)
@@ -114,7 +115,34 @@ namespace P2PServiceHome
             }
         }
 
-        public void ListenLocalPort()
+        public void ListenHomePort(string homeName)
+        {
+
+            if (ServerTcp == null)
+            {
+                ConfigServer.AppSettings.ServerName = homeName;
+                _taskFactory.StartNew(() => {
+                    while (true)
+                    {
+                        try
+                        {
+                            ServerTcp = new TcpClient(ConfigServer.AppSettings.ServerIp, ConfigServer.AppSettings.ServerPort);
+                            ServerTcp.WriteAsync(Encoding.ASCII.GetBytes(homeName), MsgType.本地服务名);
+                        }
+                        catch(Exception ex)
+                        {
+                            try
+                            {
+                                ServerTcp.Close();
+                            }
+                            catch { }
+                            ServerTcp = null;
+                        }
+                    }
+                });
+            }
+        }
+        public void ListenClientPort()
         {
             try
             {
@@ -124,15 +152,16 @@ namespace P2PServiceHome
                 while (true)
                 {
                     TcpClient tcpClient = tcpListener.AcceptTcpClient();
-                    if(LocalTcpIsNull && !LocalTcp.Connected)
+                    if (LocalTcpIsNull && !LocalTcp.Connected)
                     {
                         LocalTcp = tcpClient;
                         _taskFactory.StartNew(() => { ListenOtherServerPort(); });
                     }
                 }
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
-                Logger.Write("监听本地端口失败：{0}",ex);
+                Logger.Write("监听本地端口失败：{0}", ex);
             }
         }
 
@@ -247,7 +276,7 @@ namespace P2PServiceHome
                     {
                         LocalTcp.Close();
                     }
-                    catch(Exception ex1)
+                    catch (Exception ex1)
                     {
 
                     }

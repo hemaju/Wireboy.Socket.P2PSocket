@@ -112,6 +112,7 @@ namespace Wireboy.Socket.P2PService
                         Logger.Write("设置远程服务名 ip:{0} key:{1}", tcpResult.ReadTcp.Client.RemoteEndPoint, key);
                     }
                     break;
+                case (byte)MsgType.测试客户端:
                 case (byte)MsgType.数据转发:
                 case (byte)MsgType.连接断开:
                     {
@@ -128,6 +129,11 @@ namespace Wireboy.Socket.P2PService
                                 _tcpMapHelper[tcpResult.ReadTcp] = null;
                             }
                         }
+                    }
+                    break;
+                case (byte)MsgType.测试服务器:
+                    {
+                        tcpResult.ReadTcp.WriteAsync(data.Skip(1).ToArray(),MsgType.测试服务器);
                     }
                     break;
             }

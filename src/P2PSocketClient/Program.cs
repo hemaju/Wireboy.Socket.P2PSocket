@@ -10,8 +10,8 @@ namespace P2PServiceHome
     {
         static void Main(string[] args)
         {
-            P2PService p2PService = new P2PService();
-            p2PService.Start();
+            ServiceMenu menu = new ServiceMenu();
+            menu.ShowMenu();
         }
     }
 }
