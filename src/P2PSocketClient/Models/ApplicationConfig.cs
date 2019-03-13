@@ -8,25 +8,19 @@ namespace Wireboy.Socket.P2PClient.Models
 {
     public class ApplicationConfig
     {
-        /// <summary>
-        /// 服务器通讯端口
-        /// </summary>
+        [ConfigField("服务器通讯端口")]
         public int ServerPort { get; set; } = 3488;
-        /// <summary>
-        /// 服务器ip地址
-        /// </summary>
+
+        [ConfigField("服务器ip地址")]
         public string ServerIp { set; get; } = "127.0.0.1";
-        /// <summary> 
-        /// 主动连接的其它服务端口
-        /// </summary>
-        public int OtherServerPort { get; set; } = 3389;
-        /// <summary>
-        /// 服务监听端口
-        /// </summary>
-        public int LocalListenPort { get; set; } = 3588;
-        /// <summary>
-        /// 服务名称
-        /// </summary>
-        public string ServerName { set; get; } = "";
+
+        [ConfigField("本地Home服务端口")]
+        public int LocalHomePort { get; set; } = 3389;
+
+        [ConfigField("本地Client服务端口")]
+        public int LocalClientPort { get; set; } = 3588;
+
+        [ConfigField("本地Home服务名称")]
+        public string HomeServerName { set; get; } = "";
     }
 }

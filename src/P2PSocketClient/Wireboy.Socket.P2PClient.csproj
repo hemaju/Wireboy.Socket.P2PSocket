@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Models\ConfigField.cs" />
     <Compile Include="ServiceMenu.cs" />
     <Compile Include="Services\Logger.cs" />
     <Compile Include="Models\ApplicationConfig.cs" />

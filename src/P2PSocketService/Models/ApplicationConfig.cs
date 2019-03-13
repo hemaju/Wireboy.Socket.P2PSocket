@@ -6,9 +6,7 @@ namespace Wireboy.Socket.P2PService.Models
 {
     public class ApplicationConfig
     {
-        /// <summary>
-        /// 服务器通讯端口号
-        /// </summary>
+        [ConfigField("服务器通讯端口号")]
         public int ServerPort { get; set; } = 3488;
 
     }

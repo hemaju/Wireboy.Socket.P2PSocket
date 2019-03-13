@@ -33,7 +33,7 @@ namespace P2PServiceHome
                     {
                         try
                         {
-                            if (_clientTcp == null) _clientTcp = new TcpClient("127.0.0.1", ConfigServer.AppSettings.OtherServerPort);
+                            if (_clientTcp == null) _clientTcp = new TcpClient("127.0.0.1", ConfigServer.AppSettings.LocalHomePort);
                             _taskFactory.StartNew(() => { ListenClientServerPort(); });
                         }
                         catch (Exception ex)
@@ -107,7 +107,7 @@ namespace P2PServiceHome
             IsEnableHome = true;
             if (ServerTcp != null)
             {
-                ConfigServer.AppSettings.ServerName = homeName;
+                ConfigServer.AppSettings.HomeServerName = homeName;
                 //发送Home服务名称
                 ServerTcp.WriteAsync(homeName, MsgType.本地服务名);
             }
@@ -123,8 +123,8 @@ namespace P2PServiceHome
                 {
                     try
                     {
-                        Logger.Write("正在监听本地端口：{0}", ConfigServer.AppSettings.LocalListenPort);
-                        TcpListener tcpListener = new TcpListener(IPAddress.Any, ConfigServer.AppSettings.LocalListenPort);
+                        Logger.Write("正在监听本地端口：{0}", ConfigServer.AppSettings.LocalClientPort);
+                        TcpListener tcpListener = new TcpListener(IPAddress.Any, ConfigServer.AppSettings.LocalClientPort);
                         tcpListener.Start();
                         while (IsEnableClient)
                         {

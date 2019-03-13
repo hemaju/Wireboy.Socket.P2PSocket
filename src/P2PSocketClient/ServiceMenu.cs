@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Wireboy.Socket.P2PClient;
 
 namespace P2PServiceHome
 {
@@ -68,7 +69,7 @@ namespace P2PServiceHome
         {
             Console.WriteLine("-------------主菜单-------------");
             Console.WriteLine("1.仅被控端启动    2.仅主控端启动");
-            Console.WriteLine("3.主控被控启动    4.测试服务");
+            Console.WriteLine("3.主控被控启动    4.功能测试");
         }
 
         /// <summary>
@@ -131,7 +132,8 @@ namespace P2PServiceHome
 
         public void TestServer()
         {
-            _p2pService.TestServer();
+            ConfigServer.LoadFromFile();
+            //_p2pService.TestServer();
         }
     }
 }
