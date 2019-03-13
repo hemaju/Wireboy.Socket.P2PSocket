@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
 using Wireboy.Socket.P2PService.Models;
+using System.Linq;
 
 namespace Wireboy.Socket.P2PService.Services
 {
@@ -40,6 +41,20 @@ namespace Wireboy.Socket.P2PService.Services
                 throw new Exception("当前tcp数据流不可写入！");
             }
             return true;
+        }
+
+        public static bool WriteAsync(this TcpClient client, string str, MsgType msgType)
+        {
+            return client.WriteAsync(Encoding.Unicode.GetBytes(str), msgType);
+        }
+
+        public static String ToStringUnicode(this byte[] data)
+        {
+            return Encoding.Unicode.GetString(data);
+        }
+        public static String ToStringUnicode(this byte[] data,int startIndex)
+        {
+            return data.Skip(startIndex).ToArray().ToStringUnicode();
         }
     }
 }

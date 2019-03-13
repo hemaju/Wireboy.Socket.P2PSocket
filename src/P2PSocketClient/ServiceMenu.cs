@@ -15,7 +15,11 @@ namespace P2PServiceHome
         public ServiceMenu()
         {
             _p2pService = new P2PService();
+            _p2pService.ConnectServer();
         }
+        /// <summary>
+        /// 显示菜单
+        /// </summary>
         public void ShowMenu()
         {
             while (true)
@@ -38,7 +42,11 @@ namespace P2PServiceHome
                 }
             }
         }
-
+        /// <summary>
+        /// 获取菜单序号
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
         public bool ReadKey(out int key)
         {
             Console.WriteLine("请输入菜单序号：");
@@ -53,37 +61,42 @@ namespace P2PServiceHome
             return ret;
         }
 
+        /// <summary>
+        /// 绘制主菜单
+        /// </summary>
         public void DrawMainMenu()
         {
             Console.WriteLine("-------------主菜单-------------");
             Console.WriteLine("1.仅被控端启动    2.仅主控端启动");
-            Console.WriteLine("3.主控被控启动    4.查看服务信息");
+            Console.WriteLine("3.主控被控启动    4.测试服务");
         }
+
+        /// <summary>
+        /// 处理主菜单输入
+        /// </summary>
+        /// <param name="key"></param>
         public void DoMainMenu(int key)
         {
             switch (key)
             {
                 case 1:
                     {
-                        Console.WriteLine("选择了菜单1");
-                        _consoleTips = "被控服务启动成功！";
+                        StartHomeServer();
                     }
                     break;
                 case 2:
                     {
-                        Console.WriteLine("选择了菜单2");
-                        _consoleTips = "主控服务启动成功！";
+                        StartClientServer();
                     }
                     break;
                 case 3:
                     {
-                        Console.WriteLine("选择了菜单3");
-                        _consoleTips = "主控、被控服务启动成功！";
+                        StartAllClient();
                     }
                     break;
                 case 4:
                     {
-                        Console.WriteLine("选择了菜单4");
+                        TestServer();
                     }
                     break;
                 default:
@@ -94,24 +107,31 @@ namespace P2PServiceHome
             }
         }
 
-        public void StartHomeClient()
+        public void StartHomeServer()
         {
-
+            Console.WriteLine("请输入本地Home服务名称：");
+            String homeName = Console.ReadLine();
+            _p2pService.StartHomeServer(homeName);
+            Console.WriteLine("本地Home服务名称：{0}",homeName);
         }
 
-        public void StartClient()
+        public void StartClientServer()
         {
-
+            Console.WriteLine("请输入要连接的Home服务名称：");
+            String homeName = Console.ReadLine();
+            _p2pService.StartClientServer(homeName);
+            Console.WriteLine("要连接的Home服务名称：{0}", homeName);
         }
 
         public void StartAllClient()
         {
-
+            StartHomeServer();
+            StartClientServer();
         }
 
-        public void ShowState()
+        public void TestServer()
         {
-
+            _p2pService.TestServer();
         }
     }
 }

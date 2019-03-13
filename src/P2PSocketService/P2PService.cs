@@ -100,14 +100,14 @@ namespace Wireboy.Socket.P2PService
                     ; break;
                 case (byte)MsgType.本地服务名:
                     {
-                        string key = BitConverter.ToString(data, 1);
+                        string key = data.ToStringUnicode(1);
                         _tcpMapHelper.SetHomeClient(tcpResult.ReadTcp, key);
                         Logger.Write("设置本地服务名 ip:{0} key:{1}", tcpResult.ReadTcp.Client.RemoteEndPoint, key);
                     }
                     break;
                 case (byte)MsgType.远程服务名:
                     {
-                        string key = BitConverter.ToString(data, 1);
+                        string key = data.ToStringUnicode(1);
                         _tcpMapHelper.SetControlClient(tcpResult.ReadTcp, key);
                         Logger.Write("设置远程服务名 ip:{0} key:{1}", tcpResult.ReadTcp.Client.RemoteEndPoint, key);
                     }

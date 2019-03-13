@@ -19,7 +19,7 @@ namespace Wireboy.Socket.P2PClient
         /// <returns></returns>
         public static bool WriteAsync(this TcpClient client, byte[] bytes, MsgType msgType)
         {
-            NetworkStream networkStream = client.GetStream();
+               NetworkStream networkStream = client.GetStream();
             if (networkStream.CanWrite)
             {
                     short dataLength = Convert.ToInt16(bytes.Length + 1);
@@ -34,6 +34,18 @@ namespace Wireboy.Socket.P2PClient
                 throw new Exception("当前tcp数据流不可写入！");
             }
             return true;
+        }
+        public static bool WriteAsync(this TcpClient client, string str, MsgType msgType)
+        {
+            return client.WriteAsync(Encoding.Unicode.GetBytes(str), msgType);
+        }
+        public static String ToStringUnicode(this byte[] data)
+        {
+            return Encoding.Unicode.GetString(data);
+        }
+        public static String ToStringUnicode(this byte[] data, int startIndex)
+        {
+            return data.Skip(startIndex).ToArray().ToStringUnicode();
         }
     }
 }
