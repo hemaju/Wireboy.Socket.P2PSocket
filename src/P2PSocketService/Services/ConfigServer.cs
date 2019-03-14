@@ -13,11 +13,11 @@ namespace Wireboy.Socket.P2PService.Services
         /// <summary>
         /// 配置文件名
         /// </summary>
-        public const string ConfigFile = "config.ini";
+        public const string ConfigFile = "Settings.ini";
         /// <summary>
         /// 日志文件名
         /// </summary>
-        public const string LogFile = "P2PService.log";
+        public const string LogFile = "P2PSocketService.log";
         /// <summary>
         /// 配置
         /// </summary>
@@ -46,13 +46,33 @@ namespace Wireboy.Socket.P2PService.Services
                             PropertyInfo property = properties.Where(t => t.Name == fieldName).FirstOrDefault();
                             if (property != null)
                             {
-                                property.SetValue(AppSettings, Convert.ChangeType(value, property.PropertyType));
+                                try
+                                {
+                                    if (property.PropertyType.BaseType == typeof(Enum))
+                                    {
+                                        if (property.PropertyType == typeof(LogLevel))
+                                        {
+                                            LogLevel enumValue = ((LogLevel[])Enum.GetValues(property.PropertyType)).Where(t => t.ToString() == value).FirstOrDefault();
+                                            property.SetValue(AppSettings, enumValue);
+                                        }
+                                        else
+                                        {
+                                            throw new Exception(string.Format("未配置{0}枚举的转换", property.PropertyType));
+                                        }
+                                    }
+                                    else
+                                    {
+                                        property.SetValue(AppSettings, Convert.ChangeType(value, property.PropertyType));
+                                    }
+                                }
+                                catch { }
                             }
                         }
                     }
                 }
                 fileStream.Close();
             }
+            SaveToFile();
         }
         /// <summary>
         /// 保存配置文件

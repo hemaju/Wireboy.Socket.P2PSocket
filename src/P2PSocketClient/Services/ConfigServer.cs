@@ -14,11 +14,11 @@ namespace Wireboy.Socket.P2PClient
         /// <summary>
         /// 配置文件名
         /// </summary>
-        public const string ConfigFile = "config.ini";
+        public const string ConfigFile = "Settings.ini";
         /// <summary>
         /// 日志文件名
         /// </summary>
-        public const string LogFile = "P2PHomeClient.log";
+        public const string LogFile = "P2PSocketClient.log";
         /// <summary>
         /// 配置
         /// </summary>
@@ -49,7 +49,22 @@ namespace Wireboy.Socket.P2PClient
                             {
                                 try
                                 {
-                                    property.SetValue(AppSettings, Convert.ChangeType(value, property.PropertyType));
+                                    if (property.PropertyType.BaseType == typeof(Enum))
+                                    {
+                                        if (property.PropertyType == typeof(LogLevel))
+                                        {
+                                            LogLevel enumValue = ((LogLevel[])Enum.GetValues(property.PropertyType)).Where(t => t.ToString() == value).FirstOrDefault();
+                                            property.SetValue(AppSettings, enumValue);
+                                        }
+                                        else
+                                        {
+                                            throw new Exception(string.Format("未配置{0}枚举的转换", property.PropertyType));
+                                        }
+                                    }
+                                    else
+                                    {
+                                        property.SetValue(AppSettings, Convert.ChangeType(value, property.PropertyType));
+                                    }
                                 }
                                 catch { }
                             }
@@ -58,6 +73,7 @@ namespace Wireboy.Socket.P2PClient
                 }
                 fileStream.Close();
             }
+            SaveToFile();
         }
         /// <summary>
         /// 保存配置文件
@@ -70,9 +86,11 @@ namespace Wireboy.Socket.P2PClient
             {
                 ConfigField data = (ConfigField)property.GetCustomAttribute(typeof(ConfigField));
                 fileStream.WriteLine("#{0}", data.Remark);
-                fileStream.WriteLine("{0}={1}",property.Name, property.GetValue(AppSettings));
+                object value = property.GetValue(AppSettings);
+                fileStream.WriteLine("{0}={1}",property.Name, value);
                 fileStream.WriteLine();
             }
+
             fileStream.Close();
         }
     }

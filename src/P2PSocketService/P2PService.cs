@@ -47,7 +47,6 @@ namespace Wireboy.Socket.P2PService
             catch(Exception ex)
             {
                 Logger.Write("监听端口错误：{0}", ex);
-                Thread.Sleep(2000);
                 return;
             }
             while (true)
