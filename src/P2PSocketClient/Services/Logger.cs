@@ -31,13 +31,15 @@ namespace Wireboy.Socket.P2PClient
                 }
             }
         }
-        public static void Write(string log, object arg0)
+        public static void Write(string log, object arg0 = null, object arg1 = null, object arg2 = null)
         {
-            Logger.Write(string.Format(log, arg0));
+            Logger.Write(string.Format(log, arg0, arg1, arg2));
         }
-        public static void Write(string log, object arg0, object arg1)
+
+        public static void Debug(string log, object arg0 = null, object arg1 = null, object arg2 = null)
         {
-            Logger.Write(string.Format(log, arg0, arg1));
+            if (ConfigServer.AppSettings.LogLevel == Models.LogLevel.调试模式)
+                Logger.Write(string.Format(log, arg0, arg1,arg2));
         }
 
         private static void DoWrite()
@@ -63,7 +65,7 @@ namespace Wireboy.Socket.P2PClient
                 } while (logList.Count > 0);
                 fileStream.Close();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine("{0}", ex);
             }

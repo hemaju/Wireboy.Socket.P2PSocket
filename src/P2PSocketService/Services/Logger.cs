@@ -58,24 +58,30 @@ namespace Wireboy.Socket.P2PService
                 }
             }
         }
-        /// <summary>
-        /// 记录日志（例如：Write("{0}_{1}","内容","参数"）
-        /// </summary>
-        /// <param name="log">内容</param>
-        /// <param name="arg0">格式化参数</param>
-        public static void Write(string log, object arg0)
-        {
-            Logger.Write(string.Format(log, arg0));
-        }
+
         /// <summary>
         /// 记录日志（例如：Write("{0}_{1}_{2}","内容","参数1","参数2"）
         /// </summary>
         /// <param name="log">内容</param>
         /// <param name="arg0">格式化参数1</param>
         /// <param name="arg1">格式化参数2</param>
-        public static void Write(string log, object arg0, object arg1)
+        /// <param name="arg2">格式化参数3</param>
+        public static void Write(string log, object arg0 = null, object arg1 = null, object arg2 = null)
         {
-            Logger.Write(string.Format(log, arg0, arg1));
+            Logger.Write(string.Format(log, arg0, arg1, arg2));
+        }
+
+        /// <summary>
+        /// 记录日志（例如：Write("{0}_{1}_{2}","内容","参数1","参数2"）
+        /// </summary>
+        /// <param name="log">内容</param>
+        /// <param name="arg0">格式化参数1</param>
+        /// <param name="arg1">格式化参数2</param>
+        /// <param name="arg2">格式化参数3</param>
+        public static void Debug(string log, object arg0 = null, object arg1 = null, object arg2 = null)
+        {
+            if (ConfigServer.AppSettings.LogLevel == LogLevel.调试模式)
+                Logger.Write(string.Format(log, arg0, arg1, arg2));
         }
 
         /// <summary>
@@ -106,9 +112,9 @@ namespace Wireboy.Socket.P2PService
                 }
                 fileStream.Close();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Console.WriteLine("{0}",ex);
+                Console.WriteLine("{0}", ex);
             }
             _curTask = null;
         }

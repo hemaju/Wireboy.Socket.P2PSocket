@@ -47,7 +47,11 @@ namespace Wireboy.Socket.P2PClient
                             PropertyInfo property = properties.Where(t => t.Name == fieldName).FirstOrDefault();
                             if (property != null)
                             {
-                                property.SetValue(AppSettings, Convert.ChangeType(value, property.PropertyType));
+                                try
+                                {
+                                    property.SetValue(AppSettings, Convert.ChangeType(value, property.PropertyType));
+                                }
+                                catch { }
                             }
                         }
                     }

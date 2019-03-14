@@ -82,6 +82,8 @@ namespace Wireboy.Socket.P2PService
         {
             if (length > 0)
             {
+                string log = string.Format("从{0}接收到长度{1}的数据,类型:{2} - {3}", tcpResult.ReadTcp.Client.RemoteEndPoint, length, tcpResult.Readbuffer[2], Enum.GetName(typeof(MsgType), tcpResult.Readbuffer[2]));
+                Logger.Debug(log);
                 int curReadIndex = 0;
                 do
                 {
@@ -102,18 +104,19 @@ namespace Wireboy.Socket.P2PService
                     {
                         string key = data.ToStringUnicode(1);
                         _tcpMapHelper.SetHomeClient(tcpResult.ReadTcp, key);
-                        Logger.Write("设置本地服务名 ip:{0} key:{1}", tcpResult.ReadTcp.Client.RemoteEndPoint, key);
+                        Logger.Debug("设置本地Home服务名 ip:{0} key:{1}", tcpResult.ReadTcp.Client.RemoteEndPoint, key);
                     }
                     break;
                 case (byte)MsgType.远程服务名:
                     {
                         string key = data.ToStringUnicode(1);
                         _tcpMapHelper.SetControlClient(tcpResult.ReadTcp, key);
-                        Logger.Write("设置远程服务名 ip:{0} key:{1}", tcpResult.ReadTcp.Client.RemoteEndPoint, key);
+                        Logger.Debug("设置远程Home服务名 ip:{0} key:{1}", tcpResult.ReadTcp.Client.RemoteEndPoint, key);
                     }
                     break;
                 case (byte)MsgType.测试客户端:
-                case (byte)MsgType.数据转发:
+                case (byte)MsgType.转发FromClient:
+                case (byte)MsgType.转发FromHome:
                 case (byte)MsgType.连接断开:
                     {
                         TcpClient toClient = _tcpMapHelper[tcpResult.ReadTcp];
@@ -121,7 +124,8 @@ namespace Wireboy.Socket.P2PService
                         {
                             try
                             {
-                                toClient.WriteAsync(data, MsgType.数据转发);
+                                Logger.Debug("将数据转发到:{0}",toClient.Client.RemoteEndPoint);
+                                toClient.WriteAsync(data.Skip(1).ToArray(), (MsgType)data[0]);
                             }
                             catch (Exception ex)
                             {

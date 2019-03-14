@@ -11,9 +11,15 @@ namespace Wireboy.Socket.P2PService.Models
         身份验证 = 1,
         本地服务名 = 2,
         远程服务名 = 3,
-        数据转发 = 4,
-        连接断开 = 5,
-        测试服务器 = 6,
-        测试客户端 = 7
+        转发FromClient = 4,
+        转发FromHome = 5,
+        连接断开 = 6,
+        测试服务器 = 7,
+        测试客户端 = 8
+    }
+    public enum LogLevel
+    {
+        运行模式 = 0,
+        调试模式 = 1
     }
 }

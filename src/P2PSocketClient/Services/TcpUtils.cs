@@ -22,18 +22,29 @@ namespace Wireboy.Socket.P2PClient
                NetworkStream networkStream = client.GetStream();
             if (networkStream.CanWrite)
             {
+                if (msgType == MsgType.不封包)
+                {
+                    networkStream.WriteAsync(bytes, 0, bytes.Length);
+                }
+                else
+                {
                     short dataLength = Convert.ToInt16(bytes.Length + 1);
                     byte[] sendBytes = new byte[2 + bytes.Length + 1];
                     BitConverter.GetBytes(dataLength).CopyTo(sendBytes, 0);
                     sendBytes[2] = (byte)msgType;
                     bytes.CopyTo(sendBytes, 3);
-                    networkStream.WriteAsync(sendBytes,0,sendBytes.Length);
+                    networkStream.WriteAsync(sendBytes, 0, sendBytes.Length);
+                }
             }
             else
             {
                 throw new Exception("当前tcp数据流不可写入！");
             }
             return true;
+        }
+        public static bool WriteAsync(this TcpClient client,  byte[] bytes, int length, MsgType msgType)
+        {
+            return client.WriteAsync(bytes.Take(length).ToArray(), msgType);
         }
         public static bool WriteAsync(this TcpClient client, string str, MsgType msgType)
         {

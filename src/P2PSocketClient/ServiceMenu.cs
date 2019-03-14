@@ -132,7 +132,7 @@ namespace P2PServiceHome
 
         public void TestServer()
         {
-            ConfigServer.LoadFromFile();
+            ConfigServer.SaveToFile();
             //_p2pService.TestServer();
         }
     }

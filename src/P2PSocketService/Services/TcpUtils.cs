@@ -16,15 +16,14 @@ namespace Wireboy.Socket.P2PService.Services
         /// <param name="bytes">要发送的数据</param>
         /// <param name="msgType">数据类型（转发数据不自动封包）</param>
         /// <returns></returns>
-        public static bool WriteAsync(this TcpClient client,byte[] bytes, MsgType msgType)
+        public static bool WriteAsync(this TcpClient client, byte[] bytes, MsgType msgType)
         {
             NetworkStream networkStream = client.GetStream();
-            if(networkStream.CanWrite)
+            if (networkStream.CanWrite)
             {
-                if (msgType == MsgType.数据转发)
+                if (msgType == MsgType.不封包)
                 {
-                    //数据转发则不处理数据
-                    networkStream.WriteAsync(bytes);
+                    networkStream.WriteAsync(bytes, 0, bytes.Length);
                 }
                 else
                 {
@@ -33,7 +32,7 @@ namespace Wireboy.Socket.P2PService.Services
                     BitConverter.GetBytes(dataLength).CopyTo(sendBytes, 0);
                     sendBytes[2] = (byte)msgType;
                     bytes.CopyTo(sendBytes, 3);
-                    networkStream.WriteAsync(sendBytes);
+                    networkStream.WriteAsync(sendBytes, 0, sendBytes.Length);
                 }
             }
             else
@@ -41,6 +40,10 @@ namespace Wireboy.Socket.P2PService.Services
                 throw new Exception("当前tcp数据流不可写入！");
             }
             return true;
+        }
+        public static bool WriteAsync(this TcpClient client, byte[] bytes, int length, MsgType msgType)
+        {
+            return client.WriteAsync(bytes.Take(length).ToArray(), msgType);
         }
 
         public static bool WriteAsync(this TcpClient client, string str, MsgType msgType)
@@ -52,7 +55,7 @@ namespace Wireboy.Socket.P2PService.Services
         {
             return Encoding.Unicode.GetString(data);
         }
-        public static String ToStringUnicode(this byte[] data,int startIndex)
+        public static String ToStringUnicode(this byte[] data, int startIndex)
         {
             return data.Skip(startIndex).ToArray().ToStringUnicode();
         }

@@ -184,6 +184,7 @@ namespace Wireboy.Socket.P2PService.Models
         {
             try
             {
+                Logger.Debug("处理数据包，长度：{0} 来自：{1}", bytes.Length, ReadTcp.Client.RemoteEndPoint);
                 RecievedTcpDataCallBack?.Invoke(bytes, this);
             }
             catch(Exception ex)

@@ -187,13 +187,15 @@ namespace Wireboy.Socket.P2PClient.Models
 
         public void DoRecievedPackage(byte[] bytes)
         {
+            if (bytes.Length == 0) return;
             try
             {
+                Logger.Debug("处理数据包，长度：{0} 来自：{1}",bytes.Length,ReadTcp.Client.RemoteEndPoint);
                 RecievedTcpDataCallBack?.Invoke(bytes, this);
             }
             catch (Exception ex)
             {
-                Logger.Write("{0}", ex);
+                Logger.Write("处理数据包错误：{0}", ex);
             }
         }
     }
