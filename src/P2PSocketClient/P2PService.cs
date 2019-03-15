@@ -22,7 +22,10 @@ namespace P2PServiceHome
         /// </summary>
         TcpClient _homeServerTcp = null;
         object _lockHomeServerTcp = new object();
-        bool HomeServerTcpIsNull { get { return _homeServerTcp == null; } }
+
+        /// <summary>
+        /// Home服务Tcp连接（注：不存在则创建，不应使用此属性判断null）
+        /// </summary>
         TcpClient HomeServerTcp
         {
             set { _homeServerTcp = value; }
@@ -43,17 +46,24 @@ namespace P2PServiceHome
                                 catch (Exception ex)
                                 {
                                     Logger.Write("监听Home服务端口异常：\r\n{0}", ex);
+                                    BreakHomeServerTcp();
+                                    BreakRemoteTcp();
                                 }
                             });
                         }
                         catch (Exception ex)
                         {
                             Logger.Write("连接本地服务失败：\r\n{0}", ex);
+                            BreakHomeServerTcp();
+                            BreakRemoteTcp();
                         }
                     }
                 return _homeServerTcp;
             }
         }
+        /// <summary>
+        /// 本地Client服务Tcp
+        /// </summary>
         TcpClient ClientServerTcp { get; set; } = null;
         /// <summary>
         /// 服务器Tcp连接
@@ -67,6 +77,10 @@ namespace P2PServiceHome
         /// 是否启用Client服务
         /// </summary>
         public bool IsEnableClient { set; get; } = false;
+        /// <summary>
+        /// 远程Home服务名称
+        /// </summary>
+        private string ClientServerName { set; get; }
 
 
         public P2PService()
@@ -92,6 +106,8 @@ namespace P2PServiceHome
                                 Logger.Write("连接服务器{0}:{1}", ConfigServer.AppSettings.ServerIp, ConfigServer.AppSettings.ServerPort);
                                 //连接服务器
                                 ServerTcp = new TcpClient(ConfigServer.AppSettings.ServerIp, ConfigServer.AppSettings.ServerPort);
+                                //重启Home服务
+                                RestartLocalServer();
                                 _taskFactory.StartNew(() =>
                                 {
                                     Logger.Write("监听来自服务器的消息...");
@@ -102,8 +118,27 @@ namespace P2PServiceHome
                                     catch (Exception ex)
                                     {
                                         Logger.Write("监听服务器端口异常：\r\n{0}", ex);
+                                        BreakHomeServerTcp();
+                                        BreakClientServerTcp();
                                     }
                                 });
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Write("服务器连接异常:\r\n{0}", ex);
+                                try
+                                {
+                                    //尝试关闭TCP连接
+                                    ServerTcp.Close();
+                                }
+                                catch { }
+                                ServerTcp = null;
+                            }
+                        }
+                        else
+                        {
+                            try { 
+                                SendHeartPackage();
                             }
                             catch (Exception ex)
                             {
@@ -130,34 +165,50 @@ namespace P2PServiceHome
         public void StartHomeServer(string homeName)
         {
             IsEnableHome = true;
+            ConfigServer.AppSettings.HomeServerName = homeName;
             if (ServerTcp != null)
             {
                 try
                 {
-                    ConfigServer.AppSettings.HomeServerName = homeName;
                     //发送Home服务名称
                     ServerTcp.WriteAsync(homeName, MsgType.本地服务名);
                 }
                 catch (Exception ex)
                 {
-                    try
-                    {
-                        ServerTcp.Close();
-                    }
-                    catch { }
-                    ServerTcp = null;
                     Logger.Write("启动Home服务异常：\r\n{0}", ex);
+                    BreakHomeServerTcp();
+                    BreakRemoteTcp();
                 }
             }
 
         }
+
+        public void RestartLocalServer()
+        {
+            if (IsEnableHome)
+            {
+                Thread.Sleep(500);
+                //发送本地Home服务名称
+                ServerTcp.WriteAsync(ConfigServer.AppSettings.HomeServerName, MsgType.本地服务名);
+                Logger.Write("重启Home服务，服务名：{0}", ConfigServer.AppSettings.HomeServerName);
+            }
+            if (IsEnableClient)
+            {
+                Thread.Sleep(500);
+                //发送远程Home服务名称
+                ServerTcp.WriteAsync(ClientServerName, MsgType.远程服务名);
+                Logger.Write("重启Client服务，服务名：{0}", ClientServerName);
+            }
+        }
         public void StartClientServer(string homeName)
         {
+            ClientServerName = homeName;
             IsEnableClient = true;
             if (ServerTcp != null)
             {
                 ServerTcp.WriteAsync(homeName, MsgType.远程服务名);
-                _taskFactory.StartNew(() =>
+            }
+            _taskFactory.StartNew(() =>
                 {
                     try
                     {
@@ -183,9 +234,10 @@ namespace P2PServiceHome
                     catch (Exception ex)
                     {
                         Logger.Write("监听Client服务端口异常：\r\n{0}", ex);
+                        BreakClientServerTcp();
+                        BreakRemoteTcp();
                     }
                 });
-            }
         }
 
         /// <summary>
@@ -206,6 +258,8 @@ namespace P2PServiceHome
             }
             catch (Exception ex)
             {
+                BreakHomeServerTcp();
+                BreakClientServerTcp();
                 Logger.Write("接收服务器数据异常：\r\n{0}", ex);
             }
         }
@@ -218,7 +272,7 @@ namespace P2PServiceHome
         {
             if (length > 0)
             {
-                string log = string.Format("从{0}接收到长度{1}的数据,类型:{2} - {3}", tcpResult.ReadTcp.Client.RemoteEndPoint, length-3, tcpResult.Readbuffer[2], Enum.GetName(typeof(MsgType), tcpResult.Readbuffer[2]));
+                string log = string.Format("从{0}接收到长度{1}的数据,类型:{2} - {3}", tcpResult.ReadTcp.Client.RemoteEndPoint, length - 3, tcpResult.Readbuffer[2], Enum.GetName(typeof(MsgType), tcpResult.Readbuffer[2]));
                 Logger.Debug(log);
                 int curReadIndex = 0;
                 do
@@ -251,8 +305,8 @@ namespace P2PServiceHome
                             }
                             catch (Exception ex)
                             {
-                                HomeServerTcp = null;
-                                SendSocketBreak(ServerTcp);
+                                BreakHomeServerTcp();
+                                BreakRemoteTcp();
                                 Logger.Write("向本地端口发送数据错误：\r\n{0}", ex);
                             }
                         }
@@ -273,8 +327,8 @@ namespace P2PServiceHome
                             }
                             catch (Exception ex)
                             {
-                                ClientServerTcp = null;
-                                SendSocketBreak(ServerTcp);
+                                BreakClientServerTcp();
+                                BreakRemoteTcp();
                                 Logger.Write("向本地端口发送数据错误：\r\n{0}", ex);
                             }
                         }
@@ -286,16 +340,8 @@ namespace P2PServiceHome
                     break;
                 case (byte)MsgType.连接断开:
                     {
-                        try
-                        {
-                            if (_homeServerTcp != null)
-                                HomeServerTcp.Close();
-                            HomeServerTcp = null;
-                        }
-                        catch (Exception ex)
-                        {
-                            HomeServerTcp = null;
-                        }
+                        BreakHomeServerTcp();
+                        BreakClientServerTcp();
                     }
                     break;
                 case (byte)MsgType.测试服务器:
@@ -318,13 +364,16 @@ namespace P2PServiceHome
                 while (true)
                 {
                     int length = readStream.Read(tcpResult.Readbuffer, 0, tcpResult.Readbuffer.Length);
-                    Logger.Debug("接收到长度{0}的数据，来自：Client服务", length-3);
+                    Logger.Debug("接收到长度{0}的数据，来自：Client服务", length - 3);
                     DoRecieveClientServerPort(tcpResult, length);
                     tcpResult.ResetReadBuffer();
                 }
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 Logger.Write("监听Client服务端口异常：\r\n{0}", ex);
+                BreakClientServerTcp();
+                BreakRemoteTcp();
             }
         }
 
@@ -407,23 +456,61 @@ namespace P2PServiceHome
                 }
             }
         }
-
         /// <summary>
-        /// 向指定tcp发送连接断开信息
+        /// 向服务器发送心跳包
         /// </summary>
-        /// <param name="serverClient"></param>
-        public void SendSocketBreak(TcpClient serverClient)
+        public void SendHeartPackage()
         {
             try
             {
-                serverClient.WriteAsync(new byte[] { 0 }, MsgType.连接断开);
+                ServerTcp.WriteAsync(new byte[] { 0 }, MsgType.心跳包);
             }
             catch (Exception ex)
             {
-                serverClient = null;
+                ServerTcp = null;
             }
         }
 
+        /// <summary>
+        /// 断开远程Home/Client服务Tcp
+        /// </summary>
+        public void BreakRemoteTcp()
+        {
+            try
+            {
+                ServerTcp.WriteAsync(new byte[] { 0 }, MsgType.连接断开);
+            }
+            catch (Exception ex)
+            {
+                ServerTcp = null;
+            }
+        }
+        /// <summary>
+        /// 断开本地Home服务Tcp
+        /// </summary>
+        public void BreakHomeServerTcp()
+        {
+            if (_homeServerTcp == null) return;
+            try
+            {
+                HomeServerTcp.Close();
+            }
+            catch { }
+            HomeServerTcp = null;
+        }
+        /// <summary>
+        /// 断开本地Client服务Tcp
+        /// </summary>
+        public void BreakClientServerTcp()
+        {
+            if (ClientServerTcp == null) return;
+            try
+            {
+                ClientServerTcp.Close();
+            }
+            catch { }
+            ClientServerTcp = null;
+        }
         /// <summary>
         /// 测试服务
         /// </summary>
