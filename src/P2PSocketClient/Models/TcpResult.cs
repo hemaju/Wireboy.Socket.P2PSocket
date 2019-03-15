@@ -190,7 +190,7 @@ namespace Wireboy.Socket.P2PClient.Models
             if (bytes.Length == 0) return;
             try
             {
-                Logger.Debug("处理数据包，长度：{0} 来自：{1}",bytes.Length,ReadTcp.Client.RemoteEndPoint);
+                Logger.Debug("处理数据包，长度：{0} 来自：{1}",bytes.Length - 1,ReadTcp.Client.RemoteEndPoint);
                 RecievedTcpDataCallBack?.Invoke(bytes, this);
             }
             catch (Exception ex)

@@ -218,7 +218,7 @@ namespace P2PServiceHome
         {
             if (length > 0)
             {
-                string log = string.Format("从{0}接收到长度{1}的数据,类型:{2} - {3}", tcpResult.ReadTcp.Client.RemoteEndPoint, length, tcpResult.Readbuffer[2], Enum.GetName(typeof(MsgType), tcpResult.Readbuffer[2]));
+                string log = string.Format("从{0}接收到长度{1}的数据,类型:{2} - {3}", tcpResult.ReadTcp.Client.RemoteEndPoint, length-3, tcpResult.Readbuffer[2], Enum.GetName(typeof(MsgType), tcpResult.Readbuffer[2]));
                 Logger.Debug(log);
                 int curReadIndex = 0;
                 do
@@ -246,7 +246,7 @@ namespace P2PServiceHome
                         {
                             try
                             {
-                                Logger.Debug("转发数据到HomeService");
+                                Logger.Debug("转发数据到Home服务");
                                 HomeServerTcp.WriteAsync(data.Skip(1).ToArray(), MsgType.不封包);
                             }
                             catch (Exception ex)
@@ -258,7 +258,7 @@ namespace P2PServiceHome
                         }
                         else
                         {
-                            Logger.Debug("转发数据到HomeService失败，没有连接到Home服务的TCP");
+                            Logger.Debug("转发数据到Home服务失败，没有连接到Home服务的TCP");
                         }
                     }
                     break;
@@ -268,7 +268,7 @@ namespace P2PServiceHome
                         {
                             try
                             {
-                                Logger.Debug("转发数据到HomeService");
+                                Logger.Debug("转发数据到Client服务");
                                 ClientServerTcp.WriteAsync(data.Skip(1).ToArray(), MsgType.不封包);
                             }
                             catch (Exception ex)
@@ -318,7 +318,7 @@ namespace P2PServiceHome
                 while (true)
                 {
                     int length = readStream.Read(tcpResult.Readbuffer, 0, tcpResult.Readbuffer.Length);
-                    Logger.Debug("接收到长度{0}的数据，来自：Client服务", length);
+                    Logger.Debug("接收到长度{0}的数据，来自：Client服务", length-3);
                     DoRecieveClientServerPort(tcpResult, length);
                     tcpResult.ResetReadBuffer();
                 }
