@@ -40,15 +40,15 @@
 
 编译环境：VS2017 + .Net Framework 4.5  + .Net Core 2.1
 
-1.修改P2PSocketClient的配置文件，将服务器ip与端口改为自己的公网ip服务器。
+1.修改Wireboy.Socket.P2PClient.exe的配置文件，将服务器ip与端口改为自己的公网ip服务器。
 
 ![img1](Images/img1.png)
 
-2.在公网ip服务器部署并启动P2PSocketServer。（手动启动：在控制台输入 dotnet P2PSocketServer.dll）
+2.在公网ip服务器部署并启动Wireboy.Socket.P2PService.dll。（手动启动：在控制台输入 dotnet Wireboy.Socket.P2PService.dll）
 
-3.将P2PSocketClient在被控制电脑启动，输入本地Home服务名称：home
+3.将Wireboy.Socket.P2PClient.exe在被控制电脑启动，输入本地Home服务名称：home
 
-4.将P2PSocketClient在主控电脑启动，输入远程Home服务名称：home
+4.将Wireboy.Socket.P2PClient.exe在主控电脑启动，输入远程Home服务名称：home
 
 5.在主控电脑，启动mstsc，输入127.0.0.1:3388 进行远程连接
 
