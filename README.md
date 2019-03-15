@@ -24,10 +24,6 @@
 
 2.dev分支版本为开发者活跃版本，新功能会先加入dev分支，稳定后与master分支合并。
 
-## 版本下载
-	客户端下载 ：[点击下载](download/latest/P2PSocketClient.zip)
-	服务端端下载 ：[点击下载](download/latest/P2PSocketServer.zip)
-
 ## 网络结构
 
 ![img4](Images/img4.png)
@@ -83,7 +79,6 @@
 1.解决第二次连接失败的问题
 
 2.增加被控端（Home）的日志记录功能
-
 
 
 
