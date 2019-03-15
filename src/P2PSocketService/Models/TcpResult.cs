@@ -189,7 +189,7 @@ namespace Wireboy.Socket.P2PService.Models
             }
             catch(Exception ex)
             {
-                Logger.Write("{0}", ex);
+                Logger.Write("处理数据包异常：\r\n{0}", ex);
             }
         }
     }

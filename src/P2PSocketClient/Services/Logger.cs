@@ -46,7 +46,7 @@ namespace Wireboy.Socket.P2PClient
         {
             try
             {
-                string filePath = @"P2PHomeLog.log";
+                string filePath =ConfigServer.LogFile;
                 StreamWriter fileStream = new StreamWriter(filePath, true);
                 do
                 {

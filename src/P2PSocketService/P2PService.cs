@@ -44,9 +44,9 @@ namespace Wireboy.Socket.P2PService
                 listener = new TcpListener(IPAddress.Any, ConfigServer.AppSettings.ServerPort);
                 listener.Start();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Logger.Write("监听端口错误：{0}", ex);
+                Logger.Write("监听端口错误：\r\n{0}", ex);
                 return;
             }
             while (true)
@@ -62,22 +62,24 @@ namespace Wireboy.Socket.P2PService
 
         public void RecieveClientTcp(TcpClient readTcp)
         {
-            NetworkStream readStream = readTcp.GetStream();
-            TcpResult tcpResult = new TcpResult(readStream, readTcp, ReievedTcpDataCallBack);
-            while (readTcp.Connected)
+            EndPoint endPoint = readTcp.Client.RemoteEndPoint;
+            try
             {
-                try
+                NetworkStream readStream = readTcp.GetStream();
+                TcpResult tcpResult = new TcpResult(readStream, readTcp, ReievedTcpDataCallBack);
+                while (readTcp.Connected)
                 {
-                   int length = readStream.Read(tcpResult.Readbuffer, 0, tcpResult.Readbuffer.Length);
+                    int length = readStream.Read(tcpResult.Readbuffer, 0, tcpResult.Readbuffer.Length);
                     DoRecieveClientTcp(tcpResult, length);
                     tcpResult.ResetReadBuffer();
-                }catch(Exception ex)
-                {
-                    Logger.Write("P2PService -> RecieveClientTcp: {0}", ex);
                 }
             }
+            catch (Exception ex)
+            {
+                Logger.Write("接收来自{0}的数据异常：\r\n{1} ", endPoint, ex);
+            }
         }
-        public void DoRecieveClientTcp(TcpResult tcpResult,int length)
+        public void DoRecieveClientTcp(TcpResult tcpResult, int length)
         {
             if (length > 0)
             {
@@ -123,7 +125,7 @@ namespace Wireboy.Socket.P2PService
                         {
                             try
                             {
-                                Logger.Debug("将数据转发到:{0}",toClient.Client.RemoteEndPoint);
+                                Logger.Debug("将数据转发到:{0}", toClient.Client.RemoteEndPoint);
                                 toClient.WriteAsync(data.Skip(1).ToArray(), (MsgType)data[0]);
                             }
                             catch (Exception ex)
@@ -136,7 +138,7 @@ namespace Wireboy.Socket.P2PService
                     break;
                 case (byte)MsgType.测试服务器:
                     {
-                        tcpResult.ReadTcp.WriteAsync(data.Skip(1).ToArray(),MsgType.测试服务器);
+                        tcpResult.ReadTcp.WriteAsync(data.Skip(1).ToArray(), MsgType.测试服务器);
                     }
                     break;
             }
