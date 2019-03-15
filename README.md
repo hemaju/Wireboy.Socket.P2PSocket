@@ -24,6 +24,10 @@
 
 2.dev分支版本为开发者活跃版本，新功能会先加入dev分支，稳定后与master分支合并。
 
+## 版本下载
+	客户端下载 ：[点击下载](download/latest/P2PSocketClient.zip)
+	服务端端下载 ：[点击下载](download/latest/P2PSocketServer.zip)
+
 ## 网络结构
 
 ![img4](Images/img4.png)
@@ -40,17 +44,17 @@
 
 编译环境：VS2017 + .Net Framework 4.5  + .Net Core 2.1
 
-1.修改项目Wireboy.Socket.P2PHome与项目Wireboy.Socket.P2PClient的服务器ip地址（service_IpAddress变量）。
+1.修改P2PSocketClient的配置文件，将服务器ip与端口改为自己的公网ip服务器。
 
 ![img1](Images/img1.png)
 
-2.编译项目Wireboy.Socket.P2PService（服务端）、Wireboy.Socket.P2PHome（被控客户端）、Wireboy.Socket.P2PClient（主控客户端）
+2.在公网ip服务器部署并启动P2PSocketServer。（手动启动：在控制台输入 dotnet P2PSocketServer.dll）
 
-3.将服务端P2PService.dll部署到拥有公网ip的服务器，并运行
+3.将P2PSocketClient在被控制电脑启动，输入本地Home服务名称：home
 
-4.将主控端与被控端在两台不同的机器上运行，输入服务器名称（名称任意，仅用于主控与被控进行匹配）。
+4.将P2PSocketClient在主控电脑启动，输入远程Home服务名称：home
 
-5.打开主控端电脑的mstsc，使用ip：127.0.0.1:3388连接被控客户端电脑即可。
+5.在主控电脑，启动mstsc，输入127.0.0.1:3388 进行远程连接
 
 注：被控端电脑需要开启远程服务，如下图：
 
@@ -61,6 +65,18 @@
 ![img3](Images/img3.gif)
 
 ## 更新日志
+
+### 2019年3月15日
+
+1.原Home服务端与原Client服务端合并
+
+2.客户端完善断线重连功能，主控、被控与服务器可乱序启动
+
+3.增加配置文件的读写
+
+4.增加日志的读写
+
+5.修复使用mstsc连接失败的问题
 
 ### 2019年2月20日
 

@@ -69,7 +69,7 @@ namespace P2PServiceHome
         {
             Console.WriteLine("-------------主菜单-------------");
             Console.WriteLine("1.仅被控端启动    2.仅主控端启动");
-            Console.WriteLine("3.主控被控启动    4.功能测试");
+            //Console.WriteLine("3.主控被控启动    4.功能测试"); //暂不支持
         }
 
         /// <summary>
@@ -90,16 +90,17 @@ namespace P2PServiceHome
                         StartClientServer();
                     }
                     break;
-                case 3:
-                    {
-                        StartAllClient();
-                    }
-                    break;
-                case 4:
-                    {
-                        TestServer();
-                    }
-                    break;
+                //暂不支持
+                //case 3: 
+                //    {
+                //        StartAllClient();
+                //    }
+                //    break;
+                //case 4:
+                //    {
+                //        TestServer();
+                //    }
+                //    break;
                 default:
                     {
                         Console.WriteLine("选择的菜单不存在！");
@@ -113,7 +114,7 @@ namespace P2PServiceHome
             Console.WriteLine("请输入本地Home服务名称：");
             String homeName = Console.ReadLine();
             _p2pService.StartHomeServer(homeName);
-            Console.WriteLine("本地Home服务名称：{0}",homeName);
+            Console.WriteLine("本地Home服务名称：{0}", homeName);
         }
 
         public void StartClientServer()
