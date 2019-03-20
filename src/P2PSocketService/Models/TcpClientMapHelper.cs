@@ -10,38 +10,40 @@ namespace Wireboy.Socket.P2PService.Models
     public class TcpClientMapHelper
     {
         private List<TcpClientMap> _mapList = new List<TcpClientMap>();
-        public TcpClient this[TcpClient tcpClient]
+        /// <summary>
+        /// 获取映射的tcp
+        /// </summary>
+        /// <param name="tcpClient">当前tcp</param>
+        /// <param name="IsControl">当前tcp是否主控端</param>
+        /// <returns></returns>
+        public TcpClient this[TcpClient tcpClient,bool IsControl]
         {
             set
             {
-                TcpClientMap retClientMap = _mapList.Where(t => t.IsMatch(tcpClient)).FirstOrDefault();
-                if(retClientMap.ControlClient == tcpClient)
+                TcpClientMap retClientMap = _mapList.Where(t => IsControl?t.ControlClient ==tcpClient:t.HomeClient == tcpClient).FirstOrDefault();
+                if(IsControl)
                 {
                     retClientMap.HomeClient = value;
                 }
-                else if(retClientMap.HomeClient == tcpClient)
+                else
                 {
                     retClientMap.ControlClient = value;
                 }
             }
             get
             {
-               TcpClientMap retClientMap = _mapList.Where(t => t.IsMatch(tcpClient)).FirstOrDefault();
-                if(retClientMap == null)
+               TcpClientMap retClientMap = _mapList.Where(t => IsControl ? t.ControlClient == tcpClient : t.HomeClient == tcpClient).FirstOrDefault();
+                if (retClientMap == null)
                 {
                     return null;
                 }
-                else if(retClientMap.ControlClient == tcpClient)
+                else if (IsControl)
                 {
                     return retClientMap.HomeClient;
                 }
-                else if(retClientMap.HomeClient == tcpClient)
-                {
-                    return retClientMap.ControlClient;
-                }
                 else
                 {
-                    return null;
+                    return retClientMap.ControlClient;
                 }
             }
         }
@@ -58,9 +60,9 @@ namespace Wireboy.Socket.P2PService.Models
             }
         }
 
-        public bool ContainsControlClient(TcpClient homeClient)
+        public bool ContainsControlClient(TcpClient fromClient)
         {
-            return _mapList.Where(t => t.HomeClient == homeClient).FirstOrDefault() != null;
+            return _mapList.Where(t => t.ControlClient == fromClient).FirstOrDefault() != null;
         }
 
         public bool ContainsHomeClient(TcpClient fromClient)
@@ -70,7 +72,7 @@ namespace Wireboy.Socket.P2PService.Models
 
         public void SetControlClient(TcpClient controlClient, string key)
         {
-            if(ContainsHomeClient(controlClient))
+            if(ContainsControlClient(controlClient))
             {
                 _mapList.Where(t => t.ControlClient == controlClient).FirstOrDefault().ControlClient = null;
             }
@@ -84,28 +86,6 @@ namespace Wireboy.Socket.P2PService.Models
                 _mapList.Where(t => t.HomeClient == homeClient).FirstOrDefault().HomeClient = null;
             }
             this[key].HomeClient = homeClient;
-        }
-
-        public TcpClient GetHomeClient(TcpClient ControlClient)
-        {
-            TcpClientMap clientMap = _mapList.Where(t => t.ControlClient == ControlClient).FirstOrDefault();
-            if (clientMap != null)
-            {
-                return clientMap.HomeClient;
-            }
-            else
-                return null;
-        }
-
-        public TcpClient GetControlClient(TcpClient homeClient)
-        {
-            TcpClientMap clientMap = _mapList.Where(t => t.HomeClient == homeClient).FirstOrDefault();
-            if (clientMap != null)
-            {
-                return clientMap.ControlClient;
-            }
-            else
-                return null;
         }
     }
 }

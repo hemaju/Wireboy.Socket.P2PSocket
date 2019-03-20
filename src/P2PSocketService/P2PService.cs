@@ -66,12 +66,20 @@ namespace Wireboy.Socket.P2PService
             try
             {
                 NetworkStream readStream = readTcp.GetStream();
-                TcpResult tcpResult = new TcpResult(readStream, readTcp, ReievedTcpDataCallBack);
-                while (readTcp.Connected)
+                TcpHelper tcpHelper = new TcpHelper();
+                byte[] buffer = new byte[1024];
+                while (true)
                 {
-                    int length = readStream.Read(tcpResult.Readbuffer, 0, tcpResult.Readbuffer.Length);
-                    DoRecieveClientTcp(tcpResult, length);
-                    tcpResult.ResetReadBuffer();
+                    int length = readStream.Read(buffer, 0, buffer.Length);
+                    ConcurrentQueue<byte[]> results = tcpHelper.ReadPackages(buffer, length);
+                    while (!results.IsEmpty)
+                    {
+                        byte[] data;
+                        if (results.TryDequeue(out data))
+                        {
+                            ReievedTcpDataCallBack(data, readTcp);
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -79,21 +87,8 @@ namespace Wireboy.Socket.P2PService
                 Logger.Write("接收来自{0}的数据异常：\r\n{1} ", endPoint, ex);
             }
         }
-        public void DoRecieveClientTcp(TcpResult tcpResult, int length)
-        {
-            if (length > 0)
-            {
-                string log = string.Format("从{0}接收到长度{1}的数据,类型:{2} - {3}", tcpResult.ReadTcp.Client.RemoteEndPoint, length, tcpResult.Readbuffer[2], Enum.GetName(typeof(MsgType), tcpResult.Readbuffer[2]));
-                Logger.Debug(log);
-                int curReadIndex = 0;
-                do
-                {
-                    tcpResult.ReadOnePackageData(length, ref curReadIndex);
-                } while (curReadIndex <= length - 1);
-            }
-        }
 
-        public void ReievedTcpDataCallBack(byte[] data, TcpResult tcpResult)
+        public void ReievedTcpDataCallBack(byte[] data, TcpClient tcpClient)
         {
             switch (data[0])
             {
@@ -104,41 +99,43 @@ namespace Wireboy.Socket.P2PService
                 case (byte)MsgType.本地服务名:
                     {
                         string key = data.ToStringUnicode(1);
-                        _tcpMapHelper.SetHomeClient(tcpResult.ReadTcp, key);
-                        Logger.Debug("设置本地Home服务名 ip:{0} key:{1}", tcpResult.ReadTcp.Client.RemoteEndPoint, key);
+                        _tcpMapHelper.SetHomeClient(tcpClient, key);
+                        Logger.Debug("设置本地Home服务名 ip:{0} key:{1}", tcpClient.Client.RemoteEndPoint, key);
                     }
                     break;
                 case (byte)MsgType.远程服务名:
                     {
                         string key = data.ToStringUnicode(1);
-                        _tcpMapHelper.SetControlClient(tcpResult.ReadTcp, key);
-                        Logger.Debug("设置远程Home服务名 ip:{0} key:{1}", tcpResult.ReadTcp.Client.RemoteEndPoint, key);
+                        _tcpMapHelper.SetControlClient(tcpClient, key);
+                        Logger.Debug("设置远程Home服务名 ip:{0} key:{1}", tcpClient.Client.RemoteEndPoint, key);
                     }
                     break;
                 case (byte)MsgType.测试客户端:
                 case (byte)MsgType.转发FromClient:
                 case (byte)MsgType.转发FromHome:
-                case (byte)MsgType.连接断开:
+                case (byte)MsgType.断开FromHome:
+                case (byte)MsgType.断开FromClient:
                     {
-                        TcpClient toClient = _tcpMapHelper[tcpResult.ReadTcp];
+                        bool isFromClient = (data[0] == (byte)MsgType.转发FromClient || data[0] == (byte)MsgType.断开FromClient) ? true : false;
+                        TcpClient toClient = _tcpMapHelper[tcpClient, isFromClient];
                         if (toClient != null)
                         {
                             try
                             {
                                 Logger.Debug("将数据转发到:{0}", toClient.Client.RemoteEndPoint);
-                                toClient.WriteAsync(data.Skip(1).ToArray(), (MsgType)data[0]);
+                                toClient.WriteAsync(data.ToArray(), MsgType.无类型);
                             }
                             catch (Exception ex)
                             {
                                 Logger.Write("数据转发异常：{0}", ex);
-                                _tcpMapHelper[tcpResult.ReadTcp] = null;
+                                _tcpMapHelper[tcpClient, true] = null;
                             }
                         }
                     }
                     break;
                 case (byte)MsgType.测试服务器:
                     {
-                        tcpResult.ReadTcp.WriteAsync(data.Skip(1).ToArray(), MsgType.测试服务器);
+                        tcpClient.WriteAsync(data.Skip(1).ToArray(), MsgType.测试服务器);
                     }
                     break;
             }

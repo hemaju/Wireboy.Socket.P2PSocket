@@ -25,6 +25,14 @@ namespace Wireboy.Socket.P2PService.Services
                 {
                     networkStream.WriteAsync(bytes, 0, bytes.Length);
                 }
+                if(msgType == MsgType.无类型)
+                {
+                    short dataLength = Convert.ToInt16(bytes.Length);
+                    byte[] sendBytes = new byte[2 + bytes.Length];
+                    BitConverter.GetBytes(dataLength).CopyTo(sendBytes, 0);
+                    bytes.CopyTo(sendBytes, 2);
+                    networkStream.WriteAsync(sendBytes, 0, sendBytes.Length);
+                }
                 else
                 {
                     short dataLength = Convert.ToInt16(bytes.Length + 1);
@@ -41,7 +49,6 @@ namespace Wireboy.Socket.P2PService.Services
             }
             return true;
         }
-
         /// <summary>
         /// 异步发送数据
         /// </summary>

@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Linq;
 
-namespace Wireboy.Socket.P2PClient
+namespace Wireboy.Socket.P2PService
 {
     public class TcpHelper
     {
@@ -50,7 +49,7 @@ namespace Wireboy.Socket.P2PClient
                 {
                     if (BufferType == BufferTypeEnum.Length)
                     {
-                        PackageLength = BitConverter.ToInt16(Buffer.ToArray(),0);
+                        PackageLength = BitConverter.ToInt16(Buffer.ToArray(), 0);
                         BufferType = BufferTypeEnum.Data;
                     }
                     else

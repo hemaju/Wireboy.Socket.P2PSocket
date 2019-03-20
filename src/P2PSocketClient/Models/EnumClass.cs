@@ -15,9 +15,10 @@ namespace Wireboy.Socket.P2PClient.Models
         远程服务名 = 3,
         转发FromClient = 4,
         转发FromHome = 5,
-        连接断开 = 6,
-        测试服务器 = 7,
-        测试客户端 = 8
+        断开FromClient = 6,
+        断开FromHome = 7,
+        测试服务器 = 8,
+        测试客户端 = 9
     }
 
     public enum LogLevel

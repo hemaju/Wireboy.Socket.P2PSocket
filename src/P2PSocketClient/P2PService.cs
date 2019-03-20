@@ -47,7 +47,7 @@ namespace Wireboy.Socket.P2PClient
                                 {
                                     Logger.Write("监听Home服务端口异常：\r\n{0}", ex);
                                     BreakHomeServerTcp();
-                                    BreakRemoteTcp();
+                                    BreakRemoteTcp(MsgType.断开FromHome);
                                 }
                             });
                         }
@@ -55,7 +55,7 @@ namespace Wireboy.Socket.P2PClient
                         {
                             Logger.Write("连接本地服务失败：\r\n{0}", ex);
                             BreakHomeServerTcp();
-                            BreakRemoteTcp();
+                            BreakRemoteTcp(MsgType.断开FromHome);
                         }
                     }
                 return _homeServerTcp;
@@ -178,7 +178,7 @@ namespace Wireboy.Socket.P2PClient
                 {
                     Logger.Write("启动Home服务异常：\r\n{0}", ex);
                     BreakHomeServerTcp();
-                    BreakRemoteTcp();
+                    BreakRemoteTcp(MsgType.断开FromHome);
                 }
             }
 
@@ -236,7 +236,7 @@ namespace Wireboy.Socket.P2PClient
                     {
                         Logger.Write("监听Client服务端口异常：\r\n{0}", ex);
                         BreakClientServerTcp();
-                        BreakRemoteTcp();
+                        BreakRemoteTcp(MsgType.断开FromClient);
                     }
                 });
         }
@@ -254,7 +254,7 @@ namespace Wireboy.Socket.P2PClient
                 while (true)
                 {
                     int length = readStream.Read(buffer, 0, buffer.Length);
-                    ConcurrentQueue<byte[]> results = tcpHelper.RecieveTcp(buffer, length);
+                    ConcurrentQueue<byte[]> results = tcpHelper.ReadPackages(buffer, length);
                     while (!results.IsEmpty)
                     {
                         byte[] data;
@@ -299,13 +299,13 @@ namespace Wireboy.Socket.P2PClient
                             catch (Exception ex)
                             {
                                 BreakHomeServerTcp();
-                                BreakRemoteTcp();
+                                BreakRemoteTcp(MsgType.断开FromHome);
                                 Logger.Write("向本地端口发送数据错误：\r\n{0}", ex);
                             }
                         }
                         else
                         {
-                            Logger.Debug("转发数据到Home服务失败，没有连接到Home服务的TCP");
+                            Logger.Debug("转发数据到Home服务失败，Home服务未启用");
                         }
                     }
                     break;
@@ -321,7 +321,7 @@ namespace Wireboy.Socket.P2PClient
                             catch (Exception ex)
                             {
                                 BreakClientServerTcp();
-                                BreakRemoteTcp();
+                                BreakRemoteTcp(MsgType.断开FromClient);
                                 Logger.Write("向本地端口发送数据错误：\r\n{0}", ex);
                             }
                         }
@@ -331,9 +331,15 @@ namespace Wireboy.Socket.P2PClient
                         }
                     }
                     break;
-                case (byte)MsgType.连接断开:
+                case (byte)MsgType.断开FromClient:
                     {
+                        Logger.Write("断开Home服务");
                         BreakHomeServerTcp();
+                    }
+                    break;
+                case (byte)MsgType.断开FromHome:
+                    {
+                        Logger.Write("断开Client服务");
                         BreakClientServerTcp();
                     }
                     break;
@@ -364,7 +370,7 @@ namespace Wireboy.Socket.P2PClient
             {
                 Logger.Write("监听Client服务端口异常：\r\n{0}", ex);
                 BreakClientServerTcp();
-                BreakRemoteTcp();
+                BreakRemoteTcp(MsgType.断开FromClient);
             }
         }
 
@@ -386,6 +392,7 @@ namespace Wireboy.Socket.P2PClient
             catch (Exception ex)
             {
                 Logger.Write("监听Home服务端口异常：\r\n{0}", ex);
+                BreakHomeServerTcp();
             }
         }
 
@@ -395,6 +402,7 @@ namespace Wireboy.Socket.P2PClient
         /// <param name="asyncResult"></param>
         public void DoRecieveHClientServerPort(byte[] data, int length, TcpClient tcpClient, bool isFromHome)
         {
+            //Logger.Write("接收到Client服务数据,长度：{0}", length);
             if (length > 0)
             {
                 try
@@ -423,7 +431,7 @@ namespace Wireboy.Socket.P2PClient
             {
                 ServerTcp.WriteAsync(new byte[] { 0 }, MsgType.心跳包);
             }
-            catch (Exception ex)
+            catch
             {
                 ServerTcp = null;
             }
@@ -432,13 +440,13 @@ namespace Wireboy.Socket.P2PClient
         /// <summary>
         /// 断开远程Home/Client服务Tcp
         /// </summary>
-        public void BreakRemoteTcp()
+        public void BreakRemoteTcp(MsgType msgType)
         {
             try
             {
-                ServerTcp.WriteAsync(new byte[] { 0 }, MsgType.连接断开);
+                ServerTcp.WriteAsync(new byte[] { 0 }, msgType);
             }
-            catch (Exception ex)
+            catch
             {
                 ServerTcp = null;
             }

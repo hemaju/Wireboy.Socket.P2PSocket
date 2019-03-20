@@ -68,7 +68,7 @@ namespace Wireboy.Socket.P2PClient
         {
             Console.WriteLine("-------------主菜单-------------");
             Console.WriteLine("1.仅被控端启动    2.仅主控端启动");
-            //Console.WriteLine("3.主控被控启动    4.功能测试"); //暂不支持
+            Console.WriteLine("3.主控被控启动"); //暂不支持
         }
 
         /// <summary>
@@ -90,11 +90,11 @@ namespace Wireboy.Socket.P2PClient
                     }
                     break;
                 //暂不支持
-                //case 3: 
-                //    {
-                //        StartAllClient();
-                //    }
-                //    break;
+                case 3:
+                    {
+                        StartAllClient();
+                    }
+                    break;
                 //case 4:
                 //    {
                 //        TestServer();
