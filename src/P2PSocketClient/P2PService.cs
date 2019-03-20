@@ -6,10 +6,10 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Threading;
-using Wireboy.Socket.P2PClient;
 using Wireboy.Socket.P2PClient.Models;
+using System.Collections.Concurrent;
 
-namespace P2PServiceHome
+namespace Wireboy.Socket.P2PClient
 {
     public class P2PService
     {
@@ -31,12 +31,12 @@ namespace P2PServiceHome
             set { _homeServerTcp = value; }
             get
             {
-                if (_homeServerTcp == null && IsEnableHome)
+                if ((_homeServerTcp == null || !_homeServerTcp.Connected) && IsEnableHome)
                     lock (_lockHomeServerTcp)
                     {
                         try
                         {
-                            if (_homeServerTcp == null) _homeServerTcp = new TcpClient("127.0.0.1", ConfigServer.AppSettings.LocalHomePort);
+                            if (_homeServerTcp == null || !_homeServerTcp.Connected) _homeServerTcp = new TcpClient("127.0.0.1", ConfigServer.AppSettings.LocalHomePort);
                             _taskFactory.StartNew(() =>
                             {
                                 try
@@ -137,7 +137,8 @@ namespace P2PServiceHome
                         }
                         else
                         {
-                            try { 
+                            try
+                            {
                                 SendHeartPackage();
                             }
                             catch (Exception ex)
@@ -248,12 +249,20 @@ namespace P2PServiceHome
             try
             {
                 NetworkStream readStream = ServerTcp.GetStream();
-                TcpResult tcpResult = new TcpResult(readStream, ServerTcp, ReievedServiceTcpCallBack);
+                TcpHelper tcpHelper = new TcpHelper();
+                byte[] buffer = new byte[10240];
                 while (true)
                 {
-                    int length = readStream.Read(tcpResult.Readbuffer, 0, tcpResult.Readbuffer.Length);
-                    DoRecieveClientTcp(tcpResult, length);
-                    tcpResult.ResetReadBuffer();
+                    int length = readStream.Read(buffer, 0, buffer.Length);
+                    ConcurrentQueue<byte[]> results = tcpHelper.RecieveTcp(buffer, length);
+                    while (!results.IsEmpty)
+                    {
+                        byte[] data;
+                        if (results.TryDequeue(out data))
+                        {
+                            ReievedServiceTcpCallBack(data, ServerTcp);
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -265,28 +274,12 @@ namespace P2PServiceHome
         }
 
         /// <summary>
-        /// 接收服务器数据回调方法
-        /// </summary>
-        /// <param name="asyncResult"></param>
-        public void DoRecieveClientTcp(TcpResult tcpResult, int length)
-        {
-            if (length > 0)
-            {
-                string log = string.Format("从{0}接收到长度{1}的数据,类型:{2} - {3}", tcpResult.ReadTcp.Client.RemoteEndPoint, length - 3, tcpResult.Readbuffer[2], Enum.GetName(typeof(MsgType), tcpResult.Readbuffer[2]));
-                Logger.Debug(log);
-                int curReadIndex = 0;
-                do
-                {
-                    tcpResult.ReadOnePackageData(length, ref curReadIndex);
-                } while (curReadIndex <= length - 1);
-            }
-        }
-        /// <summary>
         /// 接收一个完整数据包回调方法
         /// </summary>
         /// <param name="data">完整的数据包</param>
         /// <param name="tcpResult"></param>
-        public void ReievedServiceTcpCallBack(byte[] data, TcpResult tcpResult)
+        //public void ReievedServiceTcpCallBack(byte[] data, TcpResult tcpResult)
+        public void ReievedServiceTcpCallBack(byte[] data, TcpClient tcpClient)
         {
             switch (data[0])
             {
@@ -360,13 +353,11 @@ namespace P2PServiceHome
             try
             {
                 NetworkStream readStream = ClientServerTcp.GetStream();
-                TcpResult tcpResult = new TcpResult(readStream, ClientServerTcp, null);
+                byte[] buffer = new byte[1024];
                 while (true)
                 {
-                    int length = readStream.Read(tcpResult.Readbuffer, 0, tcpResult.Readbuffer.Length);
-                    Logger.Debug("接收到长度{0}的数据，来自：Client服务", length - 3);
-                    DoRecieveClientServerPort(tcpResult, length);
-                    tcpResult.ResetReadBuffer();
+                    int length = readStream.Read(buffer, 0, buffer.Length);
+                    DoRecieveHClientServerPort(buffer, length, ClientServerTcp, false);
                 }
             }
             catch (Exception ex)
@@ -385,13 +376,11 @@ namespace P2PServiceHome
             try
             {
                 NetworkStream readStream = HomeServerTcp.GetStream();
-                TcpResult tcpResult = new TcpResult(readStream, HomeServerTcp, null);
+                byte[] buffer = new byte[1024];
                 while (true)
                 {
-                    int length = readStream.Read(tcpResult.Readbuffer, 0, tcpResult.Readbuffer.Length);
-                    Logger.Debug("接收到长度{0}的数据，来自：Home服务", length);
-                    DoRecieveHomeServerPort(tcpResult, length);
-                    tcpResult.ResetReadBuffer();
+                    int length = readStream.Read(buffer, 0, buffer.Length);
+                    DoRecieveHClientServerPort(buffer, length, HomeServerTcp, true);
                 }
             }
             catch (Exception ex)
@@ -401,16 +390,16 @@ namespace P2PServiceHome
         }
 
         /// <summary>
-        /// 处理Client服务端口数据
+        /// 处理Home或Client服务端口数据
         /// </summary>
         /// <param name="asyncResult"></param>
-        public void DoRecieveClientServerPort(TcpResult tcpResult, int length)
+        public void DoRecieveHClientServerPort(byte[] data, int length, TcpClient tcpClient, bool isFromHome)
         {
             if (length > 0)
             {
                 try
                 {
-                    ServerTcp.WriteAsync(tcpResult.Readbuffer, length, MsgType.转发FromClient);
+                    ServerTcp.WriteAsync(data, length, isFromHome ? MsgType.转发FromHome : MsgType.转发FromClient);
                 }
                 catch (Exception ex)
                 {
@@ -418,41 +407,10 @@ namespace P2PServiceHome
                     ServerTcp = null;
                     try
                     {
-                        ClientServerTcp.Close();
+                        tcpClient.Close();
                     }
                     catch { }
-                    Logger.Write("断开本地其它服务Tcp");
-                    ClientServerTcp = null;
-                }
-            }
-        }
-
-        /// <summary>
-        /// 处理Home服务端口数据
-        /// </summary>
-        /// <param name="asyncResult"></param>
-        public void DoRecieveHomeServerPort(TcpResult tcpResult, int length)
-        {
-            if (length > 0)
-            {
-                try
-                {
-                    ServerTcp.WriteAsync(tcpResult.Readbuffer, length, MsgType.转发FromHome);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Write("向服务器发送数据错误：\r\n{0}", ex);
-                    ServerTcp = null;
-                    try
-                    {
-                        HomeServerTcp.Close();
-                    }
-                    catch (Exception ex1)
-                    {
-
-                    }
-                    Logger.Write("断开Home服务Tcp");
-                    HomeServerTcp = null;
+                    Logger.Write("断开{0}服务Tcp", isFromHome ? "Home" : "Client");
                 }
             }
         }

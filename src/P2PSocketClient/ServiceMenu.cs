@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Wireboy.Socket.P2PClient;
 
-namespace P2PServiceHome
+namespace Wireboy.Socket.P2PClient
 {
     public class ServiceMenu
     {

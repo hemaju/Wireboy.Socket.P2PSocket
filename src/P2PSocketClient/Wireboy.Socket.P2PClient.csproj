@@ -50,11 +50,11 @@
     <Compile Include="Services\Logger.cs" />
     <Compile Include="Models\ApplicationConfig.cs" />
     <Compile Include="Models\EnumClass.cs" />
-    <Compile Include="Models\TcpResult.cs" />
     <Compile Include="P2PService.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\ConfigServer.cs" />
+    <Compile Include="Services\TcpHelper.cs" />
     <Compile Include="Services\TcpUtils.cs" />
   </ItemGroup>
   <ItemGroup>
