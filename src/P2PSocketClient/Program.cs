@@ -10,8 +10,9 @@ namespace Wireboy.Socket.P2PClient
     {
         static void Main(string[] args)
         {
-            P2PService p2PService = new P2PService();
-            p2PService.Start();
+            ConfigServer.LoadFromFile();
+            ServiceMenu menu = new ServiceMenu();
+            menu.ShowMenu();
         }
     }
 }

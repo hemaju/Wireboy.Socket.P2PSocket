@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // 有关程序集的一般信息由以下
 // 控制。更改这些特性值可修改
 // 与程序集关联的信息。
-[assembly: AssemblyTitle("P2PClient")]
+[assembly: AssemblyTitle("P2PHome")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("P2PClient")]
+[assembly: AssemblyProduct("P2PHome")]
 [assembly: AssemblyCopyright("Copyright ©  2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // 如果此项目向 COM 公开，则下列 GUID 用于类型库的 ID
-[assembly: Guid("712fbf6f-958d-4608-93a0-1886c78be677")]
+[assembly: Guid("accf9bdb-e119-4f07-ac83-e3809ad1d5ef")]
 
 // 程序集的版本信息由下列四个值组成: 
 //
