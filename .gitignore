@@ -1,3 +1,4 @@
 .vs
 obj
 bin
+src/P2PSocketService/Wireboy.Socket.P2PService.csproj.user
