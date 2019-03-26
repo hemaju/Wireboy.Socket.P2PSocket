@@ -25,21 +25,16 @@ namespace Wireboy.Socket.P2PService.Services
                 {
                     networkStream.WriteAsync(bytes, 0, bytes.Length);
                 }
-                if(msgType == MsgType.无类型)
+                else if(msgType == MsgType.无类型)
                 {
-                    short dataLength = Convert.ToInt16(bytes.Length);
-                    byte[] sendBytes = new byte[2 + bytes.Length];
-                    BitConverter.GetBytes(dataLength).CopyTo(sendBytes, 0);
-                    bytes.CopyTo(sendBytes, 2);
+                    byte[] sendBytes = bytes.TransferSendBytes();
                     networkStream.WriteAsync(sendBytes, 0, sendBytes.Length);
                 }
                 else
                 {
-                    short dataLength = Convert.ToInt16(bytes.Length + 1);
-                    byte[] sendBytes = new byte[2 + bytes.Length + 1];
-                    BitConverter.GetBytes(dataLength).CopyTo(sendBytes, 0);
-                    sendBytes[2] = (byte)msgType;
-                    bytes.CopyTo(sendBytes, 3);
+                    byte[] sendBytes = new byte[] { (byte)msgType };
+                    sendBytes = sendBytes.Concat(bytes).ToArray();
+                    sendBytes = sendBytes.TransferSendBytes();
                     networkStream.WriteAsync(sendBytes, 0, sendBytes.Length);
                 }
             }
@@ -49,6 +44,9 @@ namespace Wireboy.Socket.P2PService.Services
             }
             return true;
         }
+
+       
+
         /// <summary>
         /// 异步发送数据
         /// </summary>
@@ -106,6 +104,45 @@ namespace Wireboy.Socket.P2PService.Services
         public static String ToStringUnicode(this byte[] data, int startIndex)
         {
             return data.Skip(startIndex).ToArray().ToStringUnicode();
+        }
+
+        /// <summary>
+        /// 获取发送的bytes（在数据前面增加了short类型的长度标记）
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public static byte[] TransferSendBytes(this byte[] data)
+        {
+            short dataLength = Convert.ToInt16(data.Length);
+            byte[] ret = new byte[2 + dataLength];
+            BitConverter.GetBytes(dataLength).CopyTo(ret, 0);
+            data.CopyTo(ret, 2);
+            return ret;
+        }
+
+        public static byte ReadByte(this byte[] data, ref int index)
+        {
+            byte ret = data[index];
+            index += 1;
+            return ret;
+        }
+        public static short ReadShort(this byte[] data, ref int index)
+        {
+            short ret = BitConverter.ToInt16(data.Skip(index).Take(2).ToArray());
+            index += 2;
+            return ret;
+        }
+        public static byte[] ReadBytes(this byte[] data, ref int index, int length)
+        {
+            byte[] ret = data.Skip(index).Take(length).ToArray();
+            index += length;
+            return ret;
+        }
+        public static string ReadString(this byte[] data, ref int index, int length)
+        {
+            string ret = Encoding.Unicode.GetString(data.Skip(index).Take(length).ToArray());
+            index += length;
+            return ret;
         }
     }
 }

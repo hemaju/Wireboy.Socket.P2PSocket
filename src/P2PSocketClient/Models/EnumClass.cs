@@ -18,9 +18,16 @@ namespace Wireboy.Socket.P2PClient.Models
         断开FromClient = 6,
         断开FromHome = 7,
         测试服务器 = 8,
-        测试客户端 = 9
+        测试客户端 = 9,
+        Http服务 = 10,
+        无类型 = 11
     }
-
+    public enum HttpMsgType
+    {
+        None = 0,
+        Http服务名 = 1,
+        Http数据 = 2
+    }
     public enum LogLevel
     {
         运行模式 = 0,

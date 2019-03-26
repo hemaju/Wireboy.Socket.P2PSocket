@@ -80,6 +80,11 @@ namespace Wireboy.Socket.P2PClient
             bytes.Insert(0, msgType);
             return bytes.ToArray();
         }
+        public static byte[] ToBytes(this string str)
+        {
+            List<byte> bytes = Encoding.Unicode.GetBytes(str).ToList();
+            return bytes.ToArray();
+        }
 
         /// <summary>
         /// 将byte数组转成字符串
@@ -100,6 +105,44 @@ namespace Wireboy.Socket.P2PClient
         public static String ToStringUnicode(this byte[] data, int startIndex)
         {
             return data.Skip(startIndex).ToArray().ToStringUnicode();
+        }
+        /// <summary>
+        /// 获取发送的bytes（在数据前面增加了short类型的长度标记）
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public static byte[] TransferSendBytes(this byte[] data)
+        {
+            short dataLength = Convert.ToInt16(data.Length);
+            byte[] ret = new byte[2 + dataLength];
+            BitConverter.GetBytes(dataLength).CopyTo(ret, 0);
+            data.CopyTo(ret, 2);
+            return ret;
+        }
+
+        public static byte ReadByte(this byte[] data, ref int index)
+        {
+            byte ret = data[index];
+            index += 1;
+            return ret;
+        }
+        public static short ReadShort(this byte[] data, ref int index)
+        {
+            short ret = BitConverter.ToInt16(data.Skip(index).Take(2).ToArray(), 0);
+            index += 2;
+            return ret;
+        }
+        public static byte[] ReadBytes(this byte[] data, ref int index, int length)
+        {
+            byte[] ret = data.Skip(index).Take(length).ToArray();
+            index += length;
+            return ret;
+        }
+        public static string ReadString(this byte[] data, ref int index, int length)
+        {
+            string ret = Encoding.Unicode.GetString(data.Skip(index).Take(length).ToArray());
+            index += length;
+            return ret;
         }
     }
 }

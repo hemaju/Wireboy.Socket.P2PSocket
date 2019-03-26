@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using Wireboy.Socket.P2PClient.Models;
 using System.Collections.Concurrent;
+using Wireboy.Socket.P2PClient.Services;
 
 namespace Wireboy.Socket.P2PClient
 {
@@ -68,7 +69,7 @@ namespace Wireboy.Socket.P2PClient
         /// <summary>
         /// 服务器Tcp连接
         /// </summary>
-        TcpClient ServerTcp { set; get; } = null;
+        public TcpClient ServerTcp { set; get; } = null;
         /// <summary>
         /// 是否启用Home服务
         /// </summary>
@@ -82,9 +83,12 @@ namespace Wireboy.Socket.P2PClient
         /// </summary>
         private string ClientServerName { set; get; }
 
+        HttpServer _httpServer;
+
 
         public P2PService()
         {
+            _httpServer = new HttpServer(this);
         }
 
         /// <summary>
@@ -122,6 +126,7 @@ namespace Wireboy.Socket.P2PClient
                                         BreakClientServerTcp();
                                     }
                                 });
+                                _httpServer.Start();
                             }
                             catch (Exception ex)
                             {
@@ -347,6 +352,11 @@ namespace Wireboy.Socket.P2PClient
                     {
                         string str = Encoding.Unicode.GetString(data.Skip(1).ToArray());
                         Console.WriteLine("测试数据：{0}", str);
+                    }
+                    break;
+                case (byte)MsgType.Http服务:
+                    {
+                        _httpServer.RecieveServerTcp(data.Skip(1).ToArray());
                     }
                     break;
             }

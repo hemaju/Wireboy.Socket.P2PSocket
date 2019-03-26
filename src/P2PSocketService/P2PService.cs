@@ -21,9 +21,10 @@ namespace Wireboy.Socket.P2PService
     {
         public TcpClientMapHelper _tcpMapHelper = new TcpClientMapHelper();
         private TaskFactory _taskFactory = new TaskFactory();
+        private HttpServer _httpServer;
         public P2PService()
         {
-
+            _httpServer = new HttpServer(this);
         }
 
         public void Start()
@@ -136,6 +137,11 @@ namespace Wireboy.Socket.P2PService
                 case (byte)MsgType.测试服务器:
                     {
                         tcpClient.WriteAsync(data.Skip(1).ToArray(), MsgType.测试服务器);
+                    }
+                    break;
+                case (byte)MsgType.Http服务:
+                    {
+                        _httpServer.RecieveHttpServerTcp(data.Skip(1).ToArray(), tcpClient);
                     }
                     break;
             }
