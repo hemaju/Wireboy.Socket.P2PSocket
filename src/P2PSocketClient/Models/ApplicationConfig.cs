@@ -23,6 +23,9 @@ namespace Wireboy.Socket.P2PClient.Models
         [ConfigField("本地Client服务端口")]
         public int LocalClientPort { get; set; } = 3388;
 
+        [ConfigField("本地Http服务名称")]
+        public string HttpServerName { set; get; }
+
         [ConfigField("日志等级")]
         public LogLevel LogLevel { set; get; } = LogLevel.运行模式;
     }

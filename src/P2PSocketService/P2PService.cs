@@ -29,6 +29,7 @@ namespace Wireboy.Socket.P2PService
 
         public void Start()
         {
+            _httpServer.Start();
             //监听通讯端口
             ListenServerPort();
         }
@@ -72,14 +73,21 @@ namespace Wireboy.Socket.P2PService
                 while (true)
                 {
                     int length = readStream.Read(buffer, 0, buffer.Length);
-                    ConcurrentQueue<byte[]> results = tcpHelper.ReadPackages(buffer, length);
-                    while (!results.IsEmpty)
+                    if (length > 0)
                     {
-                        byte[] data;
-                        if (results.TryDequeue(out data))
+                        ConcurrentQueue<byte[]> results = tcpHelper.ReadPackages(buffer, length);
+                        while (!results.IsEmpty)
                         {
-                            ReievedTcpDataCallBack(data, readTcp);
+                            byte[] data;
+                            if (results.TryDequeue(out data))
+                            {
+                                ReievedTcpDataCallBack(data, readTcp);
+                            }
                         }
+                    }
+                    else
+                    {
+                        Thread.Sleep(100);
                     }
                 }
             }

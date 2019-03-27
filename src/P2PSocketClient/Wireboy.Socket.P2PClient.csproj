@@ -46,6 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Models\ConfigField.cs" />
+    <Compile Include="Models\HttpModel.cs" />
     <Compile Include="ServiceMenu.cs" />
     <Compile Include="Services\HttpServer.cs" />
     <Compile Include="Services\Logger.cs" />

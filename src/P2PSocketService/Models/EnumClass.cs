@@ -24,7 +24,8 @@ namespace Wireboy.Socket.P2PService.Models
     {
         None = 0,
         Http服务名 = 1,
-        Http数据 = 2
+        Http数据 = 2,
+        断开连接 = 3
     }
     public enum LogLevel
     {

@@ -67,8 +67,8 @@ namespace Wireboy.Socket.P2PClient
         public void DrawMainMenu()
         {
             Console.WriteLine("-------------主菜单-------------");
-            Console.WriteLine("1.仅被控端启动    2.仅主控端启动");
-            Console.WriteLine("3.主控被控启动"); //暂不支持
+            Console.WriteLine("1.启动被控端      2.启动主控端");
+            //Console.WriteLine("3.启用http转发"); 
         }
 
         /// <summary>
@@ -89,12 +89,12 @@ namespace Wireboy.Socket.P2PClient
                         StartClientServer();
                     }
                     break;
-                //暂不支持
                 case 3:
                     {
-                        StartAllClient();
+                        StartHttpServer();
                     }
                     break;
+                //暂不支持
                 //case 4:
                 //    {
                 //        TestServer();
@@ -124,10 +124,8 @@ namespace Wireboy.Socket.P2PClient
             Console.WriteLine("要连接的Home服务名称：{0}", homeName);
         }
 
-        public void StartAllClient()
+        public void StartHttpServer()
         {
-            StartHomeServer();
-            StartClientServer();
         }
 
         public void TestServer()

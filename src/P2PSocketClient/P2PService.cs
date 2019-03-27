@@ -259,14 +259,21 @@ namespace Wireboy.Socket.P2PClient
                 while (true)
                 {
                     int length = readStream.Read(buffer, 0, buffer.Length);
-                    ConcurrentQueue<byte[]> results = tcpHelper.ReadPackages(buffer, length);
-                    while (!results.IsEmpty)
+                    if (length > 0)
                     {
-                        byte[] data;
-                        if (results.TryDequeue(out data))
+                        ConcurrentQueue<byte[]> results = tcpHelper.ReadPackages(buffer, length);
+                        while (!results.IsEmpty)
                         {
-                            ReievedServiceTcpCallBack(data, ServerTcp);
+                            byte[] data;
+                            if (results.TryDequeue(out data))
+                            {
+                                ReievedServiceTcpCallBack(data, ServerTcp);
+                            }
                         }
+                    }
+                    else
+                    {
+                        Thread.Sleep(100);
                     }
                 }
             }
@@ -373,7 +380,14 @@ namespace Wireboy.Socket.P2PClient
                 while (true)
                 {
                     int length = readStream.Read(buffer, 0, buffer.Length);
-                    DoRecieveHClientServerPort(buffer, length, ClientServerTcp, false);
+                    if (length > 0)
+                    {
+                        DoRecieveHClientServerPort(buffer, length, ClientServerTcp, false);
+                    }
+                    else
+                    {
+                        Thread.Sleep(100);
+                    }
                 }
             }
             catch (Exception ex)
@@ -396,7 +410,14 @@ namespace Wireboy.Socket.P2PClient
                 while (true)
                 {
                     int length = readStream.Read(buffer, 0, buffer.Length);
-                    DoRecieveHClientServerPort(buffer, length, HomeServerTcp, true);
+                    if (length > 0)
+                    {
+                        DoRecieveHClientServerPort(buffer, length, HomeServerTcp, true);
+                    }
+                    else
+                    {
+                        Thread.Sleep(100);
+                    }
                 }
             }
             catch (Exception ex)

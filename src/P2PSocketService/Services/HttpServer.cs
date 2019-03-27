@@ -8,34 +8,35 @@ using System.Threading.Tasks;
 using Wireboy.Socket.P2PService.Models;
 using System.Linq;
 using Wireboy.Socket.P2PService.Services;
+using System.Threading;
 
 namespace Wireboy.Socket.P2PService
 {
     public class HttpServer
     {
-        Dictionary<int, List<HttpModel>> _httpMaps = new Dictionary<int, List<HttpModel>>();
         Dictionary<string, TcpClient> _transferClient = new Dictionary<string, TcpClient>();
         P2PService _p2PService = null;
         Dictionary<string, TcpClient> _httpClientMap = new Dictionary<string, TcpClient>();
         public HttpServer(P2PService p2PService)
         {
             this._p2PService = p2PService;
-            List<HttpModel> httpModels = new List<HttpModel>();
-            HttpModel httpModel = new HttpModel();
-            httpModel.Domain = "www.test.com";
-            httpModel.ServerName = "webgroup";
-            httpModels.Add(httpModel);
-            httpModel = new HttpModel();
-            httpModel.Domain = "blog.test.com";
-            httpModel.ServerName = "pgroup";
-            httpModels.Add(httpModel);
-            _httpMaps.Add(1705, httpModels);
-            Start();
+            //List<HttpModel> httpModels = new List<HttpModel>();
+            //HttpModel httpModel = new HttpModel();
+            //httpModel.Domain = "www.test.com";
+            //httpModel.ServerName = "webgroup";
+            //httpModel.Port = 1705;
+            //httpModels.Add(httpModel);
+            //httpModel = new HttpModel();
+            //httpModel.Domain = "blog.test.com";
+            //httpModel.ServerName = "pgroup";
+            //httpModel.Port = 1705;
+            //httpModels.Add(httpModel);
+            //ConfigServer.HttpSettings.Add(1705, httpModels);
         }
         TaskFactory _taskFactory = new TaskFactory();
         public void Start()
         {
-            foreach (int port in _httpMaps.Keys)
+            foreach (int port in ConfigServer.HttpSettings.Keys)
             {
                 _taskFactory.StartNew(() =>
                 {
@@ -70,33 +71,34 @@ namespace Wireboy.Socket.P2PService
             EndPoint endPoint = readTcp.Client.RemoteEndPoint;
             //当前tcp的guid
             byte[] guid = Guid.NewGuid().ToByteArray();
+            string guidKey = guid.ToStringUnicode();
+            TcpClient transferClient = null;
             try
             {
                 NetworkStream readStream = readTcp.GetStream();
                 TcpHelper tcpHelper = new TcpHelper();
                 //接收缓存
                 byte[] buffer = new byte[1024];
-                if (_httpClientMap.ContainsKey(guid.ToStringUnicode()))
+                if (_httpClientMap.ContainsKey(guidKey))
                 {
-                    _httpClientMap.Remove(guid.ToStringUnicode());
+                    _httpClientMap.Remove(guidKey);
                 }
-                _httpClientMap.Add(guid.ToStringUnicode(), readTcp);
+                _httpClientMap.Add(guidKey, readTcp);
                 //是否第一次
                 bool isFirst = true;
-                TcpClient transferClient = null;
                 while (true)
                 {
                     int length = readStream.Read(buffer, 0, buffer.Length);
-                    Logger.Write("浏览器->web：{0}", length);
                     if (length > 0)
                     {
+                        Logger.Write("浏览器->web：{0}", length);
                         if (isFirst)
                         {
                             //读取域名信息
                             string domain = GetHttpRequestHost(buffer, length);
-                            HttpModel httpModel = _httpMaps[port].Where(t => domain.StartsWith(t.Domain) || (domain == "" && t.Type.ToLower() != "http")).FirstOrDefault();
+                            HttpModel httpModel = MatchHttpModel(domain, ConfigServer.HttpSettings[port]);
                             //获取目的服务器
-                            if (_transferClient.ContainsKey(httpModel.ServerName))
+                            if (httpModel != null && _transferClient.ContainsKey(httpModel.ServerName))
                                 transferClient = _transferClient[httpModel.ServerName];
                         }
                         if (transferClient == null)
@@ -108,17 +110,35 @@ namespace Wireboy.Socket.P2PService
                         transferClient.WriteAsync(sendBytes, MsgType.Http服务);
                         isFirst = false;
                     }
+                    else
+                    {
+                        Thread.Sleep(100);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                _httpClientMap.Remove(guid.ToStringUnicode());
+                _httpClientMap.Remove(guidKey);
+                BreakHttpRequest(guid, transferClient);
                 Logger.Write("接收来自{0}的数据异常：\r\n{1} ", endPoint, ex);
-                //Console.WriteLine("接收来自{0}的数据异常：\r\n{1} ", endPoint, ex);
             }
-            _httpClientMap.Remove(guid.ToStringUnicode());
+            _httpClientMap.Remove(guidKey);
         }
-
+        /// <summary>
+        /// 断开web服务器的连接
+        /// </summary>
+        /// <param name="guid"></param>
+        /// <param name="transferClient"></param>
+        private void BreakHttpRequest(byte[] guid, TcpClient transferClient)
+        {
+            if (transferClient == null) return;
+            try
+            {
+                byte[] sendBytes = GetHttpRequestBytes(HttpMsgType.断开连接, guid, new byte[1]);
+                transferClient.WriteAsync(sendBytes, MsgType.Http服务);
+            }
+            catch { }
+        }
         public byte[] GetHttpRequestBytes(HttpMsgType httpMsgType, byte[] guid, byte[] data)
         {
             List<byte> ret = new List<byte>();
@@ -207,6 +227,23 @@ namespace Wireboy.Socket.P2PService
             int indexOf = str.IndexOf(':');
             if (indexOf > -1) str = str.Substring(indexOf + 1).Trim();
             return str;
+        }
+
+        public HttpModel MatchHttpModel(string domain, List<HttpModel> httpModels)
+        {
+            Logger.Write("域名：{0}", domain);
+            string webDomain = domain.Split(':').FirstOrDefault();
+            HttpModel ret = httpModels.Where(t =>
+            {
+                if (webDomain.StartsWith(t.Domain))
+                    return true;
+                return false;
+            }).FirstOrDefault();
+            if (ret == null)
+            {
+                ret = httpModels.Where(t => t.Type.ToLower() != "http").FirstOrDefault();
+            }
+            return ret;
         }
     }
 }
