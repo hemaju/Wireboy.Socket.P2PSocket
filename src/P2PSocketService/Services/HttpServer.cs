@@ -91,7 +91,7 @@ namespace Wireboy.Socket.P2PService
                     int length = readStream.Read(buffer, 0, buffer.Length);
                     if (length > 0)
                     {
-                        Logger.Write("浏览器->web：{0}", length);
+                        Logger.Debug("浏览器->web：{0}", length);
                         if (isFirst)
                         {
                             //读取域名信息
@@ -170,7 +170,7 @@ namespace Wireboy.Socket.P2PService
                             {
                                 length = data.ReadShort(ref index);
                                 byte[] bytes = data.ReadBytes(ref index, length);
-                                Logger.Write("web->浏览器：{0}", bytes.Length);
+                                Logger.Debug("web->浏览器：{0}", bytes.Length);
                                 _httpClientMap[key].WriteAsync(bytes, MsgType.不封包);
                             }
                         }
@@ -231,7 +231,6 @@ namespace Wireboy.Socket.P2PService
 
         public HttpModel MatchHttpModel(string domain, List<HttpModel> httpModels)
         {
-            Logger.Write("域名：{0}", domain);
             string webDomain = domain.Split(':').FirstOrDefault();
             HttpModel ret = httpModels.Where(t =>
             {

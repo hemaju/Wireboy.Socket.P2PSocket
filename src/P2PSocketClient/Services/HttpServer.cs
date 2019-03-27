@@ -43,7 +43,7 @@ namespace Wireboy.Socket.P2PClient.Services
                         }
                         if(_httpClientMap.ContainsKey(guidKey))
                         {
-                            Logger.Write("浏览器->web：{0}", bytes.Length);
+                            Logger.Debug("浏览器->web：{0}", bytes.Length);
                             _httpClientMap[guidKey].WriteAsync(bytes, MsgType.不封包);
                         }
 
@@ -89,7 +89,7 @@ namespace Wireboy.Socket.P2PClient.Services
                             int webLength = stream.Read(webBytes, 0, webBytes.Length);
                             if (webLength > 0)
                             {
-                                Logger.Write("web->浏览器：{0}", webLength);
+                                Logger.Debug("web->浏览器：{0}", webLength);
                                 byte[] webRet = GetHttpSendBytes(HttpMsgType.Http数据, curGuid, webBytes.Take(webLength).ToArray());
                                 //发送数据
                                 _p2PService.ServerTcp.WriteAsync(webRet, MsgType.Http服务);
