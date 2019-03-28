@@ -48,42 +48,42 @@
 
 ## 安全的暴露内网服务
 	
-	A：公网服务器  B：提供服务的服务器  C：用户电脑
-	
-	1.在A中，修改P2PService服务的配置文件，设置要开启的端口号（ServerPort，例如：3488）
-	
-	2.在B中，修改P2PClient服务的配置文件，设置服务器ip（ServerIp，例如：127.0.0.1）、服务器端口（ServerPort，例如：3488）与 本地Home服务端口（LocalHomePort，例如：3389）
-	
-	3.在A中，启动P2PService服务
-	
-	4.在B中，启动P2PClient服务，在控制台选择“启动被控端”，根据提示输入本地服务名称（例如：webServer）
-	
-	5.在C中，修改P2PClient服务的配置文件，设置服务器ip（ServerIp，例如：127.0.0.1）、服务器端口（ServerPort，例如：3488）与本地Client服务端口（LocalClientPort，例如：3388）
-	
-	6.在C中，启动P2PClient服务，在控制台选择“启动主控端”，根据提示输入远程服务名称（例如：webServer）
-	
-	7.在C中，连接127.0.0.1:3388等同于连接B中的127.0.0.1:3389
+A：公网服务器  B：提供服务的服务器  C：用户电脑
+
+1.在A中，修改P2PService服务的配置文件，设置要开启的端口号（ServerPort，例如：3488）
+
+2.在B中，修改P2PClient服务的配置文件，设置服务器ip（ServerIp，例如：127.0.0.1）、服务器端口（ServerPort，例如：3488）与 本地Home服务端口（LocalHomePort，例如：3389）
+
+3.在A中，启动P2PService服务
+
+4.在B中，启动P2PClient服务，在控制台选择“启动被控端”，根据提示输入本地服务名称（例如：webServer）
+
+5.在C中，修改P2PClient服务的配置文件，设置服务器ip（ServerIp，例如：127.0.0.1）、服务器端口（ServerPort，例如：3488）与本地Client服务端口（LocalClientPort，例如：3388）
+
+6.在C中，启动P2PClient服务，在控制台选择“启动主控端”，根据提示输入远程服务名称（例如：webServer）
+
+7.在C中，连接127.0.0.1:3388等同于连接B中的127.0.0.1:3389
 
 ## http内网穿透
 
-	A：公网服务器  B：提供服务的服务器
-	
-	1.在A中，修改P2PService服务的配置文件，设置要开启的端口号（ServerPort，例如：80），并添加以下代码，如下图：
-	
-	![img6](Images/img6.png)
-	
-	2.在B中，修改P2PClient服务的配置文件，设置本地Http服务名称（HttpServerName，例如：webGroup），并添加以下代码，如下图：
-	
-	![img7](Images/img7.png)
-	
-	3.在A中启动P2PService，在B中启动P2PClient
+A：公网服务器  B：提供服务的服务器
+
+1.在A中，修改P2PService服务的配置文件，设置要开启的端口号（ServerPort，例如：80），并添加以下代码，如下图：
+
+![img6](Images/img6.png)
+
+2.在B中，修改P2PClient服务的配置文件，设置本地Http服务名称（HttpServerName，例如：webGroup），并添加以下代码，如下图：
+
+![img7](Images/img7.png)
+
+3.在A中启动P2PService，在B中启动P2PClient
 	
 	
 ###	注意：
 	
-		1）P2PClient与P2PService均支持同端口不同域名的转发，且支持二级域名，但是需要将紫色框中的配置完整复制。
-		
-		2）https连接可以将Type设置为Other，但是同一个端口仅允许设置一个https转发
+1）P2PClient与P2PService均支持同端口不同域名的转发，且支持二级域名，但是需要将紫色框中的配置完整复制。
+
+2）https连接可以将Type设置为Other，但是同一个端口仅允许设置一个https转发
 		
 ### http内网穿透网络结构
 
