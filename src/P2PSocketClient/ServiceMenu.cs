@@ -9,129 +9,36 @@ namespace Wireboy.Socket.P2PClient
     public class ServiceMenu
     {
         P2PService _p2pService = null;
-        private string _consoleError = "";
-        private string _consoleTips = "";
 
         public ServiceMenu()
         {
+            ConfigServer.LoadFromFile();
             _p2pService = new P2PService();
-            _p2pService.ConnectServer();
+            //_p2pService.ConnectServer();
         }
         /// <summary>
         /// 显示菜单
         /// </summary>
         public void ShowMenu()
         {
-            while (true)
+            if (_p2pService.Start())
             {
-                if (!string.IsNullOrEmpty(_consoleError))
+                while (true)
                 {
-                    Console.WriteLine("错误：{0}", _consoleError);
-                    _consoleError = "";
-                }
-                if (!string.IsNullOrEmpty(_consoleTips))
-                {
-                    Console.WriteLine("提示：{0}", _consoleTips);
-                    _consoleTips = "";
-                }
-                DrawMainMenu();
-                int key;
-                if (ReadKey(out key))
-                {
-                    DoMainMenu(key);
+                    Console.WriteLine("请输入远程服务名称：");
+                    string remoteServerName = Console.ReadLine();
+                    if (!_p2pService.SetRemoteServerName(remoteServerName))
+                    {
+                        Console.WriteLine("{0}远程服务-服务不可用！",_p2pService.m_curLogTime);
+                    }
+                    Console.ReadKey();
                 }
             }
-        }
-        /// <summary>
-        /// 获取菜单序号
-        /// </summary>
-        /// <param name="key"></param>
-        /// <returns></returns>
-        public bool ReadKey(out int key)
-        {
-            Console.WriteLine("请输入菜单序号：");
-            String key_str = Console.ReadLine();
-            bool ret = true;
-            if (!int.TryParse(key_str, out key))
+            else
             {
-                _consoleError = "请输入菜单序号！例如：1";
-                ret = false;
+                Console.WriteLine("任意键退出...");
+                Console.ReadKey();
             }
-            Console.Clear();
-            return ret;
-        }
-
-        /// <summary>
-        /// 绘制主菜单
-        /// </summary>
-        public void DrawMainMenu()
-        {
-            Console.WriteLine("-------------主菜单-------------");
-            Console.WriteLine("1.启动被控端      2.启动主控端");
-            //Console.WriteLine("3.启用http转发"); 
-        }
-
-        /// <summary>
-        /// 处理主菜单输入
-        /// </summary>
-        /// <param name="key"></param>
-        public void DoMainMenu(int key)
-        {
-            switch (key)
-            {
-                case 1:
-                    {
-                        StartHomeServer();
-                    }
-                    break;
-                case 2:
-                    {
-                        StartClientServer();
-                    }
-                    break;
-                case 3:
-                    {
-                        StartHttpServer();
-                    }
-                    break;
-                //暂不支持
-                //case 4:
-                //    {
-                //        TestServer();
-                //    }
-                //    break;
-                default:
-                    {
-                        Console.WriteLine("选择的菜单不存在！");
-                    }
-                    break;
-            }
-        }
-
-        public void StartHomeServer()
-        {
-            Console.WriteLine("请输入本地Home服务名称：");
-            String homeName = Console.ReadLine();
-            _p2pService.StartHomeServer(homeName);
-            Console.WriteLine("本地Home服务名称：{0}", homeName);
-        }
-
-        public void StartClientServer()
-        {
-            Console.WriteLine("请输入要连接的Home服务名称：");
-            String homeName = Console.ReadLine();
-            _p2pService.StartClientServer(homeName);
-            Console.WriteLine("要连接的Home服务名称：{0}", homeName);
-        }
-
-        public void StartHttpServer()
-        {
-        }
-
-        public void TestServer()
-        {
-            ConfigServer.SaveToFile();
-            //_p2pService.TestServer();
         }
     }
 }

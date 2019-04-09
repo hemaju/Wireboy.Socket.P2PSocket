@@ -10,7 +10,6 @@ namespace Wireboy.Socket.P2PClient
     {
         static void Main(string[] args)
         {
-            ConfigServer.LoadFromFile();
             ServiceMenu menu = new ServiceMenu();
             menu.ShowMenu();
         }

@@ -49,15 +49,15 @@
     <Compile Include="Models\HttpModel.cs" />
     <Compile Include="ServiceMenu.cs" />
     <Compile Include="Services\HttpServer.cs" />
-    <Compile Include="Services\Logger.cs" />
+    <Compile Include="Utils\Logger.cs" />
     <Compile Include="Models\ApplicationConfig.cs" />
     <Compile Include="Models\EnumClass.cs" />
     <Compile Include="P2PService.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\ConfigServer.cs" />
-    <Compile Include="Services\TcpHelper.cs" />
-    <Compile Include="Services\TcpUtils.cs" />
+    <Compile Include="Utils\TcpHelper.cs" />
+    <Compile Include="Utils\TcpUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -10,7 +10,7 @@ namespace Wireboy.Socket.P2PClient.Services
 {
     public class HttpServer
     {
-        Dictionary<string, TcpClient> _httpClientMap = new Dictionary<string, TcpClient>();
+        Dictionary<string, TcpClient> m_httpClientMap = new Dictionary<string, TcpClient>();
         P2PService _p2PService;
         TaskFactory _taskFactory = new TaskFactory();
         public HttpServer(P2PService p2PService)
@@ -19,58 +19,68 @@ namespace Wireboy.Socket.P2PClient.Services
         }
         public void Start()
         {
-            byte[] bytes = GetHttpSendBytes(HttpMsgType.Http服务名, new byte[1], ConfigServer.AppSettings.HttpServerName.ToBytes());
-            _p2PService.ServerTcp.WriteAsync(bytes, MsgType.Http服务);
+            if (!string.IsNullOrEmpty(ConfigServer.AppSettings.HttpServerName))
+            {
+                byte[] bytes = GetHttpSendBytes(HttpMsgType.Http服务名, new byte[1], ConfigServer.AppSettings.HttpServerName.ToBytes());
+                _p2PService.ServerTcp.WriteAsync(bytes, MsgType.Http服务);
+                Console.WriteLine("{0}Http服务-设置http服务名:{1}", _p2PService.m_curLogTime, ConfigServer.AppSettings.HttpServerName);
+            }
         }
         public void RecieveServerTcp(byte[] data)
         {
-            int index = 0;
-            byte type = data.ReadByte(ref index);
-            short length = data.ReadShort(ref index);
-            byte[] curGuid = data.ReadBytes(ref index, length);
-            string guidKey = curGuid.ToStringUnicode();
-
-            switch (type)
+            try
             {
-                case (byte)HttpMsgType.Http数据:
-                    {
-                        length = data.ReadShort(ref index);
-                        byte[] bytes = data.ReadBytes(ref index, length);
-                        if (!_httpClientMap.ContainsKey(guidKey))
-                        {
-                            string domain = GetHttpRequestHost(bytes, bytes.Length);
-                            ConnectWebServer(curGuid,domain);
-                        }
-                        if(_httpClientMap.ContainsKey(guidKey))
-                        {
-                            Logger.Debug("浏览器->web：{0}", bytes.Length);
-                            _httpClientMap[guidKey].WriteAsync(bytes, MsgType.不封包);
-                        }
+                int index = 0;
+                byte type = data.ReadByte(ref index);
+                short length = data.ReadShort(ref index);
+                byte[] curGuid = data.ReadBytes(ref index, length);
+                string guidKey = curGuid.ToStringUnicode();
 
-                    }
-                    break;
-                case (byte)HttpMsgType.断开连接:
-                    {
-                        _httpClientMap.Remove(guidKey);
-                    }
-                    break;
-                case (byte)HttpMsgType.None:
-                    {
+                switch (type)
+                {
+                    case (byte)HttpMsgType.Http数据:
+                        {
+                            length = data.ReadShort(ref index);
+                            byte[] bytes = data.ReadBytes(ref index, length);
+                            if (!m_httpClientMap.ContainsKey(guidKey))
+                            {
+                                string domain = GetHttpRequestHost(bytes, bytes.Length);
+                                ConnectWebServer(curGuid, domain);
+                            }
+                            if (m_httpClientMap.ContainsKey(guidKey))
+                            {
+                                m_httpClientMap[guidKey].WriteAsync(bytes, MsgType.不封包);
+                            }
 
-                    }
-                    break;
+                        }
+                        break;
+                    case (byte)HttpMsgType.断开连接:
+                        {
+                            m_httpClientMap.Remove(guidKey);
+                        }
+                        break;
+                    case (byte)HttpMsgType.None:
+                        {
+
+                        }
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+
             }
         }
         public void ConnectWebServer(byte[] curGuid,string domain)
         {
             string key_in = curGuid.ToStringUnicode();
-            if (!_httpClientMap.ContainsKey(key_in))
+            if (!m_httpClientMap.ContainsKey(key_in))
             {
                 HttpModel model = MatchHttpModel(domain);
                 if (model == null) return;
                 //连接网站
                 TcpClient tcpClient = new TcpClient("127.0.0.1", model.WebPort);
-                _httpClientMap.Add(key_in, tcpClient);
+                m_httpClientMap.Add(key_in, tcpClient);
                 _taskFactory.StartNew(() =>
                 {
                     string key = key_in;
@@ -81,7 +91,7 @@ namespace Wireboy.Socket.P2PClient.Services
                         byte[] webBytes = new byte[1024];
                         while (true)
                         {
-                            if (!_httpClientMap.ContainsKey(key))
+                            if (!m_httpClientMap.ContainsKey(key))
                             {
                                 client.Close();
                                 break;
@@ -89,7 +99,6 @@ namespace Wireboy.Socket.P2PClient.Services
                             int webLength = stream.Read(webBytes, 0, webBytes.Length);
                             if (webLength > 0)
                             {
-                                Logger.Debug("web->浏览器：{0}", webLength);
                                 byte[] webRet = GetHttpSendBytes(HttpMsgType.Http数据, curGuid, webBytes.Take(webLength).ToArray());
                                 //发送数据
                                 _p2PService.ServerTcp.WriteAsync(webRet, MsgType.Http服务);
@@ -98,7 +107,7 @@ namespace Wireboy.Socket.P2PClient.Services
                     }
                     catch (Exception ex)
                     {
-                        _httpClientMap.Remove(key);
+                        m_httpClientMap.Remove(key);
                     }
                 });
             }

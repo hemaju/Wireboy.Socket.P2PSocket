@@ -120,12 +120,12 @@ namespace Wireboy.Socket.P2PService
                     }
                     break;
                 case (byte)MsgType.测试客户端:
-                case (byte)MsgType.转发FromClient:
-                case (byte)MsgType.转发FromHome:
-                case (byte)MsgType.断开FromHome:
-                case (byte)MsgType.断开FromClient:
+                case (byte)MsgType.转发FromRemote:
+                case (byte)MsgType.转发FromLocal:
+                case (byte)MsgType.断开FromLocal:
+                case (byte)MsgType.断开FromRemote:
                     {
-                        bool isFromClient = (data[0] == (byte)MsgType.转发FromClient || data[0] == (byte)MsgType.断开FromClient) ? true : false;
+                        bool isFromClient = (data[0] == (byte)MsgType.转发FromRemote || data[0] == (byte)MsgType.断开FromRemote) ? true : false;
                         TcpClient toClient = _tcpMapHelper[tcpClient, isFromClient];
                         if (toClient != null)
                         {

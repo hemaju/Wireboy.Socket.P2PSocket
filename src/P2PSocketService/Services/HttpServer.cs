@@ -20,18 +20,6 @@ namespace Wireboy.Socket.P2PService
         public HttpServer(P2PService p2PService)
         {
             this._p2PService = p2PService;
-            //List<HttpModel> httpModels = new List<HttpModel>();
-            //HttpModel httpModel = new HttpModel();
-            //httpModel.Domain = "www.test.com";
-            //httpModel.ServerName = "webgroup";
-            //httpModel.Port = 1705;
-            //httpModels.Add(httpModel);
-            //httpModel = new HttpModel();
-            //httpModel.Domain = "blog.test.com";
-            //httpModel.ServerName = "pgroup";
-            //httpModel.Port = 1705;
-            //httpModels.Add(httpModel);
-            //ConfigServer.HttpSettings.Add(1705, httpModels);
         }
         TaskFactory _taskFactory = new TaskFactory();
         public void Start()
