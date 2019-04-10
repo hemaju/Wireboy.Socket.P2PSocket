@@ -24,7 +24,6 @@ namespace Wireboy.Socket.P2PClient
         {
             if (_p2pService.Start())
             {
-                Thread.Sleep(1000);
                 while (true)
                 {
                     Console.WriteLine("请输入远程服务名称：");
