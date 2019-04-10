@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Wireboy.Socket.P2PClient
@@ -23,6 +24,7 @@ namespace Wireboy.Socket.P2PClient
         {
             if (_p2pService.Start())
             {
+                Thread.Sleep(1000);
                 while (true)
                 {
                     Console.WriteLine("请输入远程服务名称：");

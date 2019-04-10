@@ -185,7 +185,7 @@ namespace Wireboy.Socket.P2PClient
             {
                 try
                 {
-                    Console.WriteLine("{0}本地服务-设置服务名【{1}】", m_curLogTime, homeName);
+                    Console.WriteLine("{0}本地服务-设置服务名:{1}", m_curLogTime, homeName);
                     //发送Home服务名称
                     ServerTcp.WriteAsync(homeName, MsgType.本地服务名);
                 }
@@ -214,13 +214,15 @@ namespace Wireboy.Socket.P2PClient
         }
         public void StartRemoteServerListener()
         {
-            _taskFactory.StartNew(() =>
+            Console.WriteLine("{0}远程服务-监听本地端口:{1}", m_curLogTime, ConfigServer.AppSettings.RemoteLocalPort);
+            try
+            {
+                RemoteServerListener = new TcpListener(IPAddress.Any, ConfigServer.AppSettings.RemoteLocalPort);
+                RemoteServerListener.Start();
+                _taskFactory.StartNew(() =>
                 {
                     try
                     {
-                        Console.WriteLine("{0}远程服务-监听本地端口:{1}", m_curLogTime, ConfigServer.AppSettings.RemoteLocalPort);
-                        RemoteServerListener = new TcpListener(IPAddress.Any, ConfigServer.AppSettings.RemoteLocalPort);
-                        RemoteServerListener.Start();
                         while (true)
                         {
                             TcpClient tcpClient = RemoteServerListener.AcceptTcpClient();
@@ -244,6 +246,12 @@ namespace Wireboy.Socket.P2PClient
                         DoTcpException(TcpErrorType.Client, "远程服务-本地端口监听失败！");
                     }
                 });
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine("{0}远程服务-本地端口监听失败！", m_curLogTime, ConfigServer.AppSettings.RemoteLocalPort);
+                DoTcpException(TcpErrorType.Client, "远程服务-本地端口监听失败！");
+            }
         }
 
         /// <summary>
