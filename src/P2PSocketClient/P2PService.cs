@@ -139,6 +139,10 @@ namespace Wireboy.Socket.P2PClient
                         StartHttpServer();
                     }
                 }
+                else
+                {
+                    SendHeartPackage();
+                }
                 Thread.Sleep(2000);
             }
         }
@@ -226,6 +230,7 @@ namespace Wireboy.Socket.P2PClient
                         while (true)
                         {
                             TcpClient tcpClient = RemoteServerListener.AcceptTcpClient();
+                            Logger.Write("远程服务-新连入tcp：{0}",tcpClient.Client.RemoteEndPoint);
                             if (IsEnableRemoteServer && RemoteServerTcp == null)
                             {
                                 RemoteServerTcp = tcpClient;
@@ -385,7 +390,7 @@ namespace Wireboy.Socket.P2PClient
             }
             catch (Exception ex)
             {
-                DoTcpException(TcpErrorType.Client, "远程服务-监听端口失败！");
+                DoTcpException(TcpErrorType.Client, "远程服务-接收本地端口数据失败！");
             }
         }
 
@@ -413,7 +418,7 @@ namespace Wireboy.Socket.P2PClient
             }
             catch (Exception ex)
             {
-                DoTcpException(TcpErrorType.LocalServer, "远程服务-监听端口失败！");
+                DoTcpException(TcpErrorType.LocalServer, "本地服务-接收本地端口数据失败！");
             }
         }
 
@@ -473,10 +478,10 @@ namespace Wireboy.Socket.P2PClient
             if (m_localServerTcp == null) return;
             try
             {
-                LocalServerTcp.Close();
+                m_localServerTcp.Close();
             }
             catch { }
-            LocalServerTcp = null;
+            m_localServerTcp = null;
         }
         /// <summary>
         /// 断开本地Client服务Tcp
