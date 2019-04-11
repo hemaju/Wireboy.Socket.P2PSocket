@@ -65,36 +65,39 @@ namespace Wireboy.Socket.P2PService
         public void RecieveClientTcp(TcpClient readTcp)
         {
             EndPoint endPoint = readTcp.Client.RemoteEndPoint;
-            try
+            NetworkStream readStream = readTcp.GetStream();
+            TcpHelper tcpHelper = new TcpHelper();
+            byte[] buffer = new byte[10240];
+            int length = 0;
+            while (readStream.CanRead)
             {
-                NetworkStream readStream = readTcp.GetStream();
-                TcpHelper tcpHelper = new TcpHelper();
-                byte[] buffer = new byte[1024];
-                while (true)
+                length = 0;
+                try
                 {
-                    int length = readStream.Read(buffer, 0, buffer.Length);
-                    if (length > 0)
+                    length = readStream.Read(buffer, 0, buffer.Length);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Write(string.Format("来自{0}的tcp流读取错误：\r\n{1}", endPoint, ex));
+                }
+                if (length > 0)
+                {
+                    ConcurrentQueue<byte[]> results = tcpHelper.ReadPackages(buffer, length);
+                    while (!results.IsEmpty)
                     {
-                        ConcurrentQueue<byte[]> results = tcpHelper.ReadPackages(buffer, length);
-                        while (!results.IsEmpty)
+                        byte[] data;
+                        if (results.TryDequeue(out data))
                         {
-                            byte[] data;
-                            if (results.TryDequeue(out data))
-                            {
-                                ReievedTcpDataCallBack(data, readTcp);
-                            }
+                            ReievedTcpDataCallBack(data, readTcp);
                         }
                     }
-                    else
-                    {
-                        Thread.Sleep(100);
-                    }
+                }
+                else
+                {
+                    break;
                 }
             }
-            catch (Exception ex)
-            {
-                Logger.Write("接收来自{0}的数据异常：\r\n{1} ", endPoint, ex);
-            }
+            Logger.Write("断开tcp连接：{0}\r\n", endPoint);
         }
 
         public void ReievedTcpDataCallBack(byte[] data, TcpClient tcpClient)

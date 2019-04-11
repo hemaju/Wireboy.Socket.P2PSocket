@@ -23,7 +23,7 @@ namespace Wireboy.Socket.P2PClient.Services
             {
                 byte[] bytes = GetHttpSendBytes(HttpMsgType.Http服务名, new byte[1], ConfigServer.AppSettings.HttpServerName.ToBytes());
                 _p2PService.ServerTcp.WriteAsync(bytes, MsgType.Http服务);
-                Console.WriteLine("{0}Http服务-设置http服务名:{1}", _p2PService.m_curLogTime, ConfigServer.AppSettings.HttpServerName);
+                Logger.WriteLine("Http服务-设置http服务名:{0}", ConfigServer.AppSettings.HttpServerName);
             }
         }
         public void RecieveServerTcp(byte[] data)

@@ -61,56 +61,57 @@ namespace Wireboy.Socket.P2PService
             byte[] guid = Guid.NewGuid().ToByteArray();
             string guidKey = guid.ToStringUnicode();
             TcpClient transferClient = null;
-            try
-            {
-                NetworkStream readStream = readTcp.GetStream();
-                TcpHelper tcpHelper = new TcpHelper();
-                //接收缓存
-                byte[] buffer = new byte[1024];
-                if (_httpClientMap.ContainsKey(guidKey))
-                {
-                    _httpClientMap.Remove(guidKey);
-                }
-                _httpClientMap.Add(guidKey, readTcp);
-                //是否第一次
-                bool isFirst = true;
-                while (true)
-                {
-                    int length = readStream.Read(buffer, 0, buffer.Length);
-                    if (length > 0)
-                    {
-                        Logger.Debug("浏览器->web：{0}", length);
-                        if (isFirst)
-                        {
-                            //读取域名信息
-                            string domain = GetHttpRequestHost(buffer, length);
-                            HttpModel httpModel = MatchHttpModel(domain, ConfigServer.HttpSettings[port]);
-                            //获取目的服务器
-                            if (httpModel != null && _transferClient.ContainsKey(httpModel.ServerName))
-                                transferClient = _transferClient[httpModel.ServerName];
-                        }
-                        if (transferClient == null)
-                        {
-                            readTcp.Close();
-                            break;
-                        }
-                        byte[] sendBytes = GetHttpRequestBytes(HttpMsgType.Http数据, guid, buffer.Take(length).ToArray());
-                        transferClient.WriteAsync(sendBytes, MsgType.Http服务);
-                        isFirst = false;
-                    }
-                    else
-                    {
-                        Thread.Sleep(100);
-                    }
-                }
-            }
-            catch (Exception ex)
+            NetworkStream readStream = readTcp.GetStream();
+            TcpHelper tcpHelper = new TcpHelper();
+            //接收缓存
+            byte[] buffer = new byte[1024];
+            if (_httpClientMap.ContainsKey(guidKey))
             {
                 _httpClientMap.Remove(guidKey);
-                BreakHttpRequest(guid, transferClient);
-                Logger.Write("接收来自{0}的数据异常：\r\n{1} ", endPoint, ex);
+            }
+            _httpClientMap.Add(guidKey, readTcp);
+            //是否第一次
+            bool isFirst = true;
+            int length = 0;
+            while (readStream.CanRead)
+            {
+                length = 0;
+                try
+                {
+                    length = readStream.Read(buffer, 0, buffer.Length);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Write("读取来自{0}的tcp数据异常：\r\n{1} ", endPoint, ex);
+                }
+                if (length > 0)
+                {
+                    if (isFirst)
+                    {
+                        isFirst = false;
+                        //读取域名信息
+                        string domain = GetHttpRequestHost(buffer, length);
+                        HttpModel httpModel = MatchHttpModel(domain, ConfigServer.HttpSettings[port]);
+                        //获取目的服务器
+                        if (httpModel != null && _transferClient.ContainsKey(httpModel.ServerName))
+                            transferClient = _transferClient[httpModel.ServerName];
+
+                    }
+                    if (transferClient == null)
+                    {
+                        readTcp.Close();
+                        break;
+                    }
+                    byte[] sendBytes = GetHttpRequestBytes(HttpMsgType.Http数据, guid, buffer.Take(length).ToArray());
+                    transferClient.WriteAsync(sendBytes, MsgType.Http服务);
+                }
+                else
+                {
+                    break;
+                }
             }
             _httpClientMap.Remove(guidKey);
+            BreakHttpRequest(guid, transferClient);
         }
         /// <summary>
         /// 断开web服务器的连接

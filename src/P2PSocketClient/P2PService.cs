@@ -56,7 +56,6 @@ namespace Wireboy.Socket.P2PClient
                 return m_localServerTcp;
             }
         }
-        public string m_curLogTime { get { return string.Format("[{0:hh:mm:ss}]", DateTime.Now); } }
         /// <summary>
         /// 远程服务Tcp
         /// </summary>
@@ -153,12 +152,12 @@ namespace Wireboy.Socket.P2PClient
         public bool ConnectServer()
         {
             bool ret = false;
-            Console.WriteLine("{0}服务器-连接中...{1}:{2}", m_curLogTime, ConfigServer.AppSettings.ServerIp, ConfigServer.AppSettings.ServerPort);
+            Logger.WriteLine("服务器-连接中...{0}:{1}",  ConfigServer.AppSettings.ServerIp, ConfigServer.AppSettings.ServerPort);
             try
             {
                 //连接服务器
                 ServerTcp = new TcpClient(ConfigServer.AppSettings.ServerIp, ConfigServer.AppSettings.ServerPort);
-                Console.WriteLine("{0}服务器-连接成功！", m_curLogTime);
+                Logger.WriteLine("服务器-连接成功！");
                 _taskFactory.StartNew(() =>
                 {
                     RecieveServerTcp();
@@ -167,8 +166,7 @@ namespace Wireboy.Socket.P2PClient
             }
             catch (Exception ex)
             {
-                Console.WriteLine("{0}服务器-{1}:{2}连接失败！", m_curLogTime, ConfigServer.AppSettings.ServerIp, ConfigServer.AppSettings.ServerPort);
-                DoTcpException(TcpErrorType.Server, "服务器-连接失败！");
+                DoTcpException(TcpErrorType.Server, string.Format("服务器-{0}:{1}连接失败！", ConfigServer.AppSettings.ServerIp, ConfigServer.AppSettings.ServerPort));
             }
             return ret;
         }
@@ -189,7 +187,7 @@ namespace Wireboy.Socket.P2PClient
             {
                 try
                 {
-                    Console.WriteLine("{0}本地服务-设置服务名:{1}", m_curLogTime, homeName);
+                    Logger.WriteLine("本地服务-设置服务名:{0}",  homeName);
                     //发送Home服务名称
                     ServerTcp.WriteAsync(homeName, MsgType.本地服务名);
                 }
@@ -208,7 +206,7 @@ namespace Wireboy.Socket.P2PClient
                 RemoteServerName = remoteServerName;
                 if (ServerTcp != null)
                 {
-                    Console.WriteLine("{0}远程服务-连接服务名：{1}", m_curLogTime, remoteServerName);
+                    Logger.WriteLine("远程服务-连接服务名：{0}", remoteServerName);
                     ServerTcp.WriteAsync(remoteServerName, MsgType.远程服务名);
                     return true;
                 }
@@ -218,7 +216,7 @@ namespace Wireboy.Socket.P2PClient
         }
         public void StartRemoteServerListener()
         {
-            Console.WriteLine("{0}远程服务-监听本地端口:{1}", m_curLogTime, ConfigServer.AppSettings.RemoteLocalPort);
+            Logger.WriteLine("远程服务-监听本地端口:{0}", ConfigServer.AppSettings.RemoteLocalPort);
             try
             {
                 RemoteServerListener = new TcpListener(IPAddress.Any, ConfigServer.AppSettings.RemoteLocalPort);
@@ -230,7 +228,6 @@ namespace Wireboy.Socket.P2PClient
                         while (true)
                         {
                             TcpClient tcpClient = RemoteServerListener.AcceptTcpClient();
-                            Logger.Write("远程服务-新连入tcp：{0}",tcpClient.Client.RemoteEndPoint);
                             if (IsEnableRemoteServer && RemoteServerTcp == null)
                             {
                                 RemoteServerTcp = tcpClient;
@@ -241,21 +238,20 @@ namespace Wireboy.Socket.P2PClient
                             }
                             else
                             {
+                                Logger.WriteLine("远程服务-断开主动连入的tcp：{0}", tcpClient.Client.RemoteEndPoint);
                                 tcpClient.Close();
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("{0}远程服务-本地端口监听失败！", m_curLogTime, ConfigServer.AppSettings.RemoteLocalPort);
                         DoTcpException(TcpErrorType.Client, "远程服务-本地端口监听失败！");
                     }
                 });
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Console.WriteLine("{0}远程服务-本地端口监听失败！", m_curLogTime, ConfigServer.AppSettings.RemoteLocalPort);
-                DoTcpException(TcpErrorType.Client, "远程服务-本地端口监听失败！");
+                DoTcpException(TcpErrorType.Client, string.Format("远程服务-本地端口:{0}监听失败！", ConfigServer.AppSettings.RemoteLocalPort));
             }
         }
 
@@ -264,37 +260,36 @@ namespace Wireboy.Socket.P2PClient
         /// </summary>
         public void RecieveServerTcp()
         {
-            try
+            NetworkStream readStream = ServerTcp.GetStream();
+            TcpHelper tcpHelper = new TcpHelper();
+            byte[] buffer = new byte[1024];
+            int length = 0;
+            while (readStream.CanRead)
             {
-                NetworkStream readStream = ServerTcp.GetStream();
-                TcpHelper tcpHelper = new TcpHelper();
-                byte[] buffer = new byte[1024];
-                while (true)
+                length = 0;
+                try
                 {
-                    int length = readStream.Read(buffer, 0, buffer.Length);
-                    if (length > 0)
+                    length = readStream.Read(buffer, 0, buffer.Length);
+                }
+                catch { }
+                if (length > 0)
+                {
+                    ConcurrentQueue<byte[]> results = tcpHelper.ReadPackages(buffer, length);
+                    while (!results.IsEmpty)
                     {
-                        ConcurrentQueue<byte[]> results = tcpHelper.ReadPackages(buffer, length);
-                        while (!results.IsEmpty)
+                        byte[] data;
+                        if (results.TryDequeue(out data))
                         {
-                            byte[] data;
-                            if (results.TryDequeue(out data))
-                            {
-                                ReievedServiceTcpCallBack(data, ServerTcp);
-                            }
+                            ReievedServiceTcpCallBack(data, ServerTcp);
                         }
                     }
-                    else
-                    {
-                        //如果接收到长度为0的数据，则等待一段时间后再读取数据
-                        Thread.Sleep(100);
-                    }
+                }
+                else
+                {
+                    break;
                 }
             }
-            catch (Exception ex)
-            {
-                DoTcpException(TcpErrorType.Server, "服务器-连接失败！");
-            }
+            DoTcpException(TcpErrorType.Server, "服务器-tcp连接断开！");
         }
 
         /// <summary>
@@ -354,7 +349,7 @@ namespace Wireboy.Socket.P2PClient
                 case (byte)MsgType.测试服务器:
                     {
                         string str = Encoding.Unicode.GetString(data.Skip(1).ToArray());
-                        Console.WriteLine("测试数据：{0}", str);
+                        Logger.WriteLine("测试数据：{0}", str);
                     }
                     break;
                 case (byte)MsgType.Http服务:
@@ -366,79 +361,78 @@ namespace Wireboy.Socket.P2PClient
             }
         }
         /// <summary>
-        /// 监听Client服务端口
+        /// 监听Remote服务端口
         /// </summary>
         public void ListenRemoteServerPort()
         {
-            Logger.Write("远程服务-新联入Tcp:{0}", RemoteServerTcp.Client.RemoteEndPoint);
-            try
+            EndPoint endPoint = RemoteServerTcp.Client.RemoteEndPoint;
+            Logger.WriteLine("远程服务-新联入Tcp:{0}", endPoint);
+            NetworkStream readStream = RemoteServerTcp.GetStream();
+            byte[] buffer = new byte[1024];
+            int length = 0;
+            while (readStream.CanRead)
             {
-                NetworkStream readStream = RemoteServerTcp.GetStream();
-                byte[] buffer = new byte[1024];
-                while (true)
+                length = 0;
+                try
                 {
-                    int length = readStream.Read(buffer, 0, buffer.Length);
-                    if (length > 0)
-                    {
-                        DoRecieveHClientServerPort(buffer, length, RemoteServerTcp, false);
-                    }
-                    else
-                    {
-                        Thread.Sleep(100);
-                    }
+                    length = readStream.Read(buffer, 0, buffer.Length);
+                }
+                catch { }
+                if (length > 0)
+                {
+                    DoRecieveLocalRemoteServerPort(buffer, length, RemoteServerTcp, false);
+                }
+                else
+                {
+                    break;
                 }
             }
-            catch (Exception ex)
-            {
-                DoTcpException(TcpErrorType.Client, "远程服务-接收本地端口数据失败！");
-            }
+            DoTcpException(TcpErrorType.Client, string.Format("远程服务-已断开Tcp:{0}", endPoint));
         }
 
         /// <summary>
-        /// 监听Home服务端口
+        /// 监听Local服务端口
         /// </summary>
         public void ListenLocalServerPort()
         {
-            try
+            EndPoint endPoint = LocalServerTcp.Client.RemoteEndPoint;
+            NetworkStream readStream = LocalServerTcp.GetStream();
+            byte[] buffer = new byte[1024];
+            int length = 0;
+            while (readStream.CanRead)
             {
-                NetworkStream readStream = LocalServerTcp.GetStream();
-                byte[] buffer = new byte[1024];
-                while (true)
+                length = 0;
+                try
                 {
-                    int length = readStream.Read(buffer, 0, buffer.Length);
-                    if (length > 0)
-                    {
-                        DoRecieveHClientServerPort(buffer, length, LocalServerTcp, true);
-                    }
-                    else
-                    {
-                        Thread.Sleep(100);
-                    }
+                    length = readStream.Read(buffer, 0, buffer.Length);
+                }
+                catch { }
+                if (length > 0)
+                {
+                    DoRecieveLocalRemoteServerPort(buffer, length, LocalServerTcp, true);
+                }
+                else
+                {
+                    break;
                 }
             }
-            catch (Exception ex)
-            {
-                DoTcpException(TcpErrorType.LocalServer, "本地服务-接收本地端口数据失败！");
-            }
+            DoTcpException(TcpErrorType.LocalServer, string.Format("本地服务-已断开Tcp:{0}", endPoint));
         }
 
         /// <summary>
-        /// 处理Home或Client服务端口数据
+        /// 处理Local或Remote服务端口数据
         /// </summary>
         /// <param name="asyncResult"></param>
-        public void DoRecieveHClientServerPort(byte[] data, int length, TcpClient tcpClient, bool isFromHome)
+        public void DoRecieveLocalRemoteServerPort(byte[] data, int length, TcpClient tcpClient, bool isFromHome)
         {
             //Logger.Write("接收到Client服务数据,长度：{0}", length);
-            if (length > 0)
+            try
             {
-                try
-                {
-                    ServerTcp.WriteAsync(data, length, isFromHome ? MsgType.转发FromLocal : MsgType.转发FromRemote);
-                }
-                catch (Exception ex)
-                {
-                    DoTcpException(TcpErrorType.Server, "服务器-连接失败！");
-                }
+                ServerTcp.WriteAsync(data, length, isFromHome ? MsgType.转发FromLocal : MsgType.转发FromRemote);
+            }
+            catch (Exception ex)
+            {
+                DoTcpException(TcpErrorType.Server, "服务器-连接失败！");
             }
         }
         /// <summary>
@@ -501,7 +495,7 @@ namespace Wireboy.Socket.P2PClient
         {
             if (!string.IsNullOrEmpty(errorMsg))
             {
-                Logger.Write(errorMsg);
+                Logger.WriteLine(errorMsg);
             }
             switch (type)
             {
