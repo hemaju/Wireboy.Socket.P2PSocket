@@ -50,19 +50,17 @@
 	
 A：公网服务器  B：提供服务的服务器  C：用户电脑
 
-1.在A中，修改P2PService服务的配置文件，设置要开启的端口号（ServerPort，例如：3488）
+1.修改A中配置文件，如下图：
 
-2.在B中，修改P2PClient服务的配置文件，设置服务器ip（ServerIp，例如：127.0.0.1）、服务器端口（ServerPort，例如：3488）与 本地Home服务端口（LocalHomePort，例如：3389）
+![img8](Images/img8.png)
 
-3.在A中，启动P2PService服务
+2.修改B和C中配置文件（B的LocalServerName：home，C的LocalServerName可不填），如下图：
 
-4.在B中，启动P2PClient服务，在控制台选择“启动被控端”，根据提示输入本地服务名称（例如：webServer）
+![img9](Images/img9.png)
 
-5.在C中，修改P2PClient服务的配置文件，设置服务器ip（ServerIp，例如：127.0.0.1）、服务器端口（ServerPort，例如：3488）与本地Client服务端口（LocalClientPort，例如：3388）
+3.启动B和C，在C控制台输入B的本地服务名称，如下图：
 
-6.在C中，启动P2PClient服务，在控制台选择“启动主控端”，根据提示输入远程服务名称（例如：webServer）
-
-7.在C中，连接127.0.0.1:3388等同于连接B中的127.0.0.1:3389
+![img10](Images/img10.png)
 
 ## http内网穿透
 
@@ -114,6 +112,19 @@ A：公网服务器  B：提供服务的服务器
 ![img3](Images/img3.gif)
 
 ## 更新日志
+
+### 2019年4月11日
+
+1.Home服务改名称Local服务，Client服务改名称Remote服务
+
+2.优化启动方式，除了Remote服务，其它服务均按照配置文件自动启用
+
+3.同步控制台输出与日志文件输出，且控制台输出改为异步，避免程序卡住
+
+4.修复传输10M以上文件会报错的问题
+
+5.优化代码，程序稳定性有较大的提升
+
 
 ### 2019年3月27日
 
