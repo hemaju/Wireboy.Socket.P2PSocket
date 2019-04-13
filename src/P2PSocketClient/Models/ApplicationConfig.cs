@@ -27,6 +27,6 @@ namespace Wireboy.Socket.P2PClient.Models
         public string HttpServerName { set; get; }
 
         [ConfigField("日志等级")]
-        public LogLevel LogLevel { set; get; } = LogLevel.运行模式;
+        public LogLevel LogLevel { set; get; } = LogLevel.Info;
     }
 }

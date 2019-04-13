@@ -11,37 +11,35 @@ namespace Wireboy.Socket.P2PClient.Services
     public class HttpServer
     {
         Dictionary<string, TcpClient> m_httpClientMap = new Dictionary<string, TcpClient>();
-        P2PService _p2PService;
-        TaskFactory _taskFactory = new TaskFactory();
+        P2PService m_p2PService;
+        TaskFactory m_taskFactory = new TaskFactory();
+        int m_guidLength = Guid.NewGuid().ToByteArray().Length;
         public HttpServer(P2PService p2PService)
         {
-            _p2PService = p2PService;
+            m_p2PService = p2PService;
         }
         public void Start()
         {
             if (!string.IsNullOrEmpty(ConfigServer.AppSettings.HttpServerName))
             {
-                byte[] bytes = GetHttpSendBytes(HttpMsgType.Http服务名, new byte[1], ConfigServer.AppSettings.HttpServerName.ToBytes());
-                _p2PService.ServerTcp.WriteAsync(bytes, MsgType.Http服务);
-                Logger.WriteLine("Http服务-设置http服务名:{0}", ConfigServer.AppSettings.HttpServerName);
+                m_p2PService.ServerTcp.WriteAsync(ConfigServer.AppSettings.HttpServerName, P2PSocketType.Http.Code, P2PSocketType.Http.ServerName.Code);
+                Logger.Info.WriteLine("[HttpServer]->[服务器] 设置http服务名:{0}", ConfigServer.AppSettings.HttpServerName);
             }
         }
-        public void RecieveServerTcp(byte[] data)
+        public void HandleHttpPackage(byte type, byte[] data)
         {
+            //[长度][guid][数据]
             try
             {
-                int index = 0;
-                byte type = data.ReadByte(ref index);
-                short length = data.ReadShort(ref index);
-                byte[] curGuid = data.ReadBytes(ref index, length);
+                byte[] curGuid = data.Take(m_guidLength).ToArray();
                 string guidKey = curGuid.ToStringUnicode();
 
                 switch (type)
                 {
-                    case (byte)HttpMsgType.Http数据:
+                    case P2PSocketType.Http.Transfer.Code:
                         {
-                            length = data.ReadShort(ref index);
-                            byte[] bytes = data.ReadBytes(ref index, length);
+                            byte[] bytes = data.Skip(m_guidLength).ToArray();
+                            Logger.Debug.WriteLine("[Web]->[WebServer] 接收到来自浏览器的数据，长度{0}", bytes.Length);
                             if (!m_httpClientMap.ContainsKey(guidKey))
                             {
                                 string domain = GetHttpRequestHost(bytes, bytes.Length);
@@ -49,19 +47,19 @@ namespace Wireboy.Socket.P2PClient.Services
                             }
                             if (m_httpClientMap.ContainsKey(guidKey))
                             {
-                                m_httpClientMap[guidKey].WriteAsync(bytes, MsgType.不封包);
+                                m_httpClientMap[guidKey].WriteAsync(bytes);
+                                Logger.Debug.WriteLine("[WebServer]->[Port] 向本地站点发送数据，长度{0}", bytes.Length);
                             }
 
                         }
                         break;
-                    case (byte)HttpMsgType.断开连接:
+                    case P2PSocketType.Http.Break.Code:
                         {
                             m_httpClientMap.Remove(guidKey);
                         }
                         break;
-                    case (byte)HttpMsgType.None:
+                    case P2PSocketType.Http.Error.Code:
                         {
-
                         }
                         break;
                 }
@@ -71,7 +69,7 @@ namespace Wireboy.Socket.P2PClient.Services
 
             }
         }
-        public void ConnectWebServer(byte[] curGuid,string domain)
+        public void ConnectWebServer(byte[] curGuid, string domain)
         {
             string key_in = curGuid.ToStringUnicode();
             if (!m_httpClientMap.ContainsKey(key_in))
@@ -81,34 +79,54 @@ namespace Wireboy.Socket.P2PClient.Services
                 //连接网站
                 TcpClient tcpClient = new TcpClient("127.0.0.1", model.WebPort);
                 m_httpClientMap.Add(key_in, tcpClient);
-                _taskFactory.StartNew(() =>
+                m_taskFactory.StartNew(() =>
                 {
                     string key = key_in;
-                    try
+                    TcpClient client = tcpClient;
+                    NetworkStream stream = client.GetStream();
+                    byte[] webBytes = new byte[1024];
+                    while (stream.CanRead)
                     {
-                        TcpClient client = tcpClient;
-                        NetworkStream stream = client.GetStream();
-                        byte[] webBytes = new byte[1024];
-                        while (true)
+                        if (!m_httpClientMap.ContainsKey(key))
                         {
-                            if (!m_httpClientMap.ContainsKey(key))
+                            client.Close();
+                            break;
+                        }
+                        int webLength = 0;
+                        try
+                        {
+                            Logger.Debug.WriteLine("[Port]->[HttpServer] 接收数据，长度:{0}", webLength);
+                            webLength = stream.Read(webBytes, 0, webBytes.Length);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Error.WriteLine("[Port]->[HttpServer] 接收数据错误:\r\n{0}", ex);
+                            m_httpClientMap.Remove(key);
+                        }
+                        if (webLength > 0)
+                        {
+                            List<byte> webRet = new List<byte>();
+                            webRet.AddRange(curGuid);
+                            webRet.AddRange(webBytes.Take(webLength));
+                            //发送数据
+                            try
                             {
-                                client.Close();
-                                break;
+                                m_p2PService.ServerTcp.WriteAsync(webRet.ToArray(), P2PSocketType.Http.Code, P2PSocketType.Http.Transfer.Code);
+                                Logger.Debug.WriteLine("[HttpServer]->[Web] 发送数据，长度:{0}", webLength);
                             }
-                            int webLength = stream.Read(webBytes, 0, webBytes.Length);
-                            if (webLength > 0)
+                            catch (Exception ex)
                             {
-                                byte[] webRet = GetHttpSendBytes(HttpMsgType.Http数据, curGuid, webBytes.Take(webLength).ToArray());
-                                //发送数据
-                                _p2PService.ServerTcp.WriteAsync(webRet, MsgType.Http服务);
+                                Logger.Error.WriteLine("[HttpServer]->[Web] 发送数据错误:\r\n{0}", ex);
                             }
                         }
+                        else
+                        {
+                            Logger.Debug.WriteLine("[Port]->[HttpServer] 接收到长度0的数据，断开连接！");
+                            client.Close();
+                            break;
+                        }
                     }
-                    catch (Exception ex)
-                    {
-                        m_httpClientMap.Remove(key);
-                    }
+                    m_httpClientMap.Remove(key);
                 });
             }
         }
@@ -143,19 +161,12 @@ namespace Wireboy.Socket.P2PClient.Services
         public HttpModel MatchHttpModel(string domain)
         {
             string webDomain = domain.Split(':').FirstOrDefault();
-            return ConfigServer.HttpSettings.Where(t => {
+            return ConfigServer.HttpSettings.Where(t =>
+            {
                 if (webDomain.StartsWith(t.Domain))
                     return true;
                 return false;
             }).FirstOrDefault();
-        }
-        public byte[] GetHttpSendBytes(HttpMsgType httpMsgType, byte[] guid, byte[] data)
-        {
-            List<byte> ret = new List<byte>();
-            ret.Add((byte)httpMsgType);
-            ret.AddRange(guid.TransferSendBytes());
-            ret.AddRange(data.TransferSendBytes());
-            return ret.ToArray();
         }
     }
 }

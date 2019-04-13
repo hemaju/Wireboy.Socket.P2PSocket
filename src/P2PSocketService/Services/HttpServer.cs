@@ -14,12 +14,13 @@ namespace Wireboy.Socket.P2PService
 {
     public class HttpServer
     {
-        Dictionary<string, TcpClient> _transferClient = new Dictionary<string, TcpClient>();
-        P2PService _p2PService = null;
-        Dictionary<string, TcpClient> _httpClientMap = new Dictionary<string, TcpClient>();
+        Dictionary<string, TcpClient> m_transferClient = new Dictionary<string, TcpClient>();
+        P2PService m_p2PService = null;
+        Dictionary<string, TcpClient> m_httpClientMap = new Dictionary<string, TcpClient>();
+        int m_guidLength = Guid.NewGuid().ToByteArray().Length;
         public HttpServer(P2PService p2PService)
         {
-            this._p2PService = p2PService;
+            this.m_p2PService = p2PService;
         }
         TaskFactory _taskFactory = new TaskFactory();
         public void Start()
@@ -28,23 +29,26 @@ namespace Wireboy.Socket.P2PService
             {
                 _taskFactory.StartNew(() =>
                 {
-                    TcpListener listener = new TcpListener(IPAddress.Any, port);
-                    listener.Start();
-                    while (true)
+                    try
                     {
-                        TcpClient tcpClient = listener.AcceptTcpClient();
-                        //接收tcp数据
-                        _taskFactory.StartNew(() =>
+                        TcpListener listener = new TcpListener(IPAddress.Any, port);
+                        listener.Start();
+                        string serverName = "";
+                        ConfigServer.HttpSettings[port].Select(t => t.ServerName).Distinct().ToList().ForEach(t => serverName += t + " ");
+                        Logger.Info.WriteLine("[HttpServer] 启动Http服务，端口:{0} 服务名：{1}", port, serverName);
+                        while (true)
                         {
-                            try
+                            TcpClient tcpClient = listener.AcceptTcpClient();
+                            //接收tcp数据
+                            _taskFactory.StartNew(() =>
                             {
-                                RecieveClientTcp(tcpClient, port);
-                            }
-                            catch (Exception ex)
-                            {
-                                Logger.Write("{0}", ex);
-                            }
-                        });
+                                RecieveWebTcp(tcpClient, port);
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error.WriteLine("[HttpServer] http服务启动失败!\r\n{0}", ex);
                     }
                 });
             }
@@ -52,38 +56,40 @@ namespace Wireboy.Socket.P2PService
         /// <summary>
         /// 接收浏览器请求
         /// </summary>
-        /// <param name="readTcp"></param>
+        /// <param name="webClientTcp"></param>
         /// <param name="port"></param>
-        public void RecieveClientTcp(TcpClient readTcp, int port)
+        public void RecieveWebTcp(TcpClient webClientTcp, int port)
         {
-            EndPoint endPoint = readTcp.Client.RemoteEndPoint;
+            EndPoint endPoint = webClientTcp.Client.RemoteEndPoint;
             //当前tcp的guid
             byte[] guid = Guid.NewGuid().ToByteArray();
             string guidKey = guid.ToStringUnicode();
-            TcpClient transferClient = null;
-            NetworkStream readStream = readTcp.GetStream();
-            TcpHelper tcpHelper = new TcpHelper();
+            //网站服务器Tcp
+            TcpClient webServerTcp = null;
             //接收缓存
             byte[] buffer = new byte[1024];
-            if (_httpClientMap.ContainsKey(guidKey))
+            if (m_httpClientMap.ContainsKey(guidKey))
             {
-                _httpClientMap.Remove(guidKey);
+                m_httpClientMap.Remove(guidKey);
             }
-            _httpClientMap.Add(guidKey, readTcp);
+            m_httpClientMap.Add(guidKey, webClientTcp);
             //是否第一次
             bool isFirst = true;
             int length = 0;
+            NetworkStream readStream = webClientTcp.GetStream();
             while (readStream.CanRead)
             {
                 length = 0;
                 try
                 {
                     length = readStream.Read(buffer, 0, buffer.Length);
+                    Logger.Debug.WriteLine("[Port]->[HttpServer] 接收数据，长度{0}",length);
                 }
                 catch (Exception ex)
                 {
-                    Logger.Write("读取来自{0}的tcp数据异常：\r\n{1} ", endPoint, ex);
+                    Logger.Error.WriteLine("[Port]->[HttpServer] 读取来自{0}的tcp数据错误：\r\n{1} ", endPoint, ex);
                 }
+                string httpServerName = "";
                 if (length > 0)
                 {
                     if (isFirst)
@@ -92,26 +98,41 @@ namespace Wireboy.Socket.P2PService
                         //读取域名信息
                         string domain = GetHttpRequestHost(buffer, length);
                         HttpModel httpModel = MatchHttpModel(domain, ConfigServer.HttpSettings[port]);
+                        httpServerName = httpModel.ServerName;
                         //获取目的服务器
-                        if (httpModel != null && _transferClient.ContainsKey(httpModel.ServerName))
-                            transferClient = _transferClient[httpModel.ServerName];
+                        if (httpModel != null && m_transferClient.ContainsKey(httpModel.ServerName))
+                            webServerTcp = m_transferClient[httpModel.ServerName];
 
                     }
-                    if (transferClient == null)
+                    if (webServerTcp == null)
                     {
-                        readTcp.Close();
+                        Logger.Info.WriteLine("[HttpServer] 服务{0}不在线!", httpServerName);
+                        webClientTcp.Close();
                         break;
                     }
-                    byte[] sendBytes = GetHttpRequestBytes(HttpMsgType.Http数据, guid, buffer.Take(length).ToArray());
-                    transferClient.WriteAsync(sendBytes, MsgType.Http服务);
+                    List<byte> sendBytes = new List<byte>();
+                    sendBytes.AddRange(guid);
+                    sendBytes.AddRange(buffer.Take(length));
+                    try
+                    {
+                        //86 86 type1 type2 长度 guid data
+                        webServerTcp.WriteAsync(sendBytes.ToArray(), P2PSocketType.Http.Code, P2PSocketType.Http.Transfer.Code);
+                        Logger.Error.WriteLine("[HttpServer]->[HttpClient] 向Http服务{0}发送tcp数据，长度{1} ", httpServerName, sendBytes.Count);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error.WriteLine("[HttpServer]->[HttpClient] 向Http服务{0}发送tcp数据错误：\r\n{1} ", httpServerName, ex);
+                    }
                 }
                 else
                 {
+                    Logger.Info.WriteLine("[HttpServer] 接收到长度为0的数据，关闭Tcp!");
+                    webClientTcp.Close();
                     break;
                 }
             }
-            _httpClientMap.Remove(guidKey);
-            BreakHttpRequest(guid, transferClient);
+            m_httpClientMap.Remove(guidKey);
+            BreakHttpRequest(guid, webServerTcp);
         }
         /// <summary>
         /// 断开web服务器的连接
@@ -123,65 +144,54 @@ namespace Wireboy.Socket.P2PService
             if (transferClient == null) return;
             try
             {
-                byte[] sendBytes = GetHttpRequestBytes(HttpMsgType.断开连接, guid, new byte[1]);
-                transferClient.WriteAsync(sendBytes, MsgType.Http服务);
+                List<byte> sendBytes = new List<byte>();
+                sendBytes.AddRange(guid);
+                sendBytes.AddRange(new byte[1]);
+                transferClient.WriteAsync(sendBytes.ToArray(), P2PSocketType.Http.Code, P2PSocketType.Http.Break.Code);
             }
             catch { }
-        }
-        public byte[] GetHttpRequestBytes(HttpMsgType httpMsgType, byte[] guid, byte[] data)
-        {
-            List<byte> ret = new List<byte>();
-            ret.Add((byte)httpMsgType);
-            ret.AddRange(guid.TransferSendBytes());
-            ret.AddRange(data.TransferSendBytes());
-            return ret.ToArray();
         }
 
         /// <summary>
         /// 处理服务器response
         /// </summary>
         /// <param name="data"></param>
-        public void RecieveHttpServerTcp(byte[] data, TcpClient tcpClient)
+        public void HandleHttpPackage(byte type, byte[] data, TcpClient tcpClient)
         {
-            int index = 0;
-            byte type = data.ReadByte(ref index);
-            short length = data.ReadShort(ref index);
-            byte[] curGuid = data.ReadBytes(ref index, length);
-            //Logger.Write("收到web服务数据：{0}", data.Length - index - 2);
+            byte[] curGuid = data.Take(m_guidLength).ToArray();
+            string guidKey = curGuid.ToStringUnicode();
             switch (type)
             {
-                case (byte)HttpMsgType.Http数据:
+                case P2PSocketType.Http.Transfer.Code:
                     {
                         string key = curGuid.ToStringUnicode();
                         try
                         {
-                            if (_httpClientMap.ContainsKey(key))
+                            if (m_httpClientMap.ContainsKey(key))
                             {
-                                length = data.ReadShort(ref index);
-                                byte[] bytes = data.ReadBytes(ref index, length);
-                                Logger.Debug("web->浏览器：{0}", bytes.Length);
-                                _httpClientMap[key].WriteAsync(bytes, MsgType.不封包);
+                                byte[] bytes = data.Skip(m_guidLength).ToArray();
+                                m_httpClientMap[key].WriteAsync(bytes);
                             }
                         }
                         catch (Exception ex)
                         {
-                            _httpClientMap.Remove(key);
-                            Console.WriteLine("{0}", ex);
+                            m_httpClientMap.Remove(key);
+                            Logger.Error.WriteLine("Http服务-[server->web]转发数据失败！\r\n{0}", ex);
                         }
                     }
                     break;
-                case (byte)HttpMsgType.Http服务名:
+                case P2PSocketType.Http.ServerName.Code:
                     {
-                        short strLength = data.ReadShort(ref index);
-                        String httpServerName = data.ReadString(ref index, strLength);
-                        if (_transferClient.ContainsKey(httpServerName))
+                        String httpServerName = data.ToStringUnicode();
+                        if (m_transferClient.ContainsKey(httpServerName))
                         {
-                            _transferClient.Remove(httpServerName);
+                            m_transferClient.Remove(httpServerName);
                         }
-                        _transferClient.Add(httpServerName, tcpClient);
+                        m_transferClient.Add(httpServerName, tcpClient);
+                        Logger.Debug.WriteLine("[HttpClient]->[HttpServer] 设置Http服务名:{0}", httpServerName);
                     }
                     break;
-                case (byte)HttpMsgType.None:
+                case P2PSocketType.Http.Break.Code:
                     {
 
                     }

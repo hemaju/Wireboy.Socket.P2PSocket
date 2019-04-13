@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Wireboy.Socket.P2PClient.Models;
 
 namespace Wireboy.Socket.P2PClient
 {
@@ -21,9 +22,9 @@ namespace Wireboy.Socket.P2PClient
         private static object m_consoleObj = new object();
         private static ConcurrentQueue<string> m_consoleLogList = new ConcurrentQueue<string>();
 
-        public static void WriteLine(string log)
+        private static void WriteLine(string log)
         {
-            log = string.Format("[{0:yyyy-MM-dd HH:mm:ss}]{1}", DateTime.Now, log);
+            log = string.Format("{0:MM-dd HH:mm:ss} {1}", DateTime.Now, log);
             m_logList.Enqueue(log);
             if (m_curTask == null)
             {
@@ -35,16 +36,11 @@ namespace Wireboy.Socket.P2PClient
                     }
                 }
             }
+            WriteConsole(log);
         }
-        public static void WriteLine(string log, object arg0 = null, object arg1 = null, object arg2 = null)
+        private static void WriteLine(string log, object arg0 = null, object arg1 = null, object arg2 = null)
         {
             Logger.WriteLine(string.Format(log, arg0, arg1, arg2));
-        }
-
-        public static void Debug(string log, object arg0 = null, object arg1 = null, object arg2 = null)
-        {
-            if (ConfigServer.AppSettings.LogLevel == Models.LogLevel.调试模式)
-                Logger.WriteLine(string.Format(log, arg0, arg1, arg2));
         }
 
         private static void DoWriteLine()
@@ -63,7 +59,6 @@ namespace Wireboy.Socket.P2PClient
                             if (m_logList.TryDequeue(out str))
                             {
                                 fileStream.WriteLine(str);
-                                WriteConsole(str);
                             }
                         }
                     } while (m_logList.Count > 0);
@@ -103,13 +98,53 @@ namespace Wireboy.Socket.P2PClient
                         string str = "";
                         if (m_consoleLogList.TryDequeue(out str))
                         {
-                            Console.WriteLine(str);
+                            System.Console.WriteLine(str);
                         }
                     }
                 } while (m_consoleLogList.Count > 0);
                 Thread.Sleep(1000);
             } while (m_consoleLogList.Count > 0);
             m_curConsoleTask = null;
+        }
+
+        public static class Error
+        {
+            public static void WriteLine(string log, object arg0 = null, object arg1 = null, object arg2 = null)
+            {
+                if (ConfigServer.AppSettings.LogLevel >= LogLevel.Error)
+                    Logger.WriteLine(string.Format(log, arg0, arg1, arg2));
+            }
+        }
+        public static class Info
+        {
+            public static void WriteLine(string log, object arg0 = null, object arg1 = null, object arg2 = null)
+            {
+                if (ConfigServer.AppSettings.LogLevel >= LogLevel.Info)
+                    Logger.WriteLine(string.Format(log, arg0, arg1, arg2));
+            }
+        }
+        public static class Debug
+        {
+            public static void WriteLine(string log, object arg0 = null, object arg1 = null, object arg2 = null)
+            {
+                if (ConfigServer.AppSettings.LogLevel >= LogLevel.Debug)
+                    Logger.WriteLine(string.Format(log, arg0, arg1, arg2));
+            }
+        }
+        public static class Trace
+        {
+            public static void WriteLine(string log, object arg0 = null, object arg1 = null, object arg2 = null)
+            {
+                if (ConfigServer.AppSettings.LogLevel >= LogLevel.Trace)
+                    Logger.WriteLine(string.Format(log, arg0, arg1, arg2));
+            }
+        }
+        public static class Console
+        {
+            public static void WriteLine(string log, object arg0 = null, object arg1 = null, object arg2 = null)
+            {
+                Logger.WriteConsole(string.Format(log, arg0, arg1, arg2));
+            }
         }
     }
 }

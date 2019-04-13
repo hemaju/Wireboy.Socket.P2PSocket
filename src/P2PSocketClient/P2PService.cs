@@ -48,7 +48,7 @@ namespace Wireboy.Socket.P2PClient
                             }
                             catch (Exception ex)
                             {
-                                DoTcpException(TcpErrorType.LocalServer, string.Format("本地服务-tcp连接失败-端口:{0}", ConfigServer.AppSettings.LocalServerPort));
+                                DoTcpException(TcpErrorType.LocalServer, string.Format("[LocalServer]->[LocalPort] 端口:{0}连接失败!", ConfigServer.AppSettings.LocalServerPort));
                             }
                         }
                     }
@@ -152,12 +152,12 @@ namespace Wireboy.Socket.P2PClient
         public bool ConnectServer()
         {
             bool ret = false;
-            Logger.WriteLine("服务器-连接中...{0}:{1}",  ConfigServer.AppSettings.ServerIp, ConfigServer.AppSettings.ServerPort);
+            Logger.Info.WriteLine("[服务器] 连接中...{0}:{1}", ConfigServer.AppSettings.ServerIp, ConfigServer.AppSettings.ServerPort);
             try
             {
                 //连接服务器
                 ServerTcp = new TcpClient(ConfigServer.AppSettings.ServerIp, ConfigServer.AppSettings.ServerPort);
-                Logger.WriteLine("服务器-连接成功！");
+                Logger.Info.WriteLine("[服务器] 连接成功！");
                 _taskFactory.StartNew(() =>
                 {
                     RecieveServerTcp();
@@ -166,7 +166,7 @@ namespace Wireboy.Socket.P2PClient
             }
             catch (Exception ex)
             {
-                DoTcpException(TcpErrorType.Server, string.Format("服务器-{0}:{1}连接失败！", ConfigServer.AppSettings.ServerIp, ConfigServer.AppSettings.ServerPort));
+                DoTcpException(TcpErrorType.Server, string.Format("[服务器] {0}:{1}连接失败！", ConfigServer.AppSettings.ServerIp, ConfigServer.AppSettings.ServerPort));
             }
             return ret;
         }
@@ -187,13 +187,13 @@ namespace Wireboy.Socket.P2PClient
             {
                 try
                 {
-                    Logger.WriteLine("本地服务-设置服务名:{0}",  homeName);
+                    Logger.Info.WriteLine("[LocalServer]->[服务器] 设置服务名:{0}", homeName);
                     //发送Home服务名称
-                    ServerTcp.WriteAsync(homeName, MsgType.本地服务名);
+                    ServerTcp.WriteAsync(homeName, P2PSocketType.Local.Code, P2PSocketType.Local.ServerName.Code);
                 }
                 catch (Exception ex)
                 {
-                    DoTcpException(TcpErrorType.Server, "服务器-连接失败！");
+                    DoTcpException(TcpErrorType.Server, "[服务器] 连接失败！");
                 }
             }
 
@@ -206,8 +206,8 @@ namespace Wireboy.Socket.P2PClient
                 RemoteServerName = remoteServerName;
                 if (ServerTcp != null)
                 {
-                    Logger.WriteLine("远程服务-连接服务名：{0}", remoteServerName);
-                    ServerTcp.WriteAsync(remoteServerName, MsgType.远程服务名);
+                    Logger.Info.WriteLine("[RemoteServer]->[服务器] 连接服务名：{0}", remoteServerName);
+                    ServerTcp.WriteAsync(remoteServerName, P2PSocketType.Remote.Code, P2PSocketType.Remote.ServerName.Code);
                     return true;
                 }
             }
@@ -216,7 +216,7 @@ namespace Wireboy.Socket.P2PClient
         }
         public void StartRemoteServerListener()
         {
-            Logger.WriteLine("远程服务-监听本地端口:{0}", ConfigServer.AppSettings.RemoteLocalPort);
+            Logger.Info.WriteLine("[RemoteServer] 监听本地端口:{0}", ConfigServer.AppSettings.RemoteLocalPort);
             try
             {
                 RemoteServerListener = new TcpListener(IPAddress.Any, ConfigServer.AppSettings.RemoteLocalPort);
@@ -228,7 +228,11 @@ namespace Wireboy.Socket.P2PClient
                         while (true)
                         {
                             TcpClient tcpClient = RemoteServerListener.AcceptTcpClient();
-                            if (IsEnableRemoteServer && RemoteServerTcp == null)
+                            if (!IsEnableRemoteServer) {
+                                Logger.Info.WriteLine("[RemoteServer] Remote服务未启动，请设置远程服务名，断开主动连入的tcp", tcpClient.Client.RemoteEndPoint);
+                                tcpClient.Close();
+                            }
+                            else if (RemoteServerTcp == null)
                             {
                                 RemoteServerTcp = tcpClient;
                                 _taskFactory.StartNew(() =>
@@ -238,20 +242,20 @@ namespace Wireboy.Socket.P2PClient
                             }
                             else
                             {
-                                Logger.WriteLine("远程服务-断开主动连入的tcp：{0}", tcpClient.Client.RemoteEndPoint);
+                                Logger.Info.WriteLine("[RemoteServer] 断开主动连入的tcp：{0}", tcpClient.Client.RemoteEndPoint);
                                 tcpClient.Close();
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        DoTcpException(TcpErrorType.Client, "远程服务-本地端口监听失败！");
+                        DoTcpException(TcpErrorType.RemoteServer, string.Format("[RemoteServer] 端口监听错误:\r\n{0}", ex));
                     }
                 });
             }
             catch (Exception ex)
             {
-                DoTcpException(TcpErrorType.Client, string.Format("远程服务-本地端口:{0}监听失败！", ConfigServer.AppSettings.RemoteLocalPort));
+                DoTcpException(TcpErrorType.RemoteServer, string.Format("[RemoteServer] 本地端口:{0}监听失败！", ConfigServer.AppSettings.RemoteLocalPort));
             }
         }
 
@@ -280,7 +284,7 @@ namespace Wireboy.Socket.P2PClient
                         byte[] data;
                         if (results.TryDequeue(out data))
                         {
-                            ReievedServiceTcpCallBack(data, ServerTcp);
+                            HandleServerOnePackageData(data, ServerTcp);
                         }
                     }
                 }
@@ -289,7 +293,7 @@ namespace Wireboy.Socket.P2PClient
                     break;
                 }
             }
-            DoTcpException(TcpErrorType.Server, "服务器-tcp连接断开！");
+            DoTcpException(TcpErrorType.Server, "[服务器] tcp连接断开！");
         }
 
         /// <summary>
@@ -298,67 +302,112 @@ namespace Wireboy.Socket.P2PClient
         /// <param name="data">完整的数据包</param>
         /// <param name="tcpResult"></param>
         //public void ReievedServiceTcpCallBack(byte[] data, TcpResult tcpResult)
-        public void ReievedServiceTcpCallBack(byte[] data, TcpClient tcpClient)
+        public void HandleServerOnePackageData(byte[] data, TcpClient tcpClient)
         {
             switch (data[0])
             {
-                case (byte)MsgType.心跳包:
-                    ; break;
-                case (byte)MsgType.身份验证:
-                    ; break;
-                case (byte)MsgType.转发FromRemote:
+                case P2PSocketType.Heart.Code:
                     {
-                        if (IsEnableLocalServer)
-                        {
-                            try
-                            {
-                                LocalServerTcp.WriteAsync(data.Skip(1).ToArray(), MsgType.不封包);
-                            }
-                            catch (Exception ex)
-                            {
-                                DoTcpException(TcpErrorType.LocalServer, "本地服务-数据转发失败！");
-                            }
-                        }
                     }
                     break;
-                case (byte)MsgType.转发FromLocal:
+                case P2PSocketType.Http.Code:
                     {
-                        if (RemoteServerTcp != null)
-                        {
-                            try
-                            {
-                                RemoteServerTcp.WriteAsync(data.Skip(1).ToArray(), MsgType.不封包);
-                            }
-                            catch (Exception ex)
-                            {
-                                DoTcpException(TcpErrorType.Client, "远程服务-转发数据失败！");
-                            }
-                        }
+                        HandleHttpPackage(data[1], data.Skip(2).ToArray());
                     }
                     break;
-                case (byte)MsgType.断开FromRemote:
+                case P2PSocketType.Local.Code:
                     {
-                        BreakHomeServerTcp();
+                        HandleLocalPackage(data[1], data.Skip(2).ToArray());
                     }
                     break;
-                case (byte)MsgType.断开FromLocal:
+                case P2PSocketType.Remote.Code:
                     {
-                        BreakClientServerTcp();
+                        HandleRemotePackage(data[1], data.Skip(2).ToArray());
                     }
                     break;
-                case (byte)MsgType.测试服务器:
+                case P2PSocketType.Secure.Code:
                     {
-                        string str = Encoding.Unicode.GetString(data.Skip(1).ToArray());
-                        Logger.WriteLine("测试数据：{0}", str);
-                    }
-                    break;
-                case (byte)MsgType.Http服务:
-                    {
-                        if (m_httpServer != null)
-                            m_httpServer.RecieveServerTcp(data.Skip(1).ToArray());
                     }
                     break;
             }
+        }
+        public void HandleLocalPackage(byte type, byte[] data)
+        {
+            switch (type)
+            {
+                case P2PSocketType.Local.Break.Code:
+                    {
+                        BreakLocalServerTcp();
+                    }
+                    break;
+                case P2PSocketType.Local.Error.Code:
+                    {
+                        BreakLocalServerTcp();
+                    }
+                    break;
+                case P2PSocketType.Local.Secure.Code:
+                    {
+                    }
+                    break;
+                case P2PSocketType.Local.ServerName.Code:
+                    {
+                    }
+                    break;
+                case P2PSocketType.Local.Transfer.Code:
+                    {
+                        try
+                        {
+                            LocalServerTcp.WriteAsync(data);
+                        }
+                        catch (Exception ex)
+                        {
+                            DoTcpException(TcpErrorType.LocalServer, string.Format("[LocalServer]->[Port] 数据转发错误:\r\n{0}", ex));
+                        }
+                    }
+                    break;
+            }
+        }
+        public void HandleRemotePackage(byte type, byte[] data)
+        {
+            switch (type)
+            {
+                case P2PSocketType.Remote.Break.Code:
+                    {
+                        BreakRemoteServerTcp();
+                    }
+                    break;
+                case P2PSocketType.Remote.Error.Code:
+                    {
+                        BreakRemoteServerTcp();
+                    }
+                    break;
+                case P2PSocketType.Remote.Secure.Code:
+                    {
+                    }
+                    break;
+                case P2PSocketType.Remote.ServerName.Code:
+                    {
+                    }
+                    break;
+                case P2PSocketType.Remote.Transfer.Code:
+                    {
+                        try
+                        {
+                            RemoteServerTcp.WriteAsync(data);
+                        }
+                        catch (Exception ex)
+                        {
+                            DoTcpException(TcpErrorType.RemoteServer, string.Format("[RemoteServer]->[Port] 数据转发错误:\r\n{0}", ex));
+                        }
+                    }
+                    break;
+            }
+        }
+        public void HandleHttpPackage(byte type, byte[] data)
+        {
+            if (m_httpServer != null)
+                m_httpServer.HandleHttpPackage(type, data);
+
         }
         /// <summary>
         /// 监听Remote服务端口
@@ -366,7 +415,7 @@ namespace Wireboy.Socket.P2PClient
         public void ListenRemoteServerPort()
         {
             EndPoint endPoint = RemoteServerTcp.Client.RemoteEndPoint;
-            Logger.WriteLine("远程服务-新联入Tcp:{0}", endPoint);
+            Logger.Info.WriteLine("[RemoteServer] 新联入Tcp:{0}", endPoint);
             NetworkStream readStream = RemoteServerTcp.GetStream();
             byte[] buffer = new byte[1024];
             int length = 0;
@@ -377,17 +426,20 @@ namespace Wireboy.Socket.P2PClient
                 {
                     length = readStream.Read(buffer, 0, buffer.Length);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Logger.Info.WriteLine("[Port]->[RemoteServer] 接收数据错误:\r\n{0}", ex);
+                }
                 if (length > 0)
                 {
-                    DoRecieveLocalRemoteServerPort(buffer, length, RemoteServerTcp, false);
+                    TransferRemoteServerDataToServer(buffer, length, RemoteServerTcp);
                 }
                 else
                 {
                     break;
                 }
             }
-            DoTcpException(TcpErrorType.Client, string.Format("远程服务-已断开Tcp:{0}", endPoint));
+            DoTcpException(TcpErrorType.RemoteServer, string.Format("[RemoteServer] 已断开Tcp:{0}", endPoint));
         }
 
         /// <summary>
@@ -409,32 +461,40 @@ namespace Wireboy.Socket.P2PClient
                 catch { }
                 if (length > 0)
                 {
-                    DoRecieveLocalRemoteServerPort(buffer, length, LocalServerTcp, true);
+                    TransferLocalServerDataToServer(buffer, length, LocalServerTcp);
                 }
                 else
                 {
                     break;
                 }
             }
-            DoTcpException(TcpErrorType.LocalServer, string.Format("本地服务-已断开Tcp:{0}", endPoint));
+            DoTcpException(TcpErrorType.LocalServer, string.Format("[LocalServer] 已断开Tcp:{0}", endPoint));
         }
-
-        /// <summary>
-        /// 处理Local或Remote服务端口数据
-        /// </summary>
-        /// <param name="asyncResult"></param>
-        public void DoRecieveLocalRemoteServerPort(byte[] data, int length, TcpClient tcpClient, bool isFromHome)
+        public void TransferRemoteServerDataToServer(byte[] data, int length, TcpClient tcpClient)
         {
             //Logger.Write("接收到Client服务数据,长度：{0}", length);
             try
             {
-                ServerTcp.WriteAsync(data, length, isFromHome ? MsgType.转发FromLocal : MsgType.转发FromRemote);
+                ServerTcp.WriteAsync(data, length, P2PSocketType.Remote.Code, P2PSocketType.Remote.Transfer.Code);
             }
             catch (Exception ex)
             {
-                DoTcpException(TcpErrorType.Server, "服务器-连接失败！");
+                DoTcpException(TcpErrorType.Server, "[服务器] 连接失败！");
             }
         }
+        public void TransferLocalServerDataToServer(byte[] data, int length, TcpClient tcpClient)
+        {
+            //Logger.Write("接收到Client服务数据,长度：{0}", length);
+            try
+            {
+                ServerTcp.WriteAsync(data, length, P2PSocketType.Local.Code, P2PSocketType.Local.Transfer.Code);
+            }
+            catch (Exception ex)
+            {
+                DoTcpException(TcpErrorType.Server, "[服务器] 连接失败！");
+            }
+        }
+
         /// <summary>
         /// 向服务器发送心跳包
         /// </summary>
@@ -442,7 +502,7 @@ namespace Wireboy.Socket.P2PClient
         {
             try
             {
-                ServerTcp.WriteAsync(new byte[] { 0 }, MsgType.心跳包);
+                ServerTcp.WriteAsync(new byte[] { 0 }, P2PSocketType.Heart.Code);
             }
             catch
             {
@@ -453,11 +513,11 @@ namespace Wireboy.Socket.P2PClient
         /// <summary>
         /// 断开远程Home/Client服务Tcp
         /// </summary>
-        public void BreakRemoteTcp(MsgType msgType)
+        public void BreakRemoteTcp(byte type1, byte type2)
         {
             try
             {
-                ServerTcp.WriteAsync(new byte[] { 0 }, msgType);
+                ServerTcp.WriteAsync(new byte[] { 0 }, type1, type2);
             }
             catch
             {
@@ -467,7 +527,7 @@ namespace Wireboy.Socket.P2PClient
         /// <summary>
         /// 断开本地Home服务Tcp
         /// </summary>
-        public void BreakHomeServerTcp()
+        public void BreakLocalServerTcp()
         {
             if (m_localServerTcp == null) return;
             try
@@ -480,7 +540,7 @@ namespace Wireboy.Socket.P2PClient
         /// <summary>
         /// 断开本地Client服务Tcp
         /// </summary>
-        public void BreakClientServerTcp()
+        public void BreakRemoteServerTcp()
         {
             if (RemoteServerTcp == null) return;
             try
@@ -495,14 +555,14 @@ namespace Wireboy.Socket.P2PClient
         {
             if (!string.IsNullOrEmpty(errorMsg))
             {
-                Logger.WriteLine(errorMsg);
+                Logger.Error.WriteLine(errorMsg);
             }
             switch (type)
             {
                 case TcpErrorType.Server:
                     {
-                        BreakHomeServerTcp();
-                        BreakClientServerTcp();
+                        BreakLocalServerTcp();
+                        BreakRemoteServerTcp();
                         try
                         {
                             //尝试关闭TCP连接
@@ -514,14 +574,14 @@ namespace Wireboy.Socket.P2PClient
                     break;
                 case TcpErrorType.LocalServer:
                     {
-                        BreakHomeServerTcp();
-                        BreakRemoteTcp(MsgType.断开FromLocal);
+                        BreakLocalServerTcp();
+                        BreakRemoteTcp(P2PSocketType.Local.Code, P2PSocketType.Local.Break.Code);
                     }
                     break;
-                case TcpErrorType.Client:
+                case TcpErrorType.RemoteServer:
                     {
-                        BreakClientServerTcp();
-                        BreakRemoteTcp(MsgType.断开FromRemote);
+                        BreakRemoteServerTcp();
+                        BreakRemoteTcp(P2PSocketType.Remote.Code, P2PSocketType.Remote.Break.Code);
                     }
                     break;
             }
@@ -531,7 +591,7 @@ namespace Wireboy.Socket.P2PClient
         {
             Server,
             LocalServer,
-            Client
+            RemoteServer
         }
     }
 }

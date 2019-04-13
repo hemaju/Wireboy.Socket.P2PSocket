@@ -10,62 +10,42 @@ namespace Wireboy.Socket.P2PClient
 {
     public static class TcpUtils
     {
-        /// <summary>
-        /// 异步发送数据
-        /// </summary>
-        /// <param name="client"></param>
-        /// <param name="bytes">要发送的数据</param>
-        /// <param name="msgType">消息类型</param>
-        /// <returns></returns>
-        public static bool WriteAsync(this TcpClient client, byte[] bytes, MsgType msgType)
+        public static byte StartCode { get; } = 86;
+        public static void WriteAsync(this TcpClient client, byte[] bytes)
         {
             NetworkStream networkStream = client.GetStream();
             if (networkStream.CanWrite)
             {
-                if (msgType == MsgType.不封包)
-                {
-                    networkStream.WriteAsync(bytes, 0, bytes.Length);
-                }
-                else
-                {
-                    short dataLength = Convert.ToInt16(bytes.Length + 1);
-                    byte[] sendBytes = new byte[2 + bytes.Length + 1];
-                    BitConverter.GetBytes(dataLength).CopyTo(sendBytes, 0);
-                    sendBytes[2] = (byte)msgType;
-                    bytes.CopyTo(sendBytes, 3);
-                    networkStream.WriteAsync(sendBytes, 0, sendBytes.Length);
-                }
+                networkStream.WriteAsync(bytes, 0, bytes.Length);
             }
-            else
-            {
-                throw new Exception("当前tcp数据流不可写入！");
-            }
-            return true;
         }
 
-        /// <summary>
-        /// 异步发送数据
-        /// </summary>
-        /// <param name="client"></param>
-        /// <param name="bytes">byte数组</param>
-        /// <param name="length">数据实际长度</param>
-        /// <param name="msgType">消息类型</param>
-        /// <returns></returns>
-        public static bool WriteAsync(this TcpClient client, byte[] bytes, int length, MsgType msgType)
+        public static void WriteAsync(this TcpClient client, byte[] bytes, int length, byte type1, byte type2 = 0)
         {
-            return client.WriteAsync(bytes.Take(length).ToArray(), msgType);
+            short dataLength = Convert.ToInt16(length);
+            List<byte> sendData = new List<byte>() { StartCode, StartCode, type1, type2 };
+            sendData.AddRange(BitConverter.GetBytes(dataLength));
+            sendData.AddRange(bytes.Take(length));
+            client.WriteAsync(sendData.ToArray());
+        }
+        public static void WriteAsync(this TcpClient client, byte[] bytes, byte type1, byte type2 = 0)
+        {
+            int length = bytes.Length;
+            short dataLength = Convert.ToInt16(length);
+            List<byte> sendData = new List<byte>() { StartCode, StartCode, type1, type2 };
+            sendData.AddRange(BitConverter.GetBytes(dataLength));
+            sendData.AddRange(bytes.Take(length));
+            client.WriteAsync(sendData.ToArray());
         }
 
-        /// <summary>
-        /// 异步发送数据
-        /// </summary>
-        /// <param name="client"></param>
-        /// <param name="str">要发送的文本</param>
-        /// <param name="msgType">消息类型</param>
-        /// <returns></returns>
-        public static bool WriteAsync(this TcpClient client, string str, MsgType msgType)
+        public static void WriteAsync(this TcpClient client, string str, byte type1, byte type2 = 0)
         {
-            return client.WriteAsync(Encoding.Unicode.GetBytes(str), msgType);
+            byte[] data = Encoding.Unicode.GetBytes(str);
+            short dataLength = Convert.ToInt16(data.Length);
+            List<byte> sendData = new List<byte>() { StartCode, StartCode, type1, type2 };
+            sendData.AddRange(BitConverter.GetBytes(dataLength));
+            sendData.AddRange(data);
+            client.WriteAsync(sendData.ToArray());
         }
 
         /// <summary>
@@ -94,55 +74,6 @@ namespace Wireboy.Socket.P2PClient
         public static String ToStringUnicode(this byte[] data)
         {
             return Encoding.Unicode.GetString(data);
-        }
-
-        /// <summary>
-        /// 将byte数组转成字符串
-        /// </summary>
-        /// <param name="data">byte数组</param>
-        /// <param name="startIndex">起始位置</param>
-        /// <returns></returns>
-        public static String ToStringUnicode(this byte[] data, int startIndex)
-        {
-            return data.Skip(startIndex).ToArray().ToStringUnicode();
-        }
-        /// <summary>
-        /// 获取发送的bytes（在数据前面增加了short类型的长度标记）
-        /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
-        public static byte[] TransferSendBytes(this byte[] data)
-        {
-            short dataLength = Convert.ToInt16(data.Length);
-            byte[] ret = new byte[2 + dataLength];
-            BitConverter.GetBytes(dataLength).CopyTo(ret, 0);
-            data.CopyTo(ret, 2);
-            return ret;
-        }
-
-        public static byte ReadByte(this byte[] data, ref int index)
-        {
-            byte ret = data[index];
-            index += 1;
-            return ret;
-        }
-        public static short ReadShort(this byte[] data, ref int index)
-        {
-            short ret = BitConverter.ToInt16(data.Skip(index).Take(2).ToArray(), 0);
-            index += 2;
-            return ret;
-        }
-        public static byte[] ReadBytes(this byte[] data, ref int index, int length)
-        {
-            byte[] ret = data.Skip(index).Take(length).ToArray();
-            index += length;
-            return ret;
-        }
-        public static string ReadString(this byte[] data, ref int index, int length)
-        {
-            string ret = Encoding.Unicode.GetString(data.Skip(index).Take(length).ToArray());
-            index += length;
-            return ret;
         }
     }
 }

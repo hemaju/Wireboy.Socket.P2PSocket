@@ -26,18 +26,19 @@ namespace Wireboy.Socket.P2PClient
             {
                 while (true)
                 {
-                    Logger.WriteLine("请输入远程服务名称：");
+                    Thread.Sleep(500);
+                    Logger.Console.WriteLine("请输入远程服务名称：");
                     string remoteServerName = Console.ReadLine();
                     if (!_p2pService.SetRemoteServerName(remoteServerName))
                     {
-                        Logger.WriteLine("远程服务-服务不可用！");
+                        Logger.Error.WriteLine("远程服务-服务不可用！");
                     }
                     Console.ReadKey();
                 }
             }
             else
             {
-                Logger.WriteLine("任意键退出...");
+                Logger.Console.WriteLine("任意键退出...");
                 Console.ReadKey();
             }
         }
