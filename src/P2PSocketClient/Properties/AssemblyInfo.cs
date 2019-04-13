@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // 有关程序集的一般信息由以下
 // 控制。更改这些特性值可修改
 // 与程序集关联的信息。
-[assembly: AssemblyTitle("P2PHome")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("P2PSocket客户端")]
+[assembly: AssemblyDescription("P2PSocket客户端")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("P2PHome")]
-[assembly: AssemblyCopyright("Copyright ©  2019")]
+[assembly: AssemblyCompany("wireboy")]
+[assembly: AssemblyProduct("Wireboy.Socket.P2PClient")]
+[assembly: AssemblyCopyright("wireboy")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
