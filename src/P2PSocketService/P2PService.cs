@@ -98,6 +98,7 @@ namespace Wireboy.Socket.P2PService
                 }
             }
             Logger.Debug.WriteLine("[服务器] 断开tcp连接：{0}\r\n", endPoint);
+            CloseRelateTcp(readTcp);
         }
 
         public void HandleOnePackage(byte[] data, TcpClient tcpClient)
@@ -231,6 +232,29 @@ namespace Wireboy.Socket.P2PService
                         }
                     }
                     break;
+            }
+        }
+        public void CloseRelateTcp(TcpClient closedTcp)
+        {
+            TcpClient client = _tcpMapHelper[closedTcp, true];
+            if (client != null)
+            {
+                try
+                {
+                    Logger.Debug.WriteLine("[服务器]->[LocalServer] 发送断开Local服务信号 {0}", client.Client.RemoteEndPoint);
+                    client.WriteAsync(new byte[] { 0 }, P2PSocketType.Local.Code, P2PSocketType.Local.Break.Code);
+                }
+                catch { }
+            }
+            client = _tcpMapHelper[closedTcp, false];
+            if (client != null)
+            {
+                try
+                {
+                    Logger.Debug.WriteLine("[服务器]->[LocalServer] 发送断开Remote服务信号 {0}", client.Client.RemoteEndPoint);
+                    client.WriteAsync(new byte[] { 0 }, P2PSocketType.Remote.Code, P2PSocketType.Remote.Break.Code);
+                }
+                catch { }
             }
         }
     }
