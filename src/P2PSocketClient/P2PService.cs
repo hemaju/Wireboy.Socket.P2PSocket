@@ -210,6 +210,14 @@ namespace Wireboy.Socket.P2PClient
                     ServerTcp.WriteAsync(remoteServerName, P2PSocketType.Remote.Code, P2PSocketType.Remote.ServerName.Code);
                     return true;
                 }
+                else
+                {
+                    Logger.Info.WriteLine("[服务器] 未连接到服务器，设置Remote服务名失败！");
+                }
+            }
+            else
+            {
+                Logger.Info.WriteLine("[RemoteServer] 远程服务未启用，设置Remote服务名失败！");
             }
             return ret;
 
@@ -228,7 +236,8 @@ namespace Wireboy.Socket.P2PClient
                         while (true)
                         {
                             TcpClient tcpClient = RemoteServerListener.AcceptTcpClient();
-                            if (!IsEnableRemoteServer) {
+                            if (!IsEnableRemoteServer)
+                            {
                                 Logger.Info.WriteLine("[RemoteServer] Remote服务未启动，请设置远程服务名，断开主动连入的tcp", tcpClient.Client.RemoteEndPoint);
                                 tcpClient.Close();
                             }
@@ -278,6 +287,7 @@ namespace Wireboy.Socket.P2PClient
                 catch { }
                 if (length > 0)
                 {
+                    Logger.Trace.WriteLine("[服务器] 接收到数据，长度:{0}", length);
                     ConcurrentQueue<byte[]> results = tcpHelper.ReadPackages(buffer, length);
                     while (!results.IsEmpty)
                     {
@@ -290,6 +300,7 @@ namespace Wireboy.Socket.P2PClient
                 }
                 else
                 {
+                    Logger.Trace.WriteLine("[服务器] 接收到数据，长度:{0}，断开连接！", length);
                     break;
                 }
             }
@@ -432,10 +443,12 @@ namespace Wireboy.Socket.P2PClient
                 }
                 if (length > 0)
                 {
+                    Logger.Trace.WriteLine("[Port]->[RemoteServer] 接收到数据，长度:{0}", length);
                     TransferRemoteServerDataToServer(buffer, length, RemoteServerTcp);
                 }
                 else
                 {
+                    Logger.Trace.WriteLine("[Port]->[RemoteServer] 接收到数据，长度:{0}，断开连接！", length);
                     break;
                 }
             }
@@ -458,13 +471,18 @@ namespace Wireboy.Socket.P2PClient
                 {
                     length = readStream.Read(buffer, 0, buffer.Length);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Logger.Info.WriteLine("[Port]->[LocalServer] 接收数据错误:\r\n{0}", ex);
+                }
                 if (length > 0)
                 {
+                    Logger.Trace.WriteLine("[Port]->[LocalServer] 接收到数据，长度:{0}", length);
                     TransferLocalServerDataToServer(buffer, length, LocalServerTcp);
                 }
                 else
                 {
+                    Logger.Trace.WriteLine("[Port]->[LocalServer] 接收到数据，长度:{0}，断开连接！", length);
                     break;
                 }
             }
@@ -472,9 +490,9 @@ namespace Wireboy.Socket.P2PClient
         }
         public void TransferRemoteServerDataToServer(byte[] data, int length, TcpClient tcpClient)
         {
-            //Logger.Write("接收到Client服务数据,长度：{0}", length);
             try
             {
+                Logger.Trace.WriteLine("[RemoteServer]->[服务器] 发送数据，长度:{0}", length);
                 ServerTcp.WriteAsync(data, length, P2PSocketType.Remote.Code, P2PSocketType.Remote.Transfer.Code);
             }
             catch (Exception ex)
@@ -484,9 +502,9 @@ namespace Wireboy.Socket.P2PClient
         }
         public void TransferLocalServerDataToServer(byte[] data, int length, TcpClient tcpClient)
         {
-            //Logger.Write("接收到Client服务数据,长度：{0}", length);
             try
             {
+                Logger.Trace.WriteLine("[LocalServer]->[服务器] 发送数据，长度:{0}", length);
                 ServerTcp.WriteAsync(data, length, P2PSocketType.Local.Code, P2PSocketType.Local.Transfer.Code);
             }
             catch (Exception ex)

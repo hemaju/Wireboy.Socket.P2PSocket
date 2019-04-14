@@ -82,6 +82,7 @@ namespace Wireboy.Socket.P2PService
                 }
                 if (length > 0)
                 {
+                    Logger.Trace.WriteLine(string.Format("[Port]->[服务器] 接收到数据，长度:{1} 地址:{0}", endPoint, length));
                     ConcurrentQueue<byte[]> results = tcpHelper.ReadPackages(buffer, length);
                     while (!results.IsEmpty)
                     {
@@ -94,6 +95,7 @@ namespace Wireboy.Socket.P2PService
                 }
                 else
                 {
+                    Logger.Trace.WriteLine(string.Format("[Port]->[服务器] 接收到数据，断开连接！长度:{1} 地址:{0}", endPoint, length));
                     break;
                 }
             }
@@ -142,9 +144,11 @@ namespace Wireboy.Socket.P2PService
                             try
                             {
                                 toClient.WriteAsync(data.ToArray(), P2PSocketType.Local.Code, P2PSocketType.Local.Transfer.Code);
+                                Logger.Trace.WriteLine("[服务器]->[LocalServer] 发送数据，长度:{0}", data.Length);
                             }
                             catch (Exception ex)
                             {
+                                Logger.Trace.WriteLine("[服务器]->[LocalServer] 发送数据失败！长度:{0} \r\n{1}", data.Length, ex);
                                 _tcpMapHelper[tcpClient, false] = null;
                             }
                         }
@@ -172,9 +176,11 @@ namespace Wireboy.Socket.P2PService
                             try
                             {
                                 toClient.WriteAsync(data.ToArray(), P2PSocketType.Remote.Code, P2PSocketType.Remote.Transfer.Code);
+                                Logger.Trace.WriteLine("[服务器]->[RemoteServer] 发送数据，长度:{0}", data.Length);
                             }
                             catch (Exception ex)
                             {
+                                Logger.Trace.WriteLine("[服务器]->[RemoteServer] 发送数据失败！长度:{0} \r\n{1}", data.Length, ex);
                                 _tcpMapHelper[tcpClient, false] = null;
                             }
                         }
@@ -194,9 +200,11 @@ namespace Wireboy.Socket.P2PService
                             try
                             {
                                 toClient.WriteAsync(data.ToArray(), P2PSocketType.Local.Code, P2PSocketType.Local.Break.Code);
+                                Logger.Trace.WriteLine("[服务器]->[LocalServer] 发送数据，长度:{0}", data.Length);
                             }
                             catch (Exception ex)
                             {
+                                Logger.Trace.WriteLine("[服务器]->[LocalServer] 发送数据失败！长度:{0} \r\n{1}", data.Length, ex);
                                 _tcpMapHelper[tcpClient, true] = null;
                             }
                         }
@@ -224,9 +232,11 @@ namespace Wireboy.Socket.P2PService
                             try
                             {
                                 toClient.WriteAsync(data.ToArray(), P2PSocketType.Local.Code, P2PSocketType.Local.Transfer.Code);
+                                Logger.Trace.WriteLine("[服务器]->[RemoteServer] 发送数据，长度:{0}", data.Length);
                             }
                             catch (Exception ex)
                             {
+                                Logger.Trace.WriteLine("[服务器]->[RemoteServer] 发送数据失败！长度:{0} \r\n{1}", data.Length, ex);
                                 _tcpMapHelper[tcpClient, true] = null;
                             }
                         }

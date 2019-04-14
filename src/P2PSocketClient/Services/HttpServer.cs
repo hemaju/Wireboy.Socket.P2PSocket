@@ -95,8 +95,8 @@ namespace Wireboy.Socket.P2PClient.Services
                         int webLength = 0;
                         try
                         {
-                            Logger.Debug.WriteLine("[Port]->[HttpServer] 接收数据，长度:{0}", webLength);
                             webLength = stream.Read(webBytes, 0, webBytes.Length);
+                            Logger.Debug.WriteLine("[Port]->[HttpServer] 接收数据，长度:{0}", webLength);
                         }
                         catch (Exception ex)
                         {
