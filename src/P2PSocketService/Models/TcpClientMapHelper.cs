@@ -79,7 +79,7 @@ namespace Wireboy.Socket.P2PService.Models
             this[key].ControlClient = controlClient;
         }
 
-        public void SetHomeClient(TcpClient homeClient, string key)
+        public void SetLocalServerClinet(TcpClient homeClient, string key)
         {
             if (ContainsHomeClient(homeClient))
             {

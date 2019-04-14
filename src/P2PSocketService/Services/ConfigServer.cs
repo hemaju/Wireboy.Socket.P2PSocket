@@ -19,10 +19,17 @@ namespace Wireboy.Socket.P2PService.Services
         /// </summary>
         public const string LogFile = "P2PSocketService.log";
         /// <summary>
-        /// 配置
+        /// 通用配置
         /// </summary>
-        public static ApplicationConfig AppSettings = new ApplicationConfig();
-
+        public static ApplicationConfig AppSettings { set; get; } = new ApplicationConfig();
+        /// <summary>
+        /// http服务配置
+        /// </summary>
+        public static Dictionary<int, List<HttpModel>> HttpSettings { set; get; } = new Dictionary<int, List<HttpModel>>();
+        /// <summary>
+        /// http对象缓存
+        /// </summary>
+        private static HttpModel m_lastReadModel = null;
         /// <summary>
         /// 加载配置文件
         /// </summary>
@@ -31,48 +38,117 @@ namespace Wireboy.Socket.P2PService.Services
         {
             if (File.Exists(ConfigFile))
             {
+                HttpSettings.Clear();
+                //0表示未知，1表示Common属性，2表示http服务属性
+                int RecordMode = 1;
                 StreamReader fileStream = new StreamReader(ConfigFile);
-                List<PropertyInfo> properties = AppSettings.GetType().GetProperties().Where(t => t.CustomAttributes.Where(p => p.AttributeType == typeof(ConfigField)).Count() > 0).ToList();
+                List<PropertyInfo> commonPropList = GetPropertyInfos(AppSettings.GetType());
+                List<PropertyInfo> httpPropList = GetPropertyInfos(typeof(HttpModel));
                 while (!fileStream.EndOfStream)
                 {
-                    string lineStr = fileStream.ReadLine();
-                    if (!(String.IsNullOrEmpty(lineStr.Trim()) || lineStr.Trim().StartsWith("#")))
+                    string lineStr = fileStream.ReadLine().Trim();
+                    if (!(String.IsNullOrEmpty(lineStr) || lineStr.StartsWith("#")))
                     {
-                        string[] lineSplit = lineStr.Split('=');
-                        if (lineSplit.Length > 1)
+                        bool isSignal = false;
+                        if (lineStr == "[Common]")
                         {
-                            string fieldName = lineSplit[0];
-                            string value = lineSplit[1];
-                            PropertyInfo property = properties.Where(t => t.Name == fieldName).FirstOrDefault();
-                            if (property != null)
+                            RecordMode = 1;
+                            isSignal = true;
+                        }
+                        else if (lineStr == "[HttpServer]")
+                        {
+                            RecordMode = 2;
+                            isSignal = true;
+                        }
+                        if (isSignal)
+                        {
+                            InsertHttmodelAndCleartemp();
+                            if (RecordMode == 2)
+                                m_lastReadModel = new HttpModel();
+                        }
+                        else
+                        {
+                            string[] lineSplit = lineStr.Split('=');
+                            if (lineSplit.Length > 1)
                             {
-                                try
+                                string fieldName = lineSplit[0];
+                                string value = lineSplit[1];
+                                if (RecordMode == 1)
                                 {
-                                    if (property.PropertyType.BaseType == typeof(Enum))
-                                    {
-                                        if (property.PropertyType == typeof(LogLevel))
-                                        {
-                                            LogLevel enumValue = ((LogLevel[])Enum.GetValues(property.PropertyType)).Where(t => t.ToString() == value).FirstOrDefault();
-                                            property.SetValue(AppSettings, enumValue);
-                                        }
-                                        else
-                                        {
-                                            throw new Exception(string.Format("未配置{0}枚举的转换", property.PropertyType));
-                                        }
-                                    }
-                                    else
-                                    {
-                                        property.SetValue(AppSettings, Convert.ChangeType(value, property.PropertyType));
-                                    }
+                                    ReadCommonSetting(fieldName, value, commonPropList);
                                 }
-                                catch { }
+                                else if (RecordMode == 2)
+                                {
+                                    ReadHttpSetting(fieldName, value, httpPropList);
+                                }
                             }
                         }
                     }
                 }
+                InsertHttmodelAndCleartemp();
                 fileStream.Close();
             }
             SaveToFile();
+        }
+
+        public static void ReadCommonSetting(string fieldName, string value, List<PropertyInfo> commonPropList)
+        {
+            PropertyInfo property = commonPropList.Where(t => t.Name == fieldName).FirstOrDefault();
+            if (property != null)
+            {
+                try
+                {
+                    if (property.PropertyType.BaseType == typeof(Enum))
+                    {
+                        if (property.PropertyType == typeof(LogLevel))
+                        {
+                            LogLevel enumValue = ((LogLevel[])Enum.GetValues(property.PropertyType)).Where(t => t.ToString() == value).FirstOrDefault();
+                            property.SetValue(AppSettings, enumValue);
+                        }
+                        else
+                        {
+                            throw new Exception(string.Format("未配置{0}枚举的转换", property.PropertyType));
+                        }
+                    }
+                    else
+                    {
+                        property.SetValue(AppSettings, Convert.ChangeType(value, property.PropertyType));
+                    }
+                }
+                catch { }
+            }
+        }
+        public static void ReadHttpSetting(string fieldName, string value, List<PropertyInfo> httpPropList)
+        {
+            PropertyInfo property = httpPropList.Where(t => t.Name == fieldName).FirstOrDefault();
+            if (property != null)
+            {
+                try
+                {
+                    property.SetValue(m_lastReadModel, Convert.ChangeType(value, property.PropertyType));
+                }
+                catch { }
+            }
+        }
+        /// <summary>
+        /// 将记录插入配置并清除缓存
+        /// </summary>
+        public static void InsertHttmodelAndCleartemp()
+        {
+
+            if (m_lastReadModel != null && m_lastReadModel.Port > 0)
+            {
+                if (HttpSettings.ContainsKey(m_lastReadModel.Port))
+                {
+                    HttpSettings[m_lastReadModel.Port].Add(m_lastReadModel);
+                }
+                else
+                {
+                    List<HttpModel> list = new List<HttpModel>() { m_lastReadModel };
+                    HttpSettings.Add(m_lastReadModel.Port, list);
+                }
+            }
+            m_lastReadModel = null;
         }
         /// <summary>
         /// 保存配置文件
@@ -80,15 +156,71 @@ namespace Wireboy.Socket.P2PService.Services
         public static void SaveToFile()
         {
             StreamWriter fileStream = new StreamWriter(ConfigFile, false);
-            List<PropertyInfo> properties = AppSettings.GetType().GetProperties().Where(t => t.CustomAttributes.Where(p => p.AttributeType == typeof(ConfigField)).Count() > 0).ToList();
+            WriteCommonSetting(fileStream);
+            fileStream.WriteLine();
+            fileStream.WriteLine();
+            WriteHttpSetting(fileStream);
+            fileStream.Close();
+        }
+        /// <summary>
+        /// 保存通用设置
+        /// </summary>
+        /// <param name="fileStream">文件流</param>
+        public static void WriteCommonSetting(StreamWriter fileStream)
+        {
+            List<PropertyInfo> properties = GetPropertyInfos(AppSettings.GetType());
+            fileStream.WriteLine("#基础设置");
+            fileStream.WriteLine("[Common]");
+            WriteProperties(fileStream, properties, AppSettings);
+        }
+        /// <summary>
+        /// 保存http服务设置
+        /// </summary>
+        /// <param name="fileStream">文件流</param>
+        public static void WriteHttpSetting(StreamWriter fileStream)
+        {
+            List<int> portList = HttpSettings.Keys.ToList();
+            List<PropertyInfo> properties = GetPropertyInfos(typeof(HttpModel));
+            bool hasRemark = true;
+            for (int i = 0; i < portList.Count; i++)
+            {
+                int port = portList[i];
+                List<HttpModel> itemList = HttpSettings[port];
+                foreach (HttpModel item in itemList)
+                {
+                    fileStream.WriteLine("#Http服务设置");
+                    fileStream.WriteLine("[HttpServer]");
+                    WriteProperties(fileStream, properties, item, hasRemark);
+                    fileStream.WriteLine();
+                    hasRemark = false;
+                }
+            }
+        }
+        /// <summary>
+        /// 获取指定类有ConfigField标记的属性
+        /// </summary>
+        /// <param name="type">类的类型</param>
+        /// <returns></returns>
+        public static List<PropertyInfo> GetPropertyInfos(Type type)
+        {
+            return type.GetProperties().Where(t => t.CustomAttributes.Where(p => p.AttributeType == typeof(ConfigField)).Count() > 0).ToList();
+        }
+
+        /// <summary>
+        /// 将ConfigField标记的属性数据写入文件
+        /// </summary>
+        /// <param name="fileStream">文件流</param>
+        /// <param name="properties">属性集合</param>
+        public static void WriteProperties(StreamWriter fileStream, List<PropertyInfo> properties, object obj, bool hasRemark = true)
+        {
             foreach (PropertyInfo property in properties)
             {
                 ConfigField data = (ConfigField)property.GetCustomAttribute(typeof(ConfigField));
-                fileStream.WriteLine("#{0}", data.Remark);
-                fileStream.WriteLine("{0}={1}", property.Name, property.GetValue(AppSettings));
-                fileStream.WriteLine();
+                if (hasRemark)
+                    fileStream.WriteLine("#{0}", data.Remark);
+                object value = property.GetValue(obj);
+                fileStream.WriteLine("{0}={1}", property.Name, value);
             }
-            fileStream.Close();
         }
     }
 }

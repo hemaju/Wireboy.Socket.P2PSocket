@@ -16,13 +16,15 @@ namespace Wireboy.Socket.P2PService
     {
         public TcpClientMapHelper _tcpMapHelper = new TcpClientMapHelper();
         private TaskFactory _taskFactory = new TaskFactory();
+        private HttpServer _httpServer;
         public P2PService()
         {
-
+            _httpServer = new HttpServer(this);
         }
 
         public void Start()
         {
+            _httpServer.Start();
             //监听通讯端口
             ListenServerPort();
         }
@@ -32,7 +34,7 @@ namespace Wireboy.Socket.P2PService
         /// </summary>
         public void ListenServerPort()
         {
-            Logger.Write("监听本地端口：{0}", ConfigServer.AppSettings.ServerPort);
+            Logger.Info.WriteLine("[服务器] 监听本地端口：{0}", ConfigServer.AppSettings.ServerPort);
             TcpListener listener = null;
             try
             {
@@ -41,13 +43,13 @@ namespace Wireboy.Socket.P2PService
             }
             catch (Exception ex)
             {
-                Logger.Write("监听端口错误：\r\n{0}", ex);
+                Logger.Error.WriteLine("[服务器] 监听端口错误：\r\n{0}", ex);
                 return;
             }
             while (true)
             {
                 TcpClient tcpClient = listener.AcceptTcpClient();
-                Logger.Write("数据端口：接收到来自{0}的tcp接入", tcpClient.Client.RemoteEndPoint);
+                Logger.Debug.WriteLine("[Port]->[服务器] 接收到来自{0}的tcp接入", tcpClient.Client.RemoteEndPoint);
                 _taskFactory.StartNew(() =>
                 {
                     RecieveClientTcp(tcpClient);
@@ -58,81 +60,206 @@ namespace Wireboy.Socket.P2PService
         public void RecieveClientTcp(TcpClient readTcp)
         {
             EndPoint endPoint = readTcp.Client.RemoteEndPoint;
-            try
+            NetworkStream readStream = readTcp.GetStream();
+            TcpHelper tcpHelper = new TcpHelper();
+            byte[] buffer = new byte[10240];
+            int length = 0;
+            while (readStream.CanRead)
             {
-                NetworkStream readStream = readTcp.GetStream();
-                TcpHelper tcpHelper = new TcpHelper();
-                byte[] buffer = new byte[1024];
-                while (true)
+                length = 0;
+                try
                 {
-                    int length = readStream.Read(buffer, 0, buffer.Length);
+                    length = readStream.Read(buffer, 0, buffer.Length);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error.WriteLine(string.Format("[Port]->[服务器] 来自{0}的tcp流读取错误：\r\n{1}", endPoint, ex));
+                }
+                if (length > 0)
+                {
+                    Logger.Trace.WriteLine(string.Format("[Port]->[服务器] 接收到数据，长度:{1} 地址:{0}", endPoint, length));
                     ConcurrentQueue<byte[]> results = tcpHelper.ReadPackages(buffer, length);
                     while (!results.IsEmpty)
                     {
                         byte[] data;
                         if (results.TryDequeue(out data))
                         {
-                            ReievedTcpDataCallBack(data, readTcp);
+                            HandleOnePackage(data, readTcp);
                         }
                     }
                 }
+                else
+                {
+                    Logger.Trace.WriteLine(string.Format("[Port]->[服务器] 接收到数据，断开连接！长度:{1} 地址:{0}", endPoint, length));
+                    break;
+                }
             }
-            catch (Exception ex)
-            {
-                Logger.Write("接收来自{0}的数据异常：\r\n{1} ", endPoint, ex);
-            }
+            Logger.Debug.WriteLine("[服务器] 断开tcp连接：{0}\r\n", endPoint);
+            CloseRelateTcp(readTcp);
         }
 
-        public void ReievedTcpDataCallBack(byte[] data, TcpClient tcpClient)
+        public void HandleOnePackage(byte[] data, TcpClient tcpClient)
         {
             switch (data[0])
             {
-                case (byte)MsgType.心跳包:
-                    ; break;
-                case (byte)MsgType.身份验证:
-                    ; break;
-                case (byte)MsgType.本地服务名:
+                case P2PSocketType.Heart.Code:
                     {
-                        string key = data.ToStringUnicode(1);
-                        _tcpMapHelper.SetHomeClient(tcpClient, key);
-                        Logger.Debug("设置本地Home服务名 ip:{0} key:{1}", tcpClient.Client.RemoteEndPoint, key);
                     }
                     break;
-                case (byte)MsgType.远程服务名:
+                case P2PSocketType.Http.Code:
                     {
-                        string key = data.ToStringUnicode(1);
-                        _tcpMapHelper.SetControlClient(tcpClient, key);
-                        Logger.Debug("设置远程Home服务名 ip:{0} key:{1}", tcpClient.Client.RemoteEndPoint, key);
+                        _httpServer.HandleHttpPackage(data[1], data.Skip(2).ToArray(), tcpClient);
                     }
                     break;
-                case (byte)MsgType.测试客户端:
-                case (byte)MsgType.转发FromClient:
-                case (byte)MsgType.转发FromHome:
-                case (byte)MsgType.断开FromHome:
-                case (byte)MsgType.断开FromClient:
+                case P2PSocketType.Local.Code:
                     {
-                        bool isFromClient = (data[0] == (byte)MsgType.转发FromClient || data[0] == (byte)MsgType.断开FromClient) ? true : false;
-                        TcpClient toClient = _tcpMapHelper[tcpClient, isFromClient];
+                        HandleLocalPackage(data[1], data.Skip(2).ToArray(), tcpClient);
+                    }
+                    break;
+                case P2PSocketType.Remote.Code:
+                    {
+                        HandleRemotePackage(data[1], data.Skip(2).ToArray(), tcpClient);
+                    }
+                    break;
+                case P2PSocketType.Secure.Code:
+                    {
+                    }
+                    break;
+            }
+        }
+        public void HandleLocalPackage(byte type, byte[] data, TcpClient tcpClient)
+        {
+            TcpClient toClient = _tcpMapHelper[tcpClient, false];
+            switch (type)
+            {
+                case P2PSocketType.Local.Break.Code:
+                    {
                         if (toClient != null)
                         {
                             try
                             {
-                                Logger.Debug("将数据转发到:{0}", toClient.Client.RemoteEndPoint);
-                                toClient.WriteAsync(data.ToArray(), MsgType.无类型);
+                                toClient.WriteAsync(data.ToArray(), P2PSocketType.Local.Code, P2PSocketType.Local.Transfer.Code);
+                                Logger.Trace.WriteLine("[服务器]->[LocalServer] 发送数据，长度:{0}", data.Length);
                             }
                             catch (Exception ex)
                             {
-                                Logger.Write("数据转发异常：{0}", ex);
+                                Logger.Trace.WriteLine("[服务器]->[LocalServer] 发送数据失败！长度:{0} \r\n{1}", data.Length, ex);
+                                _tcpMapHelper[tcpClient, false] = null;
+                            }
+                        }
+                    }
+                    break;
+                case P2PSocketType.Local.Error.Code:
+                    {
+                    }
+                    break;
+                case P2PSocketType.Local.Secure.Code:
+                    {
+                    }
+                    break;
+                case P2PSocketType.Local.ServerName.Code:
+                    {
+                        string key = data.ToStringUnicode();
+                        _tcpMapHelper.SetLocalServerClinet(tcpClient, key);
+                        Logger.Debug.WriteLine("[LocalServerClient]->[服务器] 设置Local服务名 ip:{0} key:{1}", tcpClient.Client.RemoteEndPoint, key);
+                    }
+                    break;
+                case P2PSocketType.Local.Transfer.Code:
+                    {
+                        if (toClient != null)
+                        {
+                            try
+                            {
+                                toClient.WriteAsync(data.ToArray(), P2PSocketType.Remote.Code, P2PSocketType.Remote.Transfer.Code);
+                                Logger.Trace.WriteLine("[服务器]->[RemoteServer] 发送数据，长度:{0}", data.Length);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Trace.WriteLine("[服务器]->[RemoteServer] 发送数据失败！长度:{0} \r\n{1}", data.Length, ex);
+                                _tcpMapHelper[tcpClient, false] = null;
+                            }
+                        }
+                    }
+                    break;
+            }
+        }
+        public void HandleRemotePackage(byte type, byte[] data, TcpClient tcpClient)
+        {
+            TcpClient toClient = _tcpMapHelper[tcpClient, true];
+            switch (type)
+            {
+                case P2PSocketType.Remote.Break.Code:
+                    {
+                        if (toClient != null)
+                        {
+                            try
+                            {
+                                toClient.WriteAsync(data.ToArray(), P2PSocketType.Local.Code, P2PSocketType.Local.Break.Code);
+                                Logger.Trace.WriteLine("[服务器]->[LocalServer] 发送数据，长度:{0}", data.Length);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Trace.WriteLine("[服务器]->[LocalServer] 发送数据失败！长度:{0} \r\n{1}", data.Length, ex);
                                 _tcpMapHelper[tcpClient, true] = null;
                             }
                         }
                     }
                     break;
-                case (byte)MsgType.测试服务器:
+                case P2PSocketType.Remote.Error.Code:
                     {
-                        tcpClient.WriteAsync(data.Skip(1).ToArray(), MsgType.测试服务器);
                     }
                     break;
+                case P2PSocketType.Remote.Secure.Code:
+                    {
+                    }
+                    break;
+                case P2PSocketType.Remote.ServerName.Code:
+                    {
+                        string key = data.ToStringUnicode();
+                        _tcpMapHelper.SetControlClient(tcpClient, key);
+                        Logger.Debug.WriteLine("[RemoteServerClient]->[服务器] 设置Remote服务名 ip:{0} key:{1}", tcpClient.Client.RemoteEndPoint, key);
+                    }
+                    break;
+                case P2PSocketType.Remote.Transfer.Code:
+                    {
+                        if (toClient != null)
+                        {
+                            try
+                            {
+                                toClient.WriteAsync(data.ToArray(), P2PSocketType.Local.Code, P2PSocketType.Local.Transfer.Code);
+                                Logger.Trace.WriteLine("[服务器]->[RemoteServer] 发送数据，长度:{0}", data.Length);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Trace.WriteLine("[服务器]->[RemoteServer] 发送数据失败！长度:{0} \r\n{1}", data.Length, ex);
+                                _tcpMapHelper[tcpClient, true] = null;
+                            }
+                        }
+                    }
+                    break;
+            }
+        }
+        public void CloseRelateTcp(TcpClient closedTcp)
+        {
+            TcpClient client = _tcpMapHelper[closedTcp, true];
+            if (client != null)
+            {
+                try
+                {
+                    Logger.Debug.WriteLine("[服务器]->[LocalServer] 发送断开Local服务信号 {0}", client.Client.RemoteEndPoint);
+                    client.WriteAsync(new byte[] { 0 }, P2PSocketType.Local.Code, P2PSocketType.Local.Break.Code);
+                }
+                catch { }
+            }
+            client = _tcpMapHelper[closedTcp, false];
+            if (client != null)
+            {
+                try
+                {
+                    Logger.Debug.WriteLine("[服务器]->[LocalServer] 发送断开Remote服务信号 {0}", client.Client.RemoteEndPoint);
+                    client.WriteAsync(new byte[] { 0 }, P2PSocketType.Remote.Code, P2PSocketType.Remote.Break.Code);
+                }
+                catch { }
             }
         }
     }

@@ -1,18 +1,18 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
-using Wireboy.Socket.P2PService.Services;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Wireboy.Socket.P2PService
+namespace Wireboy.Socket.P2PClient
 {
     public class TcpHelper
     {
         /// <summary>
         /// 数据长度
         /// </summary>
-        int OnePackageDataLength { set; get; } = 2;
+        int OnePackageDataLength { set; get; } = 0;
         /// <summary>
         /// 发生粘包的数据
         /// </summary>
@@ -44,6 +44,9 @@ namespace Wireboy.Socket.P2PService
                     }
                     else
                     {
+                        OnePackageDataLength = 0;
+                        Buffer.Clear();
+                        OnePackageCurIndex = 0;
                         //说明数据包异常
                         throw new Exception("数据包异常！");
                     }

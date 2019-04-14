@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Sockets;
 using System.Text;
-using Wireboy.Socket.P2PService.Models;
-using System.Linq;
+using System.Threading.Tasks;
+using Wireboy.Socket.P2PClient.Models;
 
-namespace Wireboy.Socket.P2PService.Services
+namespace Wireboy.Socket.P2PClient
 {
     public static class TcpUtils
     {
@@ -29,10 +30,11 @@ namespace Wireboy.Socket.P2PService.Services
         }
         public static void WriteAsync(this TcpClient client, byte[] bytes, byte type1, byte type2 = 0)
         {
-            short dataLength = Convert.ToInt16(bytes.Length);
+            int length = bytes.Length;
+            short dataLength = Convert.ToInt16(length);
             List<byte> sendData = new List<byte>() { StartCode, StartCode, type1, type2 };
             sendData.AddRange(BitConverter.GetBytes(dataLength));
-            sendData.AddRange(bytes);
+            sendData.AddRange(bytes.Take(length));
             client.WriteAsync(sendData.ToArray());
         }
 

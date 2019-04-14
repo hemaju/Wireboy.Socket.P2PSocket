@@ -1,21 +1,14 @@
-﻿/*
- * 日志服务 
- * 记录日志，支持并发，是线程安全的
- * 
- */
-
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Wireboy.Socket.P2PService.Models;
-using Wireboy.Socket.P2PService.Services;
-using System.Linq;
+using Wireboy.Socket.P2PClient.Models;
 
-namespace Wireboy.Socket.P2PService
+namespace Wireboy.Socket.P2PClient
 {
     public static class Logger
     {
