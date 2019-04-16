@@ -121,6 +121,7 @@ namespace Wireboy.Socket.P2PService
                     }
                     catch (Exception ex)
                     {
+                        m_transferClient.Remove(httpServerName);
                         Logger.Error.WriteLine("[HttpServer]->[HttpClient] 向Http服务{0}发送tcp数据错误：\r\n{1} ", httpServerName, ex);
                     }
                 }

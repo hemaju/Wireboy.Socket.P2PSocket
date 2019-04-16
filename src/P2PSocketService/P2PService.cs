@@ -143,12 +143,12 @@ namespace Wireboy.Socket.P2PService
                         {
                             try
                             {
-                                toClient.WriteAsync(data.ToArray(), P2PSocketType.Local.Code, P2PSocketType.Local.Transfer.Code);
-                                Logger.Trace.WriteLine("[服务器]->[LocalServer] 发送数据，长度:{0}", data.Length);
+                                toClient.WriteAsync(data.ToArray(), P2PSocketType.Remote.Code, P2PSocketType.Remote.Transfer.Code);
+                                Logger.Trace.WriteLine("[服务器]->[RemoteServer] 发送Break数据，长度:{0}", data.Length);
                             }
                             catch (Exception ex)
                             {
-                                Logger.Trace.WriteLine("[服务器]->[LocalServer] 发送数据失败！长度:{0} \r\n{1}", data.Length, ex);
+                                Logger.Trace.WriteLine("[服务器]->[RemoteServer] 发送Break数据失败！{0} \r\n{1}", data.Length, ex);
                                 _tcpMapHelper[tcpClient, false] = null;
                             }
                         }
@@ -156,10 +156,31 @@ namespace Wireboy.Socket.P2PService
                     break;
                 case P2PSocketType.Local.Error.Code:
                     {
+
+                        try
+                        {
+                            toClient.WriteAsync(data.ToArray(), P2PSocketType.Remote.Code, P2PSocketType.Remote.Error.Code);
+                            Logger.Trace.WriteLine("[服务器]->[RemoteServer] 发送Error数据，长度:{0}", data.Length);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Trace.WriteLine("[服务器]->[RemoteServer] 发送Error数据失败！长度:{0} \r\n{1}", data.Length, ex);
+                            _tcpMapHelper[tcpClient, false] = null;
+                        }
                     }
                     break;
                 case P2PSocketType.Local.Secure.Code:
                     {
+                        try
+                        {
+                            toClient.WriteAsync(data.ToArray(), P2PSocketType.Remote.Code, P2PSocketType.Remote.Secure.Code);
+                            Logger.Trace.WriteLine("[服务器]->[RemoteServer] 发送Secure数据，长度:{0}", data.Length);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Trace.WriteLine("[服务器]->[RemoteServer] 发送Secure数据失败！长度:{0} \r\n{1}", data.Length, ex);
+                            _tcpMapHelper[tcpClient, false] = null;
+                        }
                     }
                     break;
                 case P2PSocketType.Local.ServerName.Code:
@@ -176,11 +197,11 @@ namespace Wireboy.Socket.P2PService
                             try
                             {
                                 toClient.WriteAsync(data.ToArray(), P2PSocketType.Remote.Code, P2PSocketType.Remote.Transfer.Code);
-                                Logger.Trace.WriteLine("[服务器]->[RemoteServer] 发送数据，长度:{0}", data.Length);
+                                Logger.Trace.WriteLine("[服务器]->[RemoteServer] 发送Transfer数据，长度:{0}", data.Length);
                             }
                             catch (Exception ex)
                             {
-                                Logger.Trace.WriteLine("[服务器]->[RemoteServer] 发送数据失败！长度:{0} \r\n{1}", data.Length, ex);
+                                Logger.Trace.WriteLine("[服务器]->[RemoteServer] 发送Transfer数据失败！长度:{0} \r\n{1}", data.Length, ex);
                                 _tcpMapHelper[tcpClient, false] = null;
                             }
                         }
@@ -200,11 +221,11 @@ namespace Wireboy.Socket.P2PService
                             try
                             {
                                 toClient.WriteAsync(data.ToArray(), P2PSocketType.Local.Code, P2PSocketType.Local.Break.Code);
-                                Logger.Trace.WriteLine("[服务器]->[LocalServer] 发送数据，长度:{0}", data.Length);
+                                Logger.Trace.WriteLine("[服务器]->[LocalServer] 发送Break数据，长度:{0}", data.Length);
                             }
                             catch (Exception ex)
                             {
-                                Logger.Trace.WriteLine("[服务器]->[LocalServer] 发送数据失败！长度:{0} \r\n{1}", data.Length, ex);
+                                Logger.Trace.WriteLine("[服务器]->[LocalServer] 发送Break数据失败！长度:{0} \r\n{1}", data.Length, ex);
                                 _tcpMapHelper[tcpClient, true] = null;
                             }
                         }
@@ -212,10 +233,36 @@ namespace Wireboy.Socket.P2PService
                     break;
                 case P2PSocketType.Remote.Error.Code:
                     {
+                        if (toClient != null)
+                        {
+                            try
+                            {
+                                toClient.WriteAsync(data.ToArray(), P2PSocketType.Local.Code, P2PSocketType.Local.Error.Code);
+                                Logger.Trace.WriteLine("[服务器]->[LocalServer] 发送Error数据，长度:{0}", data.Length);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Trace.WriteLine("[服务器]->[LocalServer] 发送Error数据失败！长度:{0} \r\n{1}", data.Length, ex);
+                                _tcpMapHelper[tcpClient, true] = null;
+                            }
+                        }
                     }
                     break;
                 case P2PSocketType.Remote.Secure.Code:
                     {
+                        if (toClient != null)
+                        {
+                            try
+                            {
+                                toClient.WriteAsync(data.ToArray(), P2PSocketType.Local.Code, P2PSocketType.Local.Secure.Code);
+                                Logger.Trace.WriteLine("[服务器]->[LocalServer] 发送Secure数据，长度:{0}", data.Length);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Trace.WriteLine("[服务器]->[LocalServer] 发送Secure数据失败！长度:{0} \r\n{1}", data.Length, ex);
+                                _tcpMapHelper[tcpClient, true] = null;
+                            }
+                        }
                     }
                     break;
                 case P2PSocketType.Remote.ServerName.Code:
@@ -232,11 +279,11 @@ namespace Wireboy.Socket.P2PService
                             try
                             {
                                 toClient.WriteAsync(data.ToArray(), P2PSocketType.Local.Code, P2PSocketType.Local.Transfer.Code);
-                                Logger.Trace.WriteLine("[服务器]->[RemoteServer] 发送数据，长度:{0}", data.Length);
+                                Logger.Trace.WriteLine("[服务器]->[LocalServer] 发送Transfer数据，长度:{0}", data.Length);
                             }
                             catch (Exception ex)
                             {
-                                Logger.Trace.WriteLine("[服务器]->[RemoteServer] 发送数据失败！长度:{0} \r\n{1}", data.Length, ex);
+                                Logger.Trace.WriteLine("[服务器]->[LocalServer] 发送Transfer数据失败！长度:{0} \r\n{1}", data.Length, ex);
                                 _tcpMapHelper[tcpClient, true] = null;
                             }
                         }
