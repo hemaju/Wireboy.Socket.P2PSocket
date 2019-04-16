@@ -189,7 +189,7 @@ namespace Wireboy.Socket.P2PClient
                 {
                     //发送Home服务名称
                     ServerTcp.WriteAsync(homeName, P2PSocketType.Local.Code, P2PSocketType.Local.ServerName.Code);
-                    Logger.Info.WriteLine("[LocalServer]->[服务器] 成功启动LocalServer服务，Local服务名:{0}", homeName);
+                    Logger.Info.WriteLine("[LocalServer]->[服务器] 成功启动LocalServer服务，Local服务名:{0} 端口:{1}", homeName,ConfigServer.AppSettings.LocalServerPort);
                 }
                 catch (Exception ex)
                 {
@@ -215,7 +215,7 @@ namespace Wireboy.Socket.P2PClient
                 if (ServerTcp != null)
                 {
                     ServerTcp.WriteAsync(remoteServerName, P2PSocketType.Remote.Code, P2PSocketType.Remote.ServerName.Code);
-                    Logger.Info.WriteLine("[RemoteServer]->[服务器] 成功启动Remote服务，Remote服务名：{0}", remoteServerName);
+                    Logger.Info.WriteLine("[RemoteServer]->[服务器] 成功启动Remote服务，Remote服务名:{0} 端口:{1}", remoteServerName,ConfigServer.AppSettings.RemoteLocalPort);
                     return true;
                 }
                 else
@@ -234,41 +234,48 @@ namespace Wireboy.Socket.P2PClient
         {
             try
             {
-                RemoteServerListener = new TcpListener(IPAddress.Any, ConfigServer.AppSettings.RemoteLocalPort);
-                RemoteServerListener.Start();
-                Logger.Info.WriteLine("[RemoteServer] 成功启动RemoteServer服务，本地端口:{0}", ConfigServer.AppSettings.RemoteLocalPort);
-                _taskFactory.StartNew(() =>
+                if (ConfigServer.AppSettings.RemoteLocalPort > 0)
                 {
-                    try
+                    RemoteServerListener = new TcpListener(IPAddress.Any, ConfigServer.AppSettings.RemoteLocalPort);
+                    RemoteServerListener.Start();
+                    Logger.Info.WriteLine("[RemoteServer] 成功启动RemoteServer服务，本地端口:{0}", ConfigServer.AppSettings.RemoteLocalPort);
+                    _taskFactory.StartNew(() =>
                     {
-                        while (true)
+                        try
                         {
-                            TcpClient tcpClient = RemoteServerListener.AcceptTcpClient();
-                            if (!IsEnableRemoteServer)
+                            while (true)
                             {
-                                Logger.Info.WriteLine("[RemoteServer] Remote服务未启动，请设置远端Remote服务名，断开主动连入的tcp", tcpClient.Client.RemoteEndPoint);
-                                tcpClient.Close();
-                            }
-                            else if (RemoteServerTcp == null)
-                            {
-                                RemoteServerTcp = tcpClient;
-                                _taskFactory.StartNew(() =>
+                                TcpClient tcpClient = RemoteServerListener.AcceptTcpClient();
+                                if (!IsEnableRemoteServer)
                                 {
-                                    ListenRemoteServerPort();
-                                });
-                            }
-                            else
-                            {
-                                Logger.Info.WriteLine("[RemoteServer] 断开主动连入的tcp：{0}", tcpClient.Client.RemoteEndPoint);
-                                tcpClient.Close();
+                                    Logger.Info.WriteLine("[RemoteServer] Remote服务未启动，请设置远端Remote服务名，断开主动连入的tcp", tcpClient.Client.RemoteEndPoint);
+                                    tcpClient.Close();
+                                }
+                                else if (RemoteServerTcp == null)
+                                {
+                                    RemoteServerTcp = tcpClient;
+                                    _taskFactory.StartNew(() =>
+                                    {
+                                        ListenRemoteServerPort();
+                                    });
+                                }
+                                else
+                                {
+                                    Logger.Info.WriteLine("[RemoteServer] 断开主动连入的tcp：{0}", tcpClient.Client.RemoteEndPoint);
+                                    tcpClient.Close();
+                                }
                             }
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        DoTcpException(TcpErrorType.RemoteServer, string.Format("[RemoteServer] 端口监听错误:\r\n{0}", ex));
-                    }
-                });
+                        catch (Exception ex)
+                        {
+                            DoTcpException(TcpErrorType.RemoteServer, string.Format("[RemoteServer] 端口监听错误:\r\n{0}", ex));
+                        }
+                    });
+                }
+                else
+                {
+                    Logger.Info.WriteLine("[RemoteServer] 未配置RemoteServerPort，跳过启动RemoteServer服务！");
+                }
             }
             catch (Exception ex)
             {
