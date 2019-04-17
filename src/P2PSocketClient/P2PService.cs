@@ -187,14 +187,22 @@ namespace Wireboy.Socket.P2PClient
             {
                 try
                 {
-                    Logger.Info.WriteLine("[LocalServer]->[服务器] 设置服务名:{0}", homeName);
                     //发送Home服务名称
                     ServerTcp.WriteAsync(homeName, P2PSocketType.Local.Code, P2PSocketType.Local.ServerName.Code);
+                    Logger.Info.WriteLine("[LocalServer]->[服务器] 成功启动LocalServer服务，Local服务名:{0} 端口:{1}", homeName,ConfigServer.AppSettings.LocalServerPort);
                 }
                 catch (Exception ex)
                 {
-                    DoTcpException(TcpErrorType.Server, "[服务器] 连接失败！");
+                    DoTcpException(TcpErrorType.Server, "[LocalServer]->[服务器] 未连接到服务器，启动LocalServer服务失败！");
                 }
+            }
+            else if (!IsEnableLocalServer)
+            {
+                Logger.Info.WriteLine("[LocalServer] 未配置LocalServerName，跳过启动LocalServer服务！");
+            }
+            else
+            {
+                Logger.Info.WriteLine("[LocalServer] 服务器未成功连接，跳过启动LocalServer服务！");
             }
 
         }
@@ -206,65 +214,72 @@ namespace Wireboy.Socket.P2PClient
                 RemoteServerName = remoteServerName;
                 if (ServerTcp != null)
                 {
-                    Logger.Info.WriteLine("[RemoteServer]->[服务器] 连接服务名：{0}", remoteServerName);
                     ServerTcp.WriteAsync(remoteServerName, P2PSocketType.Remote.Code, P2PSocketType.Remote.ServerName.Code);
+                    Logger.Info.WriteLine("[RemoteServer]->[服务器] 成功启动Remote服务，Remote服务名:{0} 端口:{1}", remoteServerName,ConfigServer.AppSettings.RemoteLocalPort);
                     return true;
                 }
                 else
                 {
-                    Logger.Info.WriteLine("[服务器] 未连接到服务器，设置Remote服务名失败！");
+                    Logger.Info.WriteLine("[RemoteServer]->[服务器] 未连接到服务器，启动Remote服务失败！");
                 }
             }
             else
             {
-                Logger.Info.WriteLine("[RemoteServer] 远程服务未启用，设置Remote服务名失败！");
+                Logger.Info.WriteLine("[RemoteServer] 远程服务未启用！");
             }
             return ret;
 
         }
         public void StartRemoteServerListener()
         {
-            Logger.Info.WriteLine("[RemoteServer] 监听本地端口:{0}", ConfigServer.AppSettings.RemoteLocalPort);
             try
             {
-                RemoteServerListener = new TcpListener(IPAddress.Any, ConfigServer.AppSettings.RemoteLocalPort);
-                RemoteServerListener.Start();
-                _taskFactory.StartNew(() =>
+                if (ConfigServer.AppSettings.RemoteLocalPort > 0)
                 {
-                    try
+                    RemoteServerListener = new TcpListener(IPAddress.Any, ConfigServer.AppSettings.RemoteLocalPort);
+                    RemoteServerListener.Start();
+                    Logger.Info.WriteLine("[RemoteServer] 成功启动RemoteServer服务，本地端口:{0}", ConfigServer.AppSettings.RemoteLocalPort);
+                    _taskFactory.StartNew(() =>
                     {
-                        while (true)
+                        try
                         {
-                            TcpClient tcpClient = RemoteServerListener.AcceptTcpClient();
-                            if (!IsEnableRemoteServer)
+                            while (true)
                             {
-                                Logger.Info.WriteLine("[RemoteServer] Remote服务未启动，请设置远程服务名，断开主动连入的tcp", tcpClient.Client.RemoteEndPoint);
-                                tcpClient.Close();
-                            }
-                            else if (RemoteServerTcp == null)
-                            {
-                                RemoteServerTcp = tcpClient;
-                                _taskFactory.StartNew(() =>
+                                TcpClient tcpClient = RemoteServerListener.AcceptTcpClient();
+                                if (!IsEnableRemoteServer)
                                 {
-                                    ListenRemoteServerPort();
-                                });
-                            }
-                            else
-                            {
-                                Logger.Info.WriteLine("[RemoteServer] 断开主动连入的tcp：{0}", tcpClient.Client.RemoteEndPoint);
-                                tcpClient.Close();
+                                    Logger.Info.WriteLine("[RemoteServer] Remote服务未启动，请设置远端Remote服务名，断开主动连入的tcp", tcpClient.Client.RemoteEndPoint);
+                                    tcpClient.Close();
+                                }
+                                else if (RemoteServerTcp == null)
+                                {
+                                    RemoteServerTcp = tcpClient;
+                                    _taskFactory.StartNew(() =>
+                                    {
+                                        ListenRemoteServerPort();
+                                    });
+                                }
+                                else
+                                {
+                                    Logger.Info.WriteLine("[RemoteServer] 断开主动连入的tcp：{0}", tcpClient.Client.RemoteEndPoint);
+                                    tcpClient.Close();
+                                }
                             }
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        DoTcpException(TcpErrorType.RemoteServer, string.Format("[RemoteServer] 端口监听错误:\r\n{0}", ex));
-                    }
-                });
+                        catch (Exception ex)
+                        {
+                            DoTcpException(TcpErrorType.RemoteServer, string.Format("[RemoteServer] 端口监听错误:\r\n{0}", ex));
+                        }
+                    });
+                }
+                else
+                {
+                    Logger.Info.WriteLine("[RemoteServer] 未配置RemoteServerPort，跳过启动RemoteServer服务！");
+                }
             }
             catch (Exception ex)
             {
-                DoTcpException(TcpErrorType.RemoteServer, string.Format("[RemoteServer] 本地端口:{0}监听失败！", ConfigServer.AppSettings.RemoteLocalPort));
+                DoTcpException(TcpErrorType.RemoteServer, string.Format("[RemoteServer] 启动RemoteServer服务失败，端口:{0}监听失败！", ConfigServer.AppSettings.RemoteLocalPort));
             }
         }
 
@@ -358,6 +373,27 @@ namespace Wireboy.Socket.P2PClient
                     break;
                 case P2PSocketType.Local.Secure.Code:
                     {
+                        if (IsEnableLocalServer && (m_localServerTcp == null || !m_localServerTcp.Connected))
+                        {
+                            lock (m_lockLocalServerTcp)
+                            {
+                                if (m_localServerTcp == null || !m_localServerTcp.Connected)
+                                {
+                                    try
+                                    {
+                                        m_localServerTcp = new TcpClient("127.0.0.1", ConfigServer.AppSettings.LocalServerPort);
+                                        _taskFactory.StartNew(() =>
+                                        {
+                                            ListenLocalServerPort();
+                                        });
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        DoTcpException(TcpErrorType.LocalServer, string.Format("[LocalServer]->[LocalPort] 端口:{0}连接失败!", ConfigServer.AppSettings.LocalServerPort));
+                                    }
+                                }
+                            }
+                        }
                     }
                     break;
                 case P2PSocketType.Local.ServerName.Code:
@@ -372,7 +408,7 @@ namespace Wireboy.Socket.P2PClient
                         }
                         catch (Exception ex)
                         {
-                            DoTcpException(TcpErrorType.LocalServer, string.Format("[LocalServer]->[Port] 数据转发错误:\r\n{0}", ex));
+                            DoTcpException(TcpErrorType.LocalServer, string.Format("[LocalServer]->[Port] 数据转发错误，长度:{0}\r\n{1}", data.Length, ex));
                         }
                     }
                     break;
@@ -408,7 +444,7 @@ namespace Wireboy.Socket.P2PClient
                         }
                         catch (Exception ex)
                         {
-                            DoTcpException(TcpErrorType.RemoteServer, string.Format("[RemoteServer]->[Port] 数据转发错误:\r\n{0}", ex));
+                            DoTcpException(TcpErrorType.RemoteServer, string.Format("[RemoteServer]->[Port] 数据转发错误，长度:{0}\r\n{1}", data.Length, ex));
                         }
                     }
                     break;

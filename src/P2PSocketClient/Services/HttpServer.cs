@@ -22,8 +22,19 @@ namespace Wireboy.Socket.P2PClient.Services
         {
             if (!string.IsNullOrEmpty(ConfigServer.AppSettings.HttpServerName))
             {
-                m_p2PService.ServerTcp.WriteAsync(ConfigServer.AppSettings.HttpServerName, P2PSocketType.Http.Code, P2PSocketType.Http.ServerName.Code);
-                Logger.Info.WriteLine("[HttpServer]->[服务器] 设置http服务名:{0}", ConfigServer.AppSettings.HttpServerName);
+                try
+                {
+                    m_p2PService.ServerTcp.WriteAsync(ConfigServer.AppSettings.HttpServerName, P2PSocketType.Http.Code, P2PSocketType.Http.ServerName.Code);
+                    Logger.Info.WriteLine("[HttpServer]->[服务器] 成功设置http服务名:{0}", ConfigServer.AppSettings.HttpServerName);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error.WriteLine("[HttpServer]->[服务器] 无法连接服务器，设置http服务名失败！");
+                }
+            }
+            else
+            {
+                Logger.Info.WriteLine("[HttpServer] 未配置Http服务，跳过启动Http服务！");
             }
         }
         public void HandleHttpPackage(byte type, byte[] data)
@@ -47,8 +58,16 @@ namespace Wireboy.Socket.P2PClient.Services
                             }
                             if (m_httpClientMap.ContainsKey(guidKey))
                             {
-                                m_httpClientMap[guidKey].WriteAsync(bytes);
-                                Logger.Debug.WriteLine("[WebServer]->[Port] 向本地站点发送数据，长度{0}", bytes.Length);
+                                try
+                                {
+                                    m_httpClientMap[guidKey].WriteAsync(bytes);
+                                    Logger.Debug.WriteLine("[WebServer]->[Port] 向本地站点发送数据，长度{0}", bytes.Length);
+                                }
+                                catch (Exception ex)
+                                {
+                                    m_httpClientMap.Remove(guidKey);
+                                    Logger.Error.WriteLine("[HttpServer]->[WebServer] 向Web服务发送tcp数据错误：\r\n{1} ", ex);
+                                }
                             }
 
                         }

@@ -102,7 +102,7 @@ namespace Wireboy.Socket.P2PClient
                         }
                     }
                 } while (m_consoleLogList.Count > 0);
-                Thread.Sleep(1000);
+                Thread.Sleep(200);
             } while (m_consoleLogList.Count > 0);
             m_curConsoleTask = null;
         }

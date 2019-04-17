@@ -1,115 +1,118 @@
 # Wireboy.Socket.P2PSocket
 
+这是一个使用.NetCore控制台项目作为服务端，.netframework4.5的C#控制台项目作为主控与被控客户端的项目。
+
 喜欢此项目的，请点击一下右上角的Star
 
 加入QQ群417159195，与作者共同交流，入群途径请填写“P2PSocket”
 
-## 已支持功能
+## 你好，程序员们
 
-1.安全的暴露内网服务
+1.无论你对当前项目有什么建议或者发现了什么BUG，欢迎提出来，在Issue和QQ群都可以。
 
-2.http请求转发
+2.如果有能力，欢迎大家创建分支，然后提交代码，感谢大家。
 
-3.二级域名配置
+3.对于任何建议、BUG反馈、分支代码提交等等与本项目互动的动作，我都会尽快回复，不会置之不理的。
 
-4.TCP端口复用
+## 这个项目能做些什么？
 
-## 开发计划（开发顺序不分先后）
+1.类似花生壳，将内网网站部署到公网（前提是有一台公网服务器部署P2PServer项目）
 
-（已完成）~~1.客户端与服务端均增加日志功能~~
+2.2个不同内网的电脑，使用mstsc直连或者teamview进行远程控制
 
-（已完成）~~2.客户端（主控端）增加断线重连功能~~
-
-（已完成）~~3.为客户端与服务端增加配置文件~~
-
-4.TCP点对点连接（不经过服务器）
-
-5.客户端（被控端）增加密码验证
-
-6.服务端增加用户名与密码验证（数据库）
+3.基于http协议的2级域名转发
 
 ## 当前项目状态？
 
-1.master分支版本已稳定，但需要修改服务端ip编译后使用。
+1.master分支版本作为稳定版本。
 
-2.dev分支版本为开发者活跃版本，新功能会先加入dev分支，稳定后与master分支合并。
+2.dev分支版本为开发者活跃版本，新功能在dev版本稳定后，会与master分支合并。
 
 ## 网络结构
 
+### 内网穿透结构
+
 ![img4](Images/img4.png)
 
-## 先来个项目介绍吧
-
-此项目在正确设置服务端ip后，可用于mstsc进行远程桌面控制（我的目的也如此）。
-
-这是一个使用.NetCore控制台项目作为服务端，.netframework4.5的C#控制台项目作为主控与被控客户端的项目。
-
-结论：这是一个假的p2p服务
-
-## 安全的暴露内网服务
-	
-A：公网服务器  B：提供服务的服务器  C：用户电脑
-
-1.修改A中配置文件，如下图：
-
-![img8](Images/img8.png)
-
-2.修改B和C中配置文件（B的LocalServerName：home，C的LocalServerName可不填），如下图：
-
-![img9](Images/img9.png)
-
-3.启动B和C，在C控制台输入B的本地服务名称，如下图：
-
-![img10](Images/img10.png)
-
-## http内网穿透
-
-A：公网服务器  B：提供服务的服务器
-
-1.在A中，修改P2PService服务的配置文件，设置要开启的端口号（ServerPort，例如：80），并添加以下代码，如下图：
-
-![img6](Images/img6.png)
-
-2.在B中，修改P2PClient服务的配置文件，设置本地Http服务名称（HttpServerName，例如：webGroup），并添加以下代码，如下图：
-
-![img7](Images/img7.png)
-
-3.在A中启动P2PService，在B中启动P2PClient
-	
-	
-###	注意：
-	
-1）P2PClient与P2PService均支持同端口不同域名的转发，且支持二级域名，但是需要将紫色框中的配置完整复制。
-
-2）https连接可以将Type设置为Other，但是同一个端口仅允许设置一个https转发
-		
-### http内网穿透网络结构
+### http服务结构
 
 ![img5](Images/img5.png)
 
-## 范例：远程桌面内网电脑？
+## 例子：mstsc远程控制（3端）
 
-编译环境：VS2017 + .Net Framework 4.5  + .Net Core 2.1
+介绍：mstsc服务在远程连接时，使用3389端口，所以只需要将数据转发到3389端口即可实现mstsc的内网穿透
 
-1.修改Wireboy.Socket.P2PClient.exe的配置文件，将服务器ip与端口改为自己的公网ip服务器。
+1.服务器配置
 
-![img1](Images/img1.png)
+![sp-img1](Images/sp-img1.png)
 
-2.在公网ip服务器部署并启动Wireboy.Socket.P2PService.dll。（手动启动：在控制台输入 dotnet Wireboy.Socket.P2PService.dll）
-
-3.将Wireboy.Socket.P2PClient.exe在被控制电脑启动，输入本地Home服务名称：home
-
-4.将Wireboy.Socket.P2PClient.exe在主控电脑启动，输入远程Home服务名称：home
-
-5.在主控电脑，启动mstsc，输入127.0.0.1:3388 进行远程连接
-
-注：被控端电脑需要开启远程服务，如下图：
+2.开启配置远程服务
 
 ![img2](Images/img2.png)
 
-## 运行效果图
+3.被远程电脑配置
 
-![img3](Images/img3.gif)
+![sp-img2](Images/sp-img2.png)
+
+4.本机电脑配置
+
+![sp-img3](Images/sp-img3.png)
+
+## 例子：teamview远程控制（3端）
+
+介绍：teamview服务在使用Lan远程时，使用5938端口，所以只需要将数据转发到5938端口即可实现teamview的内网穿透，且Lan连接不限制商业用途
+
+1.P2PServer配置
+
+![sp-img1](Images/sp-img1.png)
+
+3.配置被远程电脑Teamview
+
+![sp-img4](Images/sp-img4.png)
+
+4.被远程电脑P2PClient配置
+
+![sp-img5](Images/sp-img5.png)
+
+5.本机电脑P2PClient配置
+
+![sp-img6](Images/sp-img6.png)
+
+## 例子：Http内网穿透之一对一关系配置（2端）
+
+介绍：将连接到服务器1706端口的www.star110.com请求转发到内网
+
+1.P2PServer配置
+
+![sp-img7](Images/sp-img7.png)
+
+2.PC1的P2PClient配置
+
+![sp-img8](Images/sp-img8.png)
+
+## 例子：Http内网穿透之多对一关系配置（2端）
+
+介绍：将连接到服务器1706端口的www.star110.com和blog.star110.com请求分别转发到内网PC1电脑的80和81端口
+
+1.P2PServer配置
+
+![sp-img9](Images/sp-img9.png)
+
+2.P2PClient配置
+
+![sp-img10](Images/sp-img10.png)
+
+## 例子：Socket转发/Https转发（2端）
+
+介绍：将所有发送到服务器xxx端口的数据，直接转发到相应Client客户端，再通过client转发到本地xxx端口
+
+1.P2PServer配置
+
+![sp-img9](Images/sp-img9.png)
+
+2.P2PClient配置
+
+![sp-img11](Images/sp-img11.png)
 
 ## 更新日志
 
