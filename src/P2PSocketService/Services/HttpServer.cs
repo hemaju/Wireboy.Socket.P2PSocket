@@ -214,24 +214,36 @@ namespace Wireboy.Socket.P2PService
         /// <returns></returns>
         public string GetHttpRequestHost(byte[] bytes, int length)
         {
-            bool read = false;
+            bool hasHost = false;
             List<byte> byteList = new List<byte>();
+            String str = "";
             for (int i = 0; i < length; i++)
             {
                 if (bytes[i] == 13 && (i + 1) < length && bytes[i + 1] == 10)
                 {
-                    if (read) break;
+                    String strTemp = Encoding.ASCII.GetString(byteList.ToArray());
+                    if (strTemp.Trim().ToLower().StartsWith("host:"))
+                    {
+                        hasHost = true;
+                        break;
+                    }
+                    else
+                    {
+                        byteList.Clear();
+                    }
                     i++;
-                    read = true;
                 }
-                else if (read)
+                else
                 {
                     byteList.Add(bytes[i]);
                 }
             }
-            String str = Encoding.ASCII.GetString(byteList.ToArray());
-            int indexOf = str.IndexOf(':');
-            if (indexOf > -1) str = str.Substring(indexOf + 1).Trim();
+            if (hasHost)
+            {
+                str = Encoding.ASCII.GetString(byteList.ToArray());
+                int indexOf = str.IndexOf(':');
+                if (indexOf > -1) str = str.Substring(indexOf + 1).Trim();
+            }
             return str;
         }
 
