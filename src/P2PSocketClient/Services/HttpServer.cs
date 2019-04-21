@@ -142,6 +142,9 @@ namespace Wireboy.Socket.P2PClient.Services
                         {
                             Logger.Debug.WriteLine("[Port]->[HttpServer] 接收到长度0的数据，断开连接！");
                             client.Close();
+                            List<byte> webRet = new List<byte>();
+                            webRet.AddRange(curGuid);
+                            m_p2PService.ServerTcp.WriteAsync(webRet.ToArray(), P2PSocketType.Http.Code, P2PSocketType.Http.Break.Code);
                             break;
                         }
                     }

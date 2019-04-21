@@ -194,7 +194,13 @@ namespace Wireboy.Socket.P2PService
                     break;
                 case P2PSocketType.Http.Break.Code:
                     {
-
+                        string key = curGuid.ToStringUnicode();
+                        try
+                        {
+                            m_httpClientMap[key].Close();
+                        }
+                        catch { }
+                        m_httpClientMap.Remove(key);
                     }
                     break;
             }
