@@ -66,7 +66,7 @@ namespace Wireboy.Socket.P2PClient.Services
                                 catch (Exception ex)
                                 {
                                     m_httpClientMap.Remove(guidKey);
-                                    Logger.Error.WriteLine("[HttpServer]->[WebServer] 向Web服务发送tcp数据错误：\r\n{1} ", ex);
+                                    Logger.Error.WriteLine("[WebServer]->[Port] 向本地站点发送数据错误：\r\n{1} ", ex);
                                 }
                             }
 
