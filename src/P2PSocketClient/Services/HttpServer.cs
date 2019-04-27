@@ -119,7 +119,7 @@ namespace Wireboy.Socket.P2PClient.Services
                         }
                         catch (Exception ex)
                         {
-                            Logger.Error.WriteLine("[Port]->[HttpServer] 接收数据错误:\r\n{0}", ex);
+                            Logger.Debug.WriteLine("[Port]->[HttpServer] 连接已断开.");
                             m_httpClientMap.Remove(key);
                         }
                         if (webLength > 0)
@@ -135,7 +135,7 @@ namespace Wireboy.Socket.P2PClient.Services
                             }
                             catch (Exception ex)
                             {
-                                Logger.Error.WriteLine("[HttpServer]->[Web] 发送数据错误:\r\n{0}", ex);
+                                Logger.Debug.WriteLine("[HttpServer]->[Web] 连接已断开.");
                             }
                         }
                         else

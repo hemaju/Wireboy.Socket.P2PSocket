@@ -121,6 +121,8 @@ namespace Wireboy.Socket.P2PClient
             {
                 if (ConfigServer.AppSettings.LogLevel >= LogLevel.Info)
                     Logger.WriteLine(string.Format(log, arg0, arg1, arg2));
+                else
+                    Logger.Console.WriteLine(string.Format(log, arg0, arg1, arg2));
             }
         }
         public static class Debug
