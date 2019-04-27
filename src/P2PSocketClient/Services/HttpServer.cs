@@ -66,7 +66,7 @@ namespace Wireboy.Socket.P2PClient.Services
                                 catch (Exception ex)
                                 {
                                     m_httpClientMap.Remove(guidKey);
-                                    Logger.Error.WriteLine("[HttpServer]->[WebServer] 向Web服务发送tcp数据错误：\r\n{1} ", ex);
+                                    Logger.Error.WriteLine("[WebServer]->[Port] 向本地站点发送数据错误：\r\n{1} ", ex);
                                 }
                             }
 
@@ -96,7 +96,7 @@ namespace Wireboy.Socket.P2PClient.Services
                 HttpModel model = MatchHttpModel(domain);
                 if (model == null) return;
                 //连接网站
-                TcpClient tcpClient = new TcpClient("127.0.0.1", model.WebPort);
+                TcpClient tcpClient = new TcpClient(model.WebIp, model.WebPort);
                 m_httpClientMap.Add(key_in, tcpClient);
                 m_taskFactory.StartNew(() =>
                 {
@@ -119,7 +119,7 @@ namespace Wireboy.Socket.P2PClient.Services
                         }
                         catch (Exception ex)
                         {
-                            Logger.Error.WriteLine("[Port]->[HttpServer] 接收数据错误:\r\n{0}", ex);
+                            Logger.Debug.WriteLine("[Port]->[HttpServer] 连接已断开.");
                             m_httpClientMap.Remove(key);
                         }
                         if (webLength > 0)
@@ -135,13 +135,16 @@ namespace Wireboy.Socket.P2PClient.Services
                             }
                             catch (Exception ex)
                             {
-                                Logger.Error.WriteLine("[HttpServer]->[Web] 发送数据错误:\r\n{0}", ex);
+                                Logger.Debug.WriteLine("[HttpServer]->[Web] 连接已断开.");
                             }
                         }
                         else
                         {
                             Logger.Debug.WriteLine("[Port]->[HttpServer] 接收到长度0的数据，断开连接！");
                             client.Close();
+                            List<byte> webRet = new List<byte>();
+                            webRet.AddRange(curGuid);
+                            m_p2PService.ServerTcp.WriteAsync(webRet.ToArray(), P2PSocketType.Http.Code, P2PSocketType.Http.Break.Code);
                             break;
                         }
                     }
@@ -157,24 +160,36 @@ namespace Wireboy.Socket.P2PClient.Services
         /// <returns></returns>
         public string GetHttpRequestHost(byte[] bytes, int length)
         {
-            bool read = false;
+            bool hasHost = false;
             List<byte> byteList = new List<byte>();
+            String str = "";
             for (int i = 0; i < length; i++)
             {
                 if (bytes[i] == 13 && (i + 1) < length && bytes[i + 1] == 10)
                 {
-                    if (read) break;
+                    String strTemp = Encoding.ASCII.GetString(byteList.ToArray());
+                    if (strTemp.Trim().ToLower().StartsWith("host:"))
+                    {
+                        hasHost = true;
+                        break;
+                    }
+                    else
+                    {
+                        byteList.Clear();
+                    }
                     i++;
-                    read = true;
                 }
-                else if (read)
+                else
                 {
                     byteList.Add(bytes[i]);
                 }
             }
-            String str = Encoding.ASCII.GetString(byteList.ToArray());
-            int indexOf = str.IndexOf(':');
-            if (indexOf > -1) str = str.Substring(indexOf + 1).Trim();
+            if (hasHost)
+            {
+                str = Encoding.ASCII.GetString(byteList.ToArray());
+                int indexOf = str.IndexOf(':');
+                if (indexOf > -1) str = str.Substring(indexOf + 1).Trim();
+            }
             return str;
         }
         public HttpModel MatchHttpModel(string domain)

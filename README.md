@@ -62,6 +62,8 @@
 
 介绍：teamview服务在使用Lan远程时，使用5938端口，所以只需要将数据转发到5938端口即可实现teamview的内网穿透，且Lan连接不限制商业用途
 
+注意：在主控端电脑，需要在任务管理器关闭Teamview，启动P2PClient后再开启Teamview，因为P2PClient需要监听5938端口，如果先启动Teamview，P2PClient将无法监听5938端口，导致连接失败！
+
 1.P2PServer配置
 
 ![sp-img1](Images/sp-img1.png)

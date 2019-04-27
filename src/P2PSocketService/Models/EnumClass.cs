@@ -137,20 +137,24 @@ namespace Wireboy.Socket.P2PService.Models
     public enum LogLevel
     {
         /// <summary>
+        /// 不记录日志
+        /// </summary>
+        None = 0,
+        /// <summary>
         /// 错误消息
         /// </summary>
-        Error = 0,
+        Error = 1,
         /// <summary>
         /// 一般消息
         /// </summary>
-        Info = 1,
+        Info = 2,
         /// <summary>
         /// 调试消息
         /// </summary>
-        Debug = 2,
+        Debug = 3,
         /// <summary>
         /// 跟踪数据
         /// </summary>
-        Trace = 3
+        Trace = 4
     }
 }
