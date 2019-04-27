@@ -96,7 +96,7 @@ namespace Wireboy.Socket.P2PClient.Services
                 HttpModel model = MatchHttpModel(domain);
                 if (model == null) return;
                 //连接网站
-                TcpClient tcpClient = new TcpClient("127.0.0.1", model.WebPort);
+                TcpClient tcpClient = new TcpClient(model.LocIp, model.WebPort);
                 m_httpClientMap.Add(key_in, tcpClient);
                 m_taskFactory.StartNew(() =>
                 {
