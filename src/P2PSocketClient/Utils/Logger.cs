@@ -24,7 +24,7 @@ namespace Wireboy.Socket.P2PClient
 
         private static void WriteLine(string log)
         {
-            log = string.Format("{0:MM-dd HH:mm:ss} {1}", DateTime.Now, log);
+            log = string.Format("[{0:MM-dd HH:mm:ss}] {1}", DateTime.Now, log);
             m_logList.Enqueue(log);
             if (m_curTask == null)
             {
@@ -122,7 +122,10 @@ namespace Wireboy.Socket.P2PClient
                 if (ConfigServer.AppSettings.LogLevel >= LogLevel.Info)
                     Logger.WriteLine(string.Format(log, arg0, arg1, arg2));
                 else
-                    Logger.Console.WriteLine(string.Format(log, arg0, arg1, arg2));
+                {
+                    log = string.Format(log, arg0, arg1, arg2);
+                    Logger.Console.WriteLine(string.Format("[{0:MM-dd HH:mm:ss}] {1}", DateTime.Now, log));
+                }
             }
         }
         public static class Debug
