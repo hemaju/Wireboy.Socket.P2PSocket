@@ -14,7 +14,5 @@ namespace Wireboy.Socket.P2PClient.Models
         public int WebPort { set; get; }
         [ConfigField("类型（http/Other）")]
         public string Type { set; get; } = "http";
-        [ConfigField("需要映射的ip地址,计算机名（如 127.0.0.1  ,myserver）")]
-        public string LocIp { set; get; } = "127.0.0.1";
     }
 }
