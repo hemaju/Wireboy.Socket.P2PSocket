@@ -197,7 +197,7 @@ namespace Wireboy.Socket.P2PService
                         string key = curGuid.ToStringUnicode();
                         try
                         {
-                            m_httpClientMap[key].Close();
+                            //m_httpClientMap[key].Close();
                         }
                         catch { }
                         m_httpClientMap.Remove(key);
