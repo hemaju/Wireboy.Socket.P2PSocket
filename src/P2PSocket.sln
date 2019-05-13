@@ -1,11 +1,19 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27703.2042
+VisualStudioVersion = 15.0.28010.2016
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wireboy.Socket.P2PService", "P2PSocketService\Wireboy.Socket.P2PService.csproj", "{54C91442-8833-4008-8102-AACD90EF0661}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "P2PSocket.Test", "P2PSocket.Test\P2PSocket.Test.csproj", "{8861BBCD-644F-49D1-848B-A91A79BBC48D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wireboy.Socket.P2PClient", "P2PSocketClient\Wireboy.Socket.P2PClient.csproj", "{ACCF9BDB-E119-4F07-AC83-E3809AD1D5EF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "P2PSocket.Core", "P2PSocekt.Core\P2PSocket.Core.csproj", "{9FDA0C16-C49C-47CB-883B-916784334F35}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "P2PSocket.Server", "P2PSocket.Server\P2PSocket.Server.csproj", "{B60E7C30-65FD-4013-965E-51A423A45365}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "P2PSocket.Client", "P2PSocket.Client\P2PSocket.Client.csproj", "{5948E733-041F-478B-83D1-91C7F096EBE6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "P2PSocket.ConsoleTest", "P2PSocket.ConsoleTest\P2PSocket.ConsoleTest.csproj", "{B6B9ECAE-89F3-4F49-BA66-72F82015757D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "P2PSocket.StartUp", "P2PSocket.StartUp\P2PSocket.StartUp.csproj", "{0111B327-91D2-465D-93C2-7EF0BA2C2FB7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,19 +21,35 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{54C91442-8833-4008-8102-AACD90EF0661}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{54C91442-8833-4008-8102-AACD90EF0661}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{54C91442-8833-4008-8102-AACD90EF0661}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{54C91442-8833-4008-8102-AACD90EF0661}.Release|Any CPU.Build.0 = Release|Any CPU
-		{ACCF9BDB-E119-4F07-AC83-E3809AD1D5EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{ACCF9BDB-E119-4F07-AC83-E3809AD1D5EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{ACCF9BDB-E119-4F07-AC83-E3809AD1D5EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{ACCF9BDB-E119-4F07-AC83-E3809AD1D5EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8861BBCD-644F-49D1-848B-A91A79BBC48D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8861BBCD-644F-49D1-848B-A91A79BBC48D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8861BBCD-644F-49D1-848B-A91A79BBC48D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8861BBCD-644F-49D1-848B-A91A79BBC48D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9FDA0C16-C49C-47CB-883B-916784334F35}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9FDA0C16-C49C-47CB-883B-916784334F35}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9FDA0C16-C49C-47CB-883B-916784334F35}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9FDA0C16-C49C-47CB-883B-916784334F35}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B60E7C30-65FD-4013-965E-51A423A45365}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B60E7C30-65FD-4013-965E-51A423A45365}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B60E7C30-65FD-4013-965E-51A423A45365}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B60E7C30-65FD-4013-965E-51A423A45365}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5948E733-041F-478B-83D1-91C7F096EBE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5948E733-041F-478B-83D1-91C7F096EBE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5948E733-041F-478B-83D1-91C7F096EBE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5948E733-041F-478B-83D1-91C7F096EBE6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B6B9ECAE-89F3-4F49-BA66-72F82015757D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6B9ECAE-89F3-4F49-BA66-72F82015757D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6B9ECAE-89F3-4F49-BA66-72F82015757D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6B9ECAE-89F3-4F49-BA66-72F82015757D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0111B327-91D2-465D-93C2-7EF0BA2C2FB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0111B327-91D2-465D-93C2-7EF0BA2C2FB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0111B327-91D2-465D-93C2-7EF0BA2C2FB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0111B327-91D2-465D-93C2-7EF0BA2C2FB7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {53201B1B-033A-45FC-A99B-551B94504B36}
+		SolutionGuid = {C98B54D6-A1F1-4562-BD8C-8EE18546B12B}
 	EndGlobalSection
 EndGlobal
