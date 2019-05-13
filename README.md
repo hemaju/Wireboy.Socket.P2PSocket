@@ -58,7 +58,9 @@
 
 ![img6](Images/img6.png)
 
-5.效果图
+5.在主控端启动mstsc，输入127.0.0.1:3588即可
+
+6.效果图
 
 ![mstacDemo.gif](Images/mstacDemo.gif)
 
