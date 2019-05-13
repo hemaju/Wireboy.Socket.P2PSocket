@@ -2,7 +2,7 @@
 
 这是一个跨平台的项目，客户端与服务端使用standard2.0开发，StartUp项目使用.netcore2.1开发。
 
-服务端与客户端均通过StartUp启动，在StartUp.dll所在目录下，将服务端和客户端dll拷贝到P2PSocket即可使用。
+服务端与客户端均通过StartUp启动，在StartUp.dll所在目录下新建目录P2PSocket，将服务端和客户端dll拷贝到P2PSocket即可使用。
 
 喜欢此项目的，请点击一下右上角的Star
 
