@@ -1,6 +1,8 @@
 # Wireboy.Socket.P2PSocket
 
-这是一个使用.NetCore控制台项目作为服务端，.netframework4.5的C#控制台项目作为主控与被控客户端的项目。
+这是一个跨平台的项目，客户端与服务端使用standard2.0开发，StartUp项目使用.netcore2.1开发。
+
+服务端与客户端均通过StartUp启动，在StartUp.dll所在目录下，将服务端和客户端dll拷贝到P2PSocket即可使用。
 
 喜欢此项目的，请点击一下右上角的Star
 
@@ -37,6 +39,22 @@
 ### http服务结构
 
 ![img2](Images/img2.png)
+
+## 使用方法
+
+1.编译项目StartUp项目.
+
+2.编译项目P2PServer与P2PClient.
+
+3.linux系统，输入dotnet StartUp.dll启动。windows系统双击StartUp.exe启动
+
+说明：
+
+1.P2PServer与P2PClient是standard2.0项目，可直接复制到linux-x64/P2PSocket或者win-x86/P2PSocekt目录下使用.
+
+2.StartUp在启动时，通过动态加载dll启动P2PSocket目录下的服务端或客户端（先服务端后客户端）.
+
+3.如果手动编译，需要在StartUp.dll当前目录中，新建P2PSocket目录，将客户端或者服务端dll复制进去。
 
 ## 例子：mstsc远程控制（3端）
 
