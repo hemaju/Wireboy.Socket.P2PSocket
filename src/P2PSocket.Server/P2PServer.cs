@@ -124,7 +124,7 @@ namespace P2PSocket.Server
                                     Global.TcpMap[item.RemoteAddress].Client.Send(packet.PackData());
                                     Global.TaskFactory.StartNew(() =>
                                     {
-                                        Thread.Sleep(5000);
+                                        Thread.Sleep(Global.P2PTimeout);
                                         //如果5秒后没有匹配成功，则关闭连接
                                         if (Global.WaiteConnetctTcp.ContainsKey(token))
                                         {

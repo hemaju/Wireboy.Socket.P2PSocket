@@ -69,7 +69,7 @@ namespace P2PSocket.Server.Commands
                     Global.WaiteConnetctTcp.Add(token, m_tcpClient);
                     Debug.WriteLine("P2P第三步：将tcp加入待关联集合.");
                     Global.TaskFactory.StartNew(() => {
-                        Thread.Sleep(5000);
+                        Thread.Sleep(Global.P2PTimeout);
                         if (Global.WaiteConnetctTcp.ContainsKey(token))
                         {
                             Debug.WriteLine("P2P第三步：5秒超时，关闭连接.");

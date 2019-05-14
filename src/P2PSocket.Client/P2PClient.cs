@@ -26,7 +26,7 @@ namespace P2PSocket.Client
             //启动端口映射
             StartPortMap();
             //断线重连功能
-            Global.TaskFactory.StartNew(()=> { TestAndReconnectServer(); });
+            Global.TaskFactory.StartNew(() => { TestAndReconnectServer(); });
         }
 
         private void ConnectServer()
@@ -57,8 +57,26 @@ namespace P2PSocket.Client
             while (true)
             {
                 Thread.Sleep(5000);
-                if (Global.P2PServerTcp == null || !Global.P2PServerTcp.Connected)
+                try
                 {
+                    if (Global.P2PServerTcp == null || !Global.P2PServerTcp.Connected)
+                    {
+                        ConnectServer();
+                    }
+                    else
+                    {
+                        HeartPacket sendPacket = new HeartPacket();
+                        Global.P2PServerTcp.Client.Send(sendPacket.PackData());
+                    }
+                }
+                catch
+                {
+                    try
+                    {
+                        Global.P2PServerTcp.Close();
+                    }
+                    catch { }
+                    Global.P2PServerTcp = null;
                     ConnectServer();
                 }
             }
@@ -123,12 +141,11 @@ namespace P2PSocket.Client
                                     Global.WaiteConnetctTcp.Add(token, tcpClient);
                                     //发送p2p申请
                                     P2PApplyRequest packet = new P2PApplyRequest(token, item.RemoteAddress, item.RemotePort);
-                                    Debug.WriteLine("P2P第一步：向服务器发送申请.");
                                     Global.P2PServerTcp.Client.Send(packet.PackData());
-
+                                    Debug.WriteLine("P2P第一步：向服务器发送申请.");
                                     Global.TaskFactory.StartNew(() =>
                                     {
-                                        Thread.Sleep(5000);
+                                        Thread.Sleep(Global.P2PTimeout);
                                         //如果5秒后没有匹配成功，则关闭连接
                                         if (Global.WaiteConnetctTcp.ContainsKey(token))
                                         {

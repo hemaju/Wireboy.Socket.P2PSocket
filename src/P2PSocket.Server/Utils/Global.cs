@@ -29,13 +29,16 @@ namespace P2PSocket.Server
         /// </summary>
         public static Dictionary<string, P2PTcpClient> WaiteConnetctTcp = new Dictionary<string, P2PTcpClient>();
         public static List<P2PCommandType> AllowAnonymous { get; } = new List<P2PCommandType>() { P2PCommandType.Heart0x0052, P2PCommandType.Login0x0101, P2PCommandType.P2P0x0211, P2PCommandType.P2P0x0201 };
-
+        /// <summary>
+        ///     P2P内网穿透超时时间
+        /// </summary>
+        public const int P2PTimeout = 10000;
 
 
         /// <summary>
         ///     所有命令集合（需要启动时初始化）
         /// </summary>
-        public static Type[] CommandList { set; get; }
+        public static Dictionary<P2PCommandType, Type> CommandDict { set; get; } = new Dictionary<P2PCommandType, Type>();
         /// <summary>
         ///     本地端口映射（需要启动时初始化）
         /// </summary>

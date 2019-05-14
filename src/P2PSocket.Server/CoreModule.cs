@@ -5,6 +5,7 @@ using System.Text;
 using System.Linq;
 using P2PSocket.Core.Commands;
 using P2PSocket.Server.Utils;
+using P2PSocket.Core.Models;
 
 namespace P2PSocket.Server
 {
@@ -47,9 +48,22 @@ namespace P2PSocket.Server
         /// </summary>
         public void InitCommandList()
         {
-            Global.CommandList = Assembly.GetExecutingAssembly().GetTypes()
-                .Where(t=> typeof(P2PCommand).IsAssignableFrom(t) && !t.IsAbstract)
+            Type[] commandList = Assembly.GetExecutingAssembly().GetTypes()
+                .Where(t => typeof(P2PCommand).IsAssignableFrom(t) && !t.IsAbstract)
                 .ToArray();
+            foreach (Type type in commandList)
+            {
+                IEnumerable<Attribute> attributes = type.GetCustomAttributes();
+                if (!attributes.Any(t => t is CommandFlag))
+                {
+                    continue;
+                }
+                CommandFlag flag = attributes.First(t => t is CommandFlag) as CommandFlag;
+                if (!Global.CommandDict.ContainsKey(flag.CommandType))
+                {
+                    Global.CommandDict.Add(flag.CommandType, type);
+                }
+            }
         }
     }
 }

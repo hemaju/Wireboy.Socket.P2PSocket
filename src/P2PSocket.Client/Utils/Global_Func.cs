@@ -60,18 +60,10 @@ namespace P2PSocket.Client
             P2PCommand command = null;
             if (Global.AllowAnonymous.Contains(packet.CommandType) || tcpClient.IsAuth)
             {
-                foreach (Type type in Global.CommandList)
+                if (Global.CommandDict.ContainsKey(packet.CommandType))
                 {
-                    IEnumerable<Attribute> attributes = type.GetCustomAttributes();
-                    if (!attributes.Any(t => t is CommandFlag))
-                    {
-                        continue;
-                    }
-                    CommandFlag flag = attributes.First(t => t is CommandFlag) as CommandFlag;
-                    if (flag.CommandType == packet.CommandType)
-                    {
-                        command = Activator.CreateInstance(type, tcpClient, packet.GetBytes()) as P2PCommand;
-                    }
+                    Type type = Global.CommandDict[packet.CommandType];
+                    command = Activator.CreateInstance(type, tcpClient, packet.GetBytes()) as P2PCommand;
                 }
             }
             else

@@ -18,7 +18,8 @@ namespace P2PSocket.Server.Commands
         }
         public override bool Excute()
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            return true;
         }
     }
 }

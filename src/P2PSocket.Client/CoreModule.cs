@@ -1,6 +1,9 @@
 ﻿using P2PSocket.Client.Utils;
+using P2PSocket.Core.Commands;
+using P2PSocket.Core.Models;
 using P2PSocket.Core.Utils;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -43,9 +46,22 @@ namespace P2PSocket.Client
         /// </summary>
         public void InitCommandList()
         {
-            Global.CommandList = Assembly.GetExecutingAssembly().GetTypes()
-                .Where(t => typeof(Core.Commands.P2PCommand).IsAssignableFrom(t) && !t.IsAbstract)
+            Type[] commandList = Assembly.GetExecutingAssembly().GetTypes()
+                .Where(t => typeof(P2PCommand).IsAssignableFrom(t) && !t.IsAbstract)
                 .ToArray();
+            foreach (Type type in commandList)
+            {
+                IEnumerable<Attribute> attributes = type.GetCustomAttributes();
+                if (!attributes.Any(t => t is CommandFlag))
+                {
+                    continue;
+                }
+                CommandFlag flag = attributes.First(t => t is CommandFlag) as CommandFlag;
+                if (!Global.CommandDict.ContainsKey(flag.CommandType))
+                {
+                    Global.CommandDict.Add(flag.CommandType, type);
+                }
+            }
         }
     }
 }
