@@ -1,6 +1,8 @@
 # Wireboy.Socket.P2PSocket
 
-这是一个使用.NetCore控制台项目作为服务端，.netframework4.5的C#控制台项目作为主控与被控客户端的项目。
+这是一个跨平台的项目，客户端与服务端使用standard2.0开发，StartUp项目使用.netcore2.1开发。
+
+服务端与客户端均通过StartUp启动，在StartUp.dll所在目录下新建目录P2PSocket，将服务端和客户端dll拷贝到P2PSocket即可使用。
 
 喜欢此项目的，请点击一下右上角的Star
 
@@ -32,91 +34,72 @@
 
 ### 内网穿透结构
 
-![img4](Images/img4.png)
+![img1](Images/img1.png)
 
 ### http服务结构
 
-![img5](Images/img5.png)
+![img2](Images/img2.png)
+
+## 使用方法
+
+1.编译项目StartUp项目.
+
+2.编译项目P2PServer与P2PClient.
+
+3.linux系统，输入dotnet StartUp.dll启动。windows系统双击StartUp.exe启动
+
+说明：
+
+1.P2PServer与P2PClient是standard2.0项目，可直接复制到linux-x64/P2PSocket或者win-x86/P2PSocekt目录下使用.
+
+2.StartUp在启动时，通过动态加载dll启动P2PSocket目录下的服务端或客户端（先服务端后客户端）.
+
+3.如果手动编译，需要在StartUp.dll当前目录中，新建P2PSocket目录，将客户端或者服务端dll复制进去。
 
 ## 例子：mstsc远程控制（3端）
 
 介绍：mstsc服务在远程连接时，使用3389端口，所以只需要将数据转发到3389端口即可实现mstsc的内网穿透
 
-1.服务器配置
+1.被控制端mstsc设置
 
-![sp-img1](Images/sp-img1.png)
+![img3](Images/img3.png)
 
-2.开启配置远程服务
+2.服务端Server配置
 
-![img2](Images/img2.png)
+![img4](Images/img4.png)
 
-3.被远程电脑配置
+3.主控制端Client配置
 
-![sp-img2](Images/sp-img2.png)
+![img5](Images/img5.png)
 
-4.本机电脑配置
+4.被控制端Client配置
 
-![sp-img3](Images/sp-img3.png)
+![img6](Images/img6.png)
 
-## 例子：teamview远程控制（3端）
+5.在主控端启动mstsc，输入127.0.0.1:3588即可
 
-介绍：teamview服务在使用Lan远程时，使用5938端口，所以只需要将数据转发到5938端口即可实现teamview的内网穿透，且Lan连接不限制商业用途
+6.效果图
 
-注意：在主控端电脑，需要在任务管理器关闭Teamview，启动P2PClient后再开启Teamview，因为P2PClient需要监听5938端口，如果先启动Teamview，P2PClient将无法监听5938端口，导致连接失败！
+![mstacDemo.gif](Images/mstacDemo.gif)
 
-1.P2PServer配置
-
-![sp-img1](Images/sp-img1.png)
-
-3.配置被远程电脑Teamview
-
-![sp-img4](Images/sp-img4.png)
-
-4.被远程电脑P2PClient配置
-
-![sp-img5](Images/sp-img5.png)
-
-5.本机电脑P2PClient配置
-
-![sp-img6](Images/sp-img6.png)
-
-## 例子：Http内网穿透之一对一关系配置（2端）
-
-介绍：将连接到服务器1706端口的www.star110.com请求转发到内网
-
-1.P2PServer配置
-
-![sp-img7](Images/sp-img7.png)
-
-2.PC1的P2PClient配置
-
-![sp-img8](Images/sp-img8.png)
-
-## 例子：Http内网穿透之多对一关系配置（2端）
-
-介绍：将连接到服务器1706端口的www.star110.com和blog.star110.com请求分别转发到内网PC1电脑的80和81端口
-
-1.P2PServer配置
-
-![sp-img9](Images/sp-img9.png)
-
-2.P2PClient配置
-
-![sp-img10](Images/sp-img10.png)
-
-## 例子：Socket转发/Https转发（2端）
-
-介绍：将所有发送到服务器xxx端口的数据，直接转发到相应Client客户端，再通过client转发到本地xxx端口
-
-1.P2PServer配置
-
-![sp-img9](Images/sp-img9.png)
-
-2.P2PClient配置
-
-![sp-img11](Images/sp-img11.png)
 
 ## 更新日志
+
+### 2019年5月13日 - 2.0版本全新发布
+
+1.通讯tcp连接与内网穿透数据tcp分离
+
+2.新增本地电脑->目标电脑多端口映射
+
+3.适应多种场景：
+
+	1）在DMZ主机映射内网端口：单独运行P2PServer或者单独运行P2PClient即可将DMZ主机多个端口映射到内网指定ip的端口
+	
+	2）不同内网的电脑端口映射：在公网服务器运行P2PServer，在不同内网电脑上，运行P2PClient
+	
+	3）将公网服务器端口映射到其它内网电脑端口：在公网服务器运行P2PServer，在内网电脑运行P2PClient
+	
+4.移除Http的二级域名转发支持，有需要的可以搭配nginx使用。
 
 ### 2019年4月13日
 
