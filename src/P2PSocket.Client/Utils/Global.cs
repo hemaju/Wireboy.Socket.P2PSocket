@@ -10,6 +10,14 @@ namespace P2PSocket.Client
     public static class Global
     {
         /// <summary>
+        ///     软件版本
+        /// </summary>
+        public const string SoftVerSion = "2.0.0";
+        /// <summary>
+        ///     通讯协议版本
+        /// </summary>
+        public const string DataVerSion = "1.0.0";
+        /// <summary>
         ///     配置文件路径
         /// </summary>
         public const string ConfigFile = @"P2PSocket/Client.ini";

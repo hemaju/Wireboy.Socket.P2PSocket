@@ -13,7 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "P2PSocket.Client", "P2PSock
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "P2PSocket.ConsoleTest", "P2PSocket.ConsoleTest\P2PSocket.ConsoleTest.csproj", "{B6B9ECAE-89F3-4F49-BA66-72F82015757D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "P2PSocket.StartUp", "P2PSocket.StartUp\P2PSocket.StartUp.csproj", "{0111B327-91D2-465D-93C2-7EF0BA2C2FB7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "P2PSocket.StartUp", "P2PSocket.StartUp\P2PSocket.StartUp.csproj", "{0111B327-91D2-465D-93C2-7EF0BA2C2FB7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

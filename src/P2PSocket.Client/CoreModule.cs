@@ -17,6 +17,8 @@ namespace P2PSocket.Client
         }
         public void Start()
         {
+            ConsoleUtils.WriteLine($"P2PClient - > 程序版本:{Global.SoftVerSion}");
+            ConsoleUtils.WriteLine($"P2PClient - > 通讯协议:{Global.DataVerSion}");
             //读取配置文件
             if (ConfigUtils.IsExistConfig())
             {

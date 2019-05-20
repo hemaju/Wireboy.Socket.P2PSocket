@@ -6,6 +6,7 @@ using System.Linq;
 using P2PSocket.Core.Commands;
 using P2PSocket.Server.Utils;
 using P2PSocket.Core.Models;
+using P2PSocket.Core.Utils;
 
 namespace P2PSocket.Server
 {
@@ -19,6 +20,8 @@ namespace P2PSocket.Server
 
         public void Start()
         {
+            ConsoleUtils.WriteLine($"P2PServer - > 程序版本:{Global.SoftVerSion}");
+            ConsoleUtils.WriteLine($"P2PServer - > 通讯协议:{Global.DataVerSion}");
             //读取配置文件
             if (ConfigUtils.IsExistConfig())
             {
@@ -32,7 +35,7 @@ namespace P2PSocket.Server
             }
             else
             {
-                Console.WriteLine("启动失败，配置文件不存在.");
+                ConsoleUtils.WriteLine("启动失败，配置文件不存在.");
             }
         }
         /// <summary>

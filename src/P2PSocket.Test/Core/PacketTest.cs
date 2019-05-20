@@ -43,7 +43,7 @@ namespace P2PSocket.Test.Core
         {
             CoreModule coreModule = new CoreModule();
             coreModule.InitCommandList();
-            Assert.AreNotEqual(Global.CommandList.Length, 0);
+            Assert.AreNotEqual(Global.CommandDict.Count, 0);
         }
         [TestMethod]
         public void TestConfig_LoadFile()
