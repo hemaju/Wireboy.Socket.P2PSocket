@@ -32,6 +32,11 @@ namespace P2PSocket.Core.Models
         ///     本地端口号
         /// </summary>
         public int LocalPort { set; get; }
+
+        /// <summary>
+        ///     本地监听ip
+        /// </summary>
+        public string LocalAddress { set; get; }
         /// <summary>
         ///     映射类型
         /// </summary>

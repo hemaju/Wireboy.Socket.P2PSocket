@@ -21,15 +21,15 @@ namespace P2PSocket.Test.Core
             dataList.AddRange(sendPacket.PackData());
             dataList.AddRange(sendPacket.PackData());
             data = dataList.ToArray();
-            RecievePacket recievePacket = new RecievePacket();
+            ReceivePacket ReceivePacket = new ReceivePacket();
             while (data.Length > 0)
             {
-                if (recievePacket.ParseData(ref data))
+                if (ReceivePacket.ParseData(ref data))
                 {
-                    string str = recievePacket.GetBytes().ToStringUnicode();
+                    string str = ReceivePacket.GetBytes().ToStringUnicode();
                     Console.WriteLine(str);
                     Assert.AreEqual("这是一条测试数据", str);
-                    recievePacket = new RecievePacket();
+                    ReceivePacket = new ReceivePacket();
                 }
                 else
                 {

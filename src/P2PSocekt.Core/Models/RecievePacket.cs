@@ -7,7 +7,7 @@ using P2PSocket.Core.Commands;
 
 namespace P2PSocket.Core.Models
 {
-    public class RecievePacket
+    public class ReceivePacket
     {
         /// <summary>
         ///     当前在解析数据包的第几步
@@ -35,7 +35,7 @@ namespace P2PSocket.Core.Models
         public P2PCommandType CommandType { set; get; }
 
 
-        public RecievePacket()
+        public ReceivePacket()
         {
 
         }

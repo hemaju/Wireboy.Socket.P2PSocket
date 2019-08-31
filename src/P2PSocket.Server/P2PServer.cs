@@ -5,6 +5,7 @@ using P2PSocket.Core.Models;
 using P2PSocket.Core.Utils;
 using P2PSocket.Server.Commands;
 using P2PSocket.Server.Models;
+using P2PSocket.Server.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,6 +19,7 @@ namespace P2PSocket.Server
 {
     public class P2PServer
     {
+        public List<TcpListener> ListenerList { set; get; } = new List<TcpListener>();
         public P2PServer()
         {
 
@@ -59,99 +61,87 @@ namespace P2PSocket.Server
         /// </summary>
         private void ListenMessagePort()
         {
-            //服务端口限制在1000以上
-            if (Global.LocalPort > 1000)
+            try
             {
-                try
+                TcpListener listener = new TcpListener(IPAddress.Any, Global.LocalPort);
+                listener.Start();
+                ListenerList.Add(listener);
+                Global.TaskFactory.StartNew(() =>
                 {
-                    TcpListener listener = new TcpListener(IPAddress.Any, Global.LocalPort);
-                    listener.Start();
-                    Global.TaskFactory.StartNew(() =>
-                    {
-                        try
-                        {
-                            while (true)
-                            {
-                                Socket socket = listener.AcceptSocket();
-                                P2PTcpClient tcpClient = new P2PTcpClient(socket);
-                                //接收数据
-                                Global.TaskFactory.StartNew(() =>
-                                {
-                                    Global_Func.ListenTcp<RecievePacket>(tcpClient);
-                                });
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine(ex.Message);
-                        }
-                    });
-                }
-                catch
-                {
-                    ConsoleUtils.WriteLine($"端口{Global.LocalPort}监听失败.");
-                }
-            }
-        }
-
-        private void ListenPortMapPortWithServerName(PortMapItem item)
-        {
-            //服务端口限制在1000以上
-            if (item.LocalPort > 1000)
-            {
-                try
-                {
-                    TcpListener listener = new TcpListener(IPAddress.Any, item.LocalPort);
-                    listener.Start();
-                    ConsoleUtils.WriteLine($"Server:端口映射：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}");
-                    Global.TaskFactory.StartNew(() =>
+                    try
                     {
                         while (true)
                         {
                             Socket socket = listener.AcceptSocket();
                             P2PTcpClient tcpClient = new P2PTcpClient(socket);
+                            //接收数据
                             Global.TaskFactory.StartNew(() =>
-                            {
-                                string token = tcpClient.Token;
-                                //获取目标tcp
-                                if (Global.TcpMap.ContainsKey(item.RemoteAddress) && Global.TcpMap[item.RemoteAddress].Connected)
-                                {
-                                    //加入待连接集合
-                                    Global.WaiteConnetctTcp.Add(token, tcpClient);
-                                    //发送p2p申请
-                                    Models.Send.Port2PApplyRequest packet = new Models.Send.Port2PApplyRequest(token, item.RemotePort);
-                                    Debug.WriteLine("[服务器]发送Port2P连接申请");
-                                    Global.TcpMap[item.RemoteAddress].Client.Send(packet.PackData());
-                                    Global.TaskFactory.StartNew(() =>
-                                    {
-                                        Thread.Sleep(Global.P2PTimeout);
-                                        //如果5秒后没有匹配成功，则关闭连接
-                                        if (Global.WaiteConnetctTcp.ContainsKey(token))
-                                        {
-                                            Debug.WriteLine("[服务器]5秒无响应，关闭连接");
-                                            Global.WaiteConnetctTcp[token].Close();
-                                            Global.WaiteConnetctTcp.Remove(token);
-                                        }
-                                    });
-                                }
-                                else
-                                {
-                                    Debug.WriteLine($"[服务器][错误]端口映射:{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}服务不在线.");
-                                    tcpClient.Close();
-                                }
-                            });
+                        {
+                            Global_Func.ListenTcp<ReceivePacket>(tcpClient);
+                        });
                         }
-                    });
-                }
-                catch
-                {
-                    ConsoleUtils.WriteLine($"Server:端口映射{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}创建失败.");
-                    throw new Exception($"端口映射{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}创建失败.");
-                }
+                    }
+                    catch (Exception ex)
+                    {
+                        LogUtils.Debug(ex.Message);
+                    }
+                });
             }
-            else
+            catch
             {
-                ConsoleUtils.WriteLine($"Server:端口必须大于1000,当前端口：{item.LocalPort}");
+                LogUtils.Error($"【失败】服务端口：{Global.LocalPort} 监听失败.");
+            }
+        }
+
+        private void ListenPortMapPortWithServerName(PortMapItem item)
+        {
+            try
+            {
+                TcpListener listener = new TcpListener(IPAddress.Any, item.LocalPort);
+                listener.Start();
+                ListenerList.Add(listener);
+                LogUtils.Show($"【成功】端口映射：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}");
+                Global.TaskFactory.StartNew(() =>
+                {
+                    while (true)
+                    {
+                        Socket socket = listener.AcceptSocket();
+                        P2PTcpClient tcpClient = new P2PTcpClient(socket);
+                        Global.TaskFactory.StartNew(() =>
+                        {
+                            string token = tcpClient.Token;
+                            //获取目标tcp
+                            if (Global.TcpMap.ContainsKey(item.RemoteAddress) && Global.TcpMap[item.RemoteAddress].TcpClient.Connected)
+                            {
+                                //加入待连接集合
+                                Global.WaiteConnetctTcp.Add(token, tcpClient);
+                                //发送p2p申请
+                                Models.Send.Send_0x0211 packet = new Models.Send.Send_0x0211(token, item.RemotePort);
+                                Global.TcpMap[item.RemoteAddress].TcpClient.Client.Send(packet.PackData());
+                                Global.TaskFactory.StartNew(() =>
+                                {
+                                    Thread.Sleep(Global.P2PTimeout);
+                                    //如果5秒后没有匹配成功，则关闭连接
+                                    if (Global.WaiteConnetctTcp.ContainsKey(token))
+                                    {
+                                        LogUtils.Warning($"【失败】内网穿透：{Global.P2PTimeout}秒无响应，已超时.");
+                                        Global.WaiteConnetctTcp[token].Close();
+                                        Global.WaiteConnetctTcp.Remove(token);
+                                    }
+                                });
+                            }
+                            else
+                            {
+                                LogUtils.Warning($"【失败】内网穿透：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort} 客户端不在线!");
+                                tcpClient.Close();
+                            }
+                        });
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                LogUtils.Error($"【失败】端口映射：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}{Environment.NewLine}{ex.ToString()}");
             }
         }
 
@@ -161,51 +151,43 @@ namespace P2PSocket.Server
         /// <param name="item"></param>
         private void ListenPortMapPortWithIp(PortMapItem item)
         {
-            //服务端口限制在1000以上
-            if (item.LocalPort > 1000)
+            try
             {
-                try
+                TcpListener listener = new TcpListener(IPAddress.Any, item.LocalPort);
+                listener.Start();
+                ListenerList.Add(listener);
+                LogUtils.Show($"【成功】端口映射：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}");
+                Global.TaskFactory.StartNew(() =>
                 {
-                    TcpListener listener = new TcpListener(IPAddress.Any, item.LocalPort);
-                    listener.Start();
-                    ConsoleUtils.WriteLine($"Server:端口映射：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}");
-                    Global.TaskFactory.StartNew(() =>
+                    while (true)
                     {
-                        while (true)
+                        Socket socket = listener.AcceptSocket();
+                        P2PTcpClient tcpClient = new P2PTcpClient(socket);
+                        Global.TaskFactory.StartNew(() =>
                         {
-                            Socket socket = listener.AcceptSocket();
-                            P2PTcpClient tcpClient = new P2PTcpClient(socket);
-                            Global.TaskFactory.StartNew(() =>
+                            try
                             {
-                                try
-                                {
-                                    P2PTcpClient ipClient = new P2PTcpClient(item.RemoteAddress, item.RemotePort);
-                                    tcpClient.ToClient = ipClient;
-                                    ipClient.ToClient = tcpClient;
-                                }
-                                catch
-                                {
-                                    tcpClient.Close();
-                                    Debug.WriteLine($"端口{item.LocalPort}映射关闭,无法建立{item.RemoteAddress}:{item.RemotePort}tcp连接.");
-                                }
-                                if (tcpClient.Connected)
-                                {
-                                    Global.TaskFactory.StartNew(() => { ListenPortMapTcpWithIp(tcpClient); });
-                                    Global.TaskFactory.StartNew(() => { ListenPortMapTcpWithIp(tcpClient.ToClient); });
-                                }
-                            });
-                        }
-                    });
-                }
-                catch
-                {
-                    ConsoleUtils.WriteLine($"Server:端口映射{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}创建失败.");
-                    throw new Exception($"端口映射{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}创建失败.");
-                }
+                                P2PTcpClient ipClient = new P2PTcpClient(item.RemoteAddress, item.RemotePort);
+                                tcpClient.ToClient = ipClient;
+                                ipClient.ToClient = tcpClient;
+                            }
+                            catch (Exception ex)
+                            {
+                                tcpClient.Close();
+                                LogUtils.Error($"【失败】内网穿透：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}{Environment.NewLine}{ex.ToString()}");
+                            }
+                            if (tcpClient.Connected)
+                            {
+                                Global.TaskFactory.StartNew(() => { ListenPortMapTcpWithIp(tcpClient); });
+                                Global.TaskFactory.StartNew(() => { ListenPortMapTcpWithIp(tcpClient.ToClient); });
+                            }
+                        });
+                    }
+                });
             }
-            else
+            catch (Exception ex)
             {
-                ConsoleUtils.WriteLine($"Server:端口必须大于1000,当前端口：{item.LocalPort}");
+                LogUtils.Error($"【失败】端口映射：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}{Environment.NewLine}{ex.ToString()}");
             }
         }
 
@@ -217,7 +199,7 @@ namespace P2PSocket.Server
         {
             if (readClient.ToClient == null || !readClient.ToClient.Connected)
             {
-                Debug.WriteLine($"[错误]端口映射：目标tcp不存在");
+                LogUtils.Warning($"【失败】IP数据转发：绑定的Tcp连接已断开.");
                 readClient.Close();
                 return;
             }
@@ -235,14 +217,14 @@ namespace P2PSocket.Server
                     }
                     else
                     {
-                        Debug.WriteLine($"远程端口已关闭{readClient.Client.RemoteEndPoint}");
+                        LogUtils.Warning($"【失败】IP数据转发：目标Tcp连接已断开.");
                         readClient.Close();
                         break;
                     }
                 }
                 else
                 {
-                    Debug.WriteLine($"从端口{readClient.LocalEndPoint}读取到0的数据");
+                    LogUtils.Warning($"【失败】IP数据转发：Tcp连接已断开.");
                     //如果tcp已关闭，需要关闭相关tcp
                     if (readClient.ToClient != null && readClient.ToClient.Connected)
                     {

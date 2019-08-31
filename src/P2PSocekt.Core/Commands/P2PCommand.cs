@@ -12,5 +12,9 @@ namespace P2PSocket.Core.Commands
         {
             return Error;
         }
+        public virtual bool IsMatch(byte[] data)
+        {
+            return true;
+        }
     }
 }

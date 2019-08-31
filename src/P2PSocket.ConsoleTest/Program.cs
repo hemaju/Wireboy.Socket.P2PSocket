@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Net;
 
 namespace P2PSocket.ConsoleTest
 {
@@ -11,17 +12,10 @@ namespace P2PSocket.ConsoleTest
     {
         static void Main(string[] args)
         {
-
-            new TaskFactory().StartNew(() =>
-            {
-                Server.CoreModule coreModule = new Server.CoreModule();
-                coreModule.Start();
-            });
-            {
-                Client.CoreModule coreModule = new Client.CoreModule();
-                coreModule.Start();
-            }
-            Console.ReadKey();
+            Guid guid1 = Guid.NewGuid();
+            Guid guid2 = guid1;
+            bool flag = guid1 == guid2;
+            guid1 = Guid.NewGuid();
         }
     }
 }

@@ -20,8 +20,8 @@ namespace P2PSocket.Server
 
         public void Start()
         {
-            ConsoleUtils.WriteLine($"P2PServer - > 程序版本:{Global.SoftVerSion}");
-            ConsoleUtils.WriteLine($"P2PServer - > 通讯协议:{Global.DataVerSion}");
+            LogUtils.InitConfig();
+            LogUtils.Show($"程序版本:{Global.SoftVerSion}  通讯协议:{Global.DataVerSion}");
             //读取配置文件
             if (ConfigUtils.IsExistConfig())
             {
@@ -35,7 +35,16 @@ namespace P2PSocket.Server
             }
             else
             {
-                ConsoleUtils.WriteLine("启动失败，配置文件不存在.");
+                LogUtils.Show("启动失败，配置文件不存在.");
+            }
+        }
+
+        public void Stop()
+        {
+            Global.CurrentGuid = Guid.NewGuid();
+            foreach (var listener in P2PServer.ListenerList)
+            {
+                listener.Stop();
             }
         }
         /// <summary>

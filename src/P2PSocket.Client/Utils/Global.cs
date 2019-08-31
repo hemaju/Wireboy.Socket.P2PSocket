@@ -12,15 +12,19 @@ namespace P2PSocket.Client
         /// <summary>
         ///     软件版本
         /// </summary>
-        public const string SoftVerSion = "2.0.0";
+        public const string SoftVerSion = "2.0.4";
         /// <summary>
         ///     通讯协议版本
         /// </summary>
-        public const string DataVerSion = "1.0.0";
+        public const string DataVerSion = "1.0.3";
+        /// <summary>
+        ///     运行目录
+        /// </summary>
+        public static string RuntimePath { get { return AppDomain.CurrentDomain.BaseDirectory; } }
         /// <summary>
         ///     配置文件路径
         /// </summary>
-        public const string ConfigFile = @"P2PSocket/Client.ini";
+        public static string ConfigFile { get { return $"{RuntimePath}P2PSocket\\Client.ini"; } }
         /// <summary>
         ///     服务器Tcp连接
         /// </summary>
@@ -49,6 +53,10 @@ namespace P2PSocket.Client
         ///     P2P内网穿透超时时间
         /// </summary>
         public const int P2PTimeout = 10000;
+        /// <summary>
+        ///     当前主服务Guid
+        /// </summary>
+        public static Guid CurrentGuid { set; get; } = Guid.NewGuid();
 
 
 
@@ -65,9 +73,17 @@ namespace P2PSocket.Client
         /// </summary>
         public static string ClientName { set; get; }
         /// <summary>
-        ///     允许外部连接的端口白名单
+        ///     客户端授权码
         /// </summary>
-        public static List<int> AllowPort { get; } = new List<int>();
+        public static string AuthCode { set; get; }
+        /// <summary>
+        ///     允许外部连接的端口
+        /// </summary>
+        public static List<AllowPortItem> AllowPortList { get; } = new List<AllowPortItem>();
+        /// <summary>
+        ///     客户端黑名单
+        /// </summary>
+        public static List<string> BlackClients { get; } = new List<string>();
     }
 
 

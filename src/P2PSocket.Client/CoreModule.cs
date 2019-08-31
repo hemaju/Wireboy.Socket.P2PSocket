@@ -15,10 +15,11 @@ namespace P2PSocket.Client
         public CoreModule()
         {
         }
+
         public void Start()
         {
-            ConsoleUtils.WriteLine($"P2PClient - > 程序版本:{Global.SoftVerSion}");
-            ConsoleUtils.WriteLine($"P2PClient - > 通讯协议:{Global.DataVerSion}");
+            LogUtils.InitConfig();
+            LogUtils.Show($"程序版本:{Global.SoftVerSion}  通讯协议:{Global.DataVerSion}");
             //读取配置文件
             if (ConfigUtils.IsExistConfig())
             {
@@ -28,11 +29,19 @@ namespace P2PSocket.Client
                 ConfigUtils.LoadFromFile();
                 //启动服务
                 P2PClient.StartServer();
-                //todo:控制台显示
             }
             else
             {
-                ConsoleUtils.WriteLine($"启动失败，配置文件不存在.{AppDomain.CurrentDomain.BaseDirectory}/{ Global.ConfigFile}");
+                LogUtils.Error($"找不到配置文件：\"{ Global.ConfigFile}\"");
+            }
+        }
+
+        public void Stop()
+        {
+            Global.CurrentGuid = Guid.NewGuid();
+            foreach (var listener in P2PClient.ListenerList)
+            {
+                listener.Stop();
             }
         }
         /// <summary>

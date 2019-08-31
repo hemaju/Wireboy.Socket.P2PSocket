@@ -33,21 +33,35 @@ namespace P2PSocket.Core.Utils
     }
     public class Logger
     {
-        public  string LogFile { set; get; }
-        public  LogLevel LogLevel { set; get; } = LogLevel.None;
-        private  TaskFactory m_taskFactory = new TaskFactory();
-        private  Task m_curTask = null;
-        private  object m_obj = new object();
-        private  ConcurrentQueue<string> m_logList = new ConcurrentQueue<string>();
-        public Logger(string fileName = "logs.log")
+        public string FilePath
         {
-            LogFile = fileName;
+            get
+            {
+                return $"{LogDirect}/{PreFix}{DateTime.Now.ToString("yyyy-MM-dd")}.log";
+            }
         }
 
-        protected virtual void WriteLine(string log)
+        public string LogDirect = "";
+        public string PreFix = "";
+        public LogLevel LogLevel { set; get; } = LogLevel.None;
+        private TaskFactory m_taskFactory = new TaskFactory();
+        private Task m_curTask = null;
+        private object m_obj = new object();
+        private ConcurrentQueue<LogInfo> m_logList = new ConcurrentQueue<LogInfo>();
+        public Logger(string logDirectory, string preFix)
         {
-            log = string.Format("{0:MM-dd HH:mm:ss} {1}", DateTime.Now, log);
-            m_logList.Enqueue(log);
+            if (!Directory.Exists(logDirectory))
+            {
+                Directory.CreateDirectory(logDirectory);
+            }
+            PreFix = preFix;
+            LogDirect = logDirectory;
+        }
+
+        public virtual void WriteLine(LogLevel logLevel, string log)
+        {
+            if (logLevel == LogLevel.None) return;
+            m_logList.Enqueue(new LogInfo() { LogLevel = logLevel, Msg = log, Time = DateTime.Now });
             if (m_curTask == null)
             {
                 lock (m_obj)
@@ -59,38 +73,54 @@ namespace P2PSocket.Core.Utils
                 }
             }
         }
-        public virtual void WriteLine(LogLevel logLevel, string log, object arg0 = null, object arg1 = null, object arg2 = null)
-        {
-            if (LogLevel >= logLevel)
-                WriteLine(string.Format(log, arg0, arg1, arg2));
-        }
 
         protected virtual void DoWriteLine()
         {
-            try
-            {
-                StreamWriter fileStream = new StreamWriter(LogFile, true);
-                do
+            bool isError = false;
+            do {
+                isError = false;
+                try
                 {
                     do
                     {
-                        if (!m_logList.IsEmpty)
+                        StreamWriter fileStream = new StreamWriter(FilePath, true);
+                        do
                         {
-                            string str = "";
-                            if (m_logList.TryDequeue(out str))
+                            if (!m_logList.IsEmpty)
                             {
-                                fileStream.WriteLine(str);
+                                LogInfo logInfo = null;
+                                if (m_logList.TryDequeue(out logInfo))
+                                {
+                                    try
+                                    {
+                                        RecordLogEvent?.Invoke(fileStream, logInfo);
+                                    }
+                                    catch
+                                    {
+                                    }
+                                }
                             }
-                        }
+                        } while (m_logList.Count > 0);
+                        Thread.Sleep(1000);
+                        fileStream.Close();
                     } while (m_logList.Count > 0);
-                    Thread.Sleep(1000);
-                } while (m_logList.Count > 0);
-                fileStream.Close();
-            }
-            catch (Exception ex)
-            {
-            }
+                }
+                catch
+                {
+                    isError = true;
+                    Thread.Sleep(2000);
+                }
+            } while (isError);
             m_curTask = null;
         }
+
+        public delegate void RecordLogHandler(StreamWriter ss, LogInfo logInfo);
+        public event RecordLogHandler RecordLogEvent;
+    }
+    public class LogInfo
+    {
+        public LogLevel LogLevel { set; get; }
+        public string Msg { set; get; }
+        public DateTime Time { set; get; }
     }
 }

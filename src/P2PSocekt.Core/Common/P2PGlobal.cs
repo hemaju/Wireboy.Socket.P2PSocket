@@ -40,6 +40,10 @@ namespace P2PSocket.Core
         /// </summary>
         Login0x0102 = 0x0102,
         /// <summary>
+        ///     客户端信息
+        /// </summary>
+        Login0x0103 = 0x0103,
+        /// <summary>
         ///     P2P端口映射请求
         /// </summary>
         P2P0x0201 = 0x0201,
@@ -54,7 +58,11 @@ namespace P2PSocket.Core
         /// <summary>
         ///     服务端口映射数据转发
         /// </summary>
-        P2P0x0212 = 0x0212
+        P2P0x0212 = 0x0212,
+        /// <summary>
+        ///     日志消息
+        /// </summary>
+        Msg0x0301 = 0x0301
 
     }
 

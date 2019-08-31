@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using P2PSocket.Client.Utils;
 using P2PSocket.Client;
+using P2PSocket.Core.Models;
 
 namespace P2PSocket.Test.Client
 {
@@ -14,7 +15,13 @@ namespace P2PSocket.Test.Client
         public void LoadFromFile_Test()
         {
             ConfigUtils.LoadFromFile();
-            Assert.AreNotEqual(Global.AllowPort.Count, 0);
+            Assert.AreNotEqual(Global.AllowPortList.Count, 0);
+        }
+
+        [TestMethod]
+        public void TestParsePort()
+        {
+            AllowPortItem t = new AllowPortItem("0-900");
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using P2PSocket.Core;
+﻿using P2PSocket.Client.Utils;
+using P2PSocket.Core;
 using P2PSocket.Core.Commands;
 using P2PSocket.Core.Extends;
 using P2PSocket.Core.Models;
@@ -14,38 +15,46 @@ namespace P2PSocket.Client
 
     public static class Global_Func
     {
-        public static void ListenTcp<T>(P2PTcpClient tcpClient) where T : RecievePacket
+        public static void ListenTcp<T>(P2PTcpClient tcpClient) where T : ReceivePacket
         {
-            byte[] buffer = new byte[P2PGlobal.P2PSocketBufferSize];
-            NetworkStream tcpStream = tcpClient.GetStream();
-            RecievePacket msgRecieve = Activator.CreateInstance(typeof(T)) as RecievePacket; 
-            while (tcpClient.Connected)
+            try
             {
-                int curReadLength = tcpStream.ReadSafe(buffer, 0, buffer.Length);
-                if (curReadLength > 0)
+                Guid curGuid = Global.CurrentGuid;
+                byte[] buffer = new byte[P2PGlobal.P2PSocketBufferSize];
+                NetworkStream tcpStream = tcpClient.GetStream();
+                ReceivePacket msgReceive = Activator.CreateInstance(typeof(T)) as ReceivePacket;
+                while (tcpClient.Connected && curGuid == Global.CurrentGuid)
                 {
-                    byte[] refData = buffer.Take(curReadLength).ToArray();
-                    while (msgRecieve.ParseData(ref refData))
+                    int curReadLength = tcpStream.ReadSafe(buffer, 0, buffer.Length);
+                    if (curReadLength > 0)
                     {
-                        Debug.WriteLine($"命令类型:{msgRecieve.CommandType}");
-                        //todo：执行command
-                        P2PCommand command = FindCommand(tcpClient, msgRecieve);
-                        if (command != null) command.Excute();
-                        //重置msgRecieve
-                        msgRecieve = Activator.CreateInstance(typeof(T)) as RecievePacket;
-                        if (refData.Length <= 0) break;
+                        byte[] refData = buffer.Take(curReadLength).ToArray();
+                        while (msgReceive.ParseData(ref refData))
+                        {
+                            LogUtils.Debug($"命令类型:{msgReceive.CommandType}");
+                            //todo：执行command
+                            P2PCommand command = FindCommand(tcpClient, msgReceive);
+                            if (command != null) command.Excute();
+                            //重置msgReceive
+                            msgReceive = Activator.CreateInstance(typeof(T)) as ReceivePacket;
+                            if (refData.Length <= 0) break;
+                        }
+                    }
+                    else
+                    {
+                        //如果tcp已关闭，需要关闭相关tcp
+                        if (tcpClient.ToClient != null && tcpClient.ToClient.Connected)
+                        {
+                            tcpClient.ToClient.Close();
+                        }
+                        LogUtils.Debug($"tcp连接{tcpClient.RemoteEndPoint}已断开");
+                        break;
                     }
                 }
-                else
-                {
-                    //如果tcp已关闭，需要关闭相关tcp
-                    if (tcpClient.ToClient != null && tcpClient.ToClient.Connected)
-                    {
-                        Debug.WriteLine("tcp已关闭");
-                        tcpClient.ToClient.Close();
-                    }
-                    break;
-                }
+            }
+            catch (Exception ex)
+            {
+                LogUtils.Error($"【错误】Global_Func.ListenTcp：{Environment.NewLine}{ex}");
             }
         }
 
@@ -55,7 +64,7 @@ namespace P2PSocket.Client
         /// <param name="tcpClient"></param>
         /// <param name="packet"></param>
         /// <returns></returns>
-        public static P2PCommand FindCommand(P2PTcpClient tcpClient, RecievePacket packet)
+        public static P2PCommand FindCommand(P2PTcpClient tcpClient, ReceivePacket packet)
         {
             P2PCommand command = null;
             if (Global.AllowAnonymous.Contains(packet.CommandType) || tcpClient.IsAuth)
@@ -65,10 +74,19 @@ namespace P2PSocket.Client
                     Type type = Global.CommandDict[packet.CommandType];
                     command = Activator.CreateInstance(type, tcpClient, packet.GetBytes()) as P2PCommand;
                 }
+                else
+                {
+                    LogUtils.Warning($"{tcpClient.RemoteEndPoint}请求了未知命令{packet.CommandType}");
+                }
             }
             else
             {
-                throw new Exception("没有权限");
+                tcpClient.Close();
+                if (tcpClient.ToClient != null && tcpClient.ToClient.Connected)
+                {
+                    tcpClient.ToClient.Close();
+                }
+                LogUtils.Warning($"拦截{tcpClient.RemoteEndPoint}未授权命令");
             }
             return command;
         }

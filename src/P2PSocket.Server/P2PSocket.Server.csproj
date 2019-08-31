@@ -6,7 +6,11 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <OutputPath>C:\Users\xiejm\Documents\我的程序源码\wireboy\P2PSocket\OutPut\</OutputPath>
+    <OutputPath>..\OutPut\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <OutputPath>..\OutPut\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
