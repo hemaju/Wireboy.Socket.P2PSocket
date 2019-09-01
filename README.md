@@ -52,6 +52,8 @@
 
 ![useGuide](Images/useGuide.gif)
 
+## 配置文件说明 -> [点此查看](https://github.com/bobowire/Wireboy.Socket.P2PSocket/wiki)
+
 ## 例子：mstsc远程控制（3端）
 
 介绍：mstsc服务在远程连接时，使用3389端口，所以只需要将数据转发到3389端口即可实现mstsc的内网穿透
