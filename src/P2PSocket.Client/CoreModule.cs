@@ -26,7 +26,15 @@ namespace P2PSocket.Client
                 //初始化全局变量
                 InitGlobal();
                 //加载配置文件
-                ConfigUtils.LoadFromFile();
+                try
+                {
+                    ConfigUtils.LoadFromFile();
+                }
+                catch (Exception ex)
+                {
+                    LogUtils.Error($"配置文件格式错误.");
+                    return;
+                }
                 //启动服务
                 P2PClient.StartServer();
             }

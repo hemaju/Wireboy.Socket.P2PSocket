@@ -33,39 +33,35 @@ namespace P2PSocket.Server
                         while (msgReceive.ParseData(ref refData))
                         {
                             LogUtils.Debug($"命令类型:{msgReceive.CommandType}");
-                            //todo：执行command
-                            P2PCommand command = FindCommand(tcpClient, msgReceive);
-                            if (command != null) command.Excute();
+                            // 执行command
+                            using (P2PCommand command = FindCommand(tcpClient, msgReceive))
+                            {
+                                command?.Excute();
+                            }
                             //重置msgReceive
-                            msgReceive = Activator.CreateInstance(typeof(T)) as ReceivePacket;
+                            msgReceive.Reset();
                             if (refData.Length <= 0) break;
                         }
                     }
                     else
                     {
-                        try {
-                            if(Global.TcpMap.ContainsKey(tcpClient.ClientName))
-                            {
-                                if (Global.TcpMap[tcpClient.ClientName].TcpClient == tcpClient)
-                                    Global.TcpMap.Remove(tcpClient.ClientName);
-                            }
-                            tcpClient.Close();
-                        } catch { }
-                        //如果tcp已关闭，需要关闭相关tcp
-                        if (tcpClient.ToClient != null && tcpClient.ToClient.Connected)
+                        if (Global.TcpMap.ContainsKey(tcpClient.ClientName))
                         {
-                            try
-                            {
-                                tcpClient.ToClient.Close();
-                            }
-                            catch { }
+                            if (Global.TcpMap[tcpClient.ClientName].TcpClient == tcpClient)
+                                Global.TcpMap.Remove(tcpClient.ClientName);
                         }
+                        //如果tcp已关闭，需要关闭相关tcp
+                        try
+                        {
+                            tcpClient.ToClient?.Close();
+                        }
+                        catch { }
                         LogUtils.Debug($"tcp连接{tcpClient.RemoteEndPoint}已断开");
                         break;
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 LogUtils.Error($"【错误】Global_Func.ListenTcp：{Environment.NewLine}{ex}");
             }
