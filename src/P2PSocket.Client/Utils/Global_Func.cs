@@ -32,21 +32,24 @@ namespace P2PSocket.Client
                         while (msgReceive.ParseData(ref refData))
                         {
                             LogUtils.Debug($"命令类型:{msgReceive.CommandType}");
-                            //todo：执行command
-                            P2PCommand command = FindCommand(tcpClient, msgReceive);
-                            if (command != null) command.Excute();
+                            // 执行command
+                            using (P2PCommand command = FindCommand(tcpClient, msgReceive))
+                            {
+                                command?.Excute();
+                            }
                             //重置msgReceive
-                            msgReceive = Activator.CreateInstance(typeof(T)) as ReceivePacket;
+                            msgReceive.Reset();
                             if (refData.Length <= 0) break;
                         }
                     }
                     else
                     {
                         //如果tcp已关闭，需要关闭相关tcp
-                        if (tcpClient.ToClient != null && tcpClient.ToClient.Connected)
+                        try
                         {
-                            tcpClient.ToClient.Close();
+                            tcpClient.ToClient?.Close();
                         }
+                        catch { }
                         LogUtils.Debug($"tcp连接{tcpClient.RemoteEndPoint}已断开");
                         break;
                     }

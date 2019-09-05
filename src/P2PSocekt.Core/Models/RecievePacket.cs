@@ -216,5 +216,14 @@ namespace P2PSocket.Core.Models
         {
             return DataBuffer;
         }
+
+        public virtual void Reset()
+        {
+            Step = "ParseHeader";
+            PacketDataIndex = 0;
+            CurStreamIndex = 0;
+            DataBuffer = null;
+            NextLength = -1;
+        }
     }
 }
