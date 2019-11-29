@@ -7,6 +7,7 @@ using P2PSocket.Core.Commands;
 using P2PSocket.Server.Utils;
 using P2PSocket.Core.Models;
 using P2PSocket.Core.Utils;
+using System.IO;
 
 namespace P2PSocket.Server
 {
@@ -20,22 +21,28 @@ namespace P2PSocket.Server
 
         public void Start()
         {
-            LogUtils.InitConfig();
-            LogUtils.Show($"程序版本:{Global.SoftVerSion}  通讯协议:{Global.DataVerSion}");
-            //读取配置文件
-            if (ConfigUtils.IsExistConfig())
+            try
             {
-                //初始化全局变量
-                InitGlobal();
-                //加载配置文件
-                ConfigUtils.LoadFromFile();
-                //启动服务
-                P2PServer.StartServer();
-                //todo:控制台显示
+                LogUtils.InitConfig();
+                LogUtils.Info($"程序版本:{Global.SoftVerSion}  通讯协议:{Global.DataVerSion}");
+                //读取配置文件
+                if (ConfigUtils.IsExistConfig())
+                {
+                    //初始化全局变量
+                    InitGlobal();
+                    //加载配置文件
+                    ConfigUtils.LoadFromFile();
+                    //启动服务
+                    P2PServer.StartServer();
+                    //todo:控制台显示
+                }
+                else
+                {
+                    LogUtils.Show("启动失败，配置文件不存在.");
+                }
             }
-            else
+            catch(Exception ex)
             {
-                LogUtils.Show("启动失败，配置文件不存在.");
             }
         }
 

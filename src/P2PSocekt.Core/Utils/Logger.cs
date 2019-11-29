@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace P2PSocket.Core.Utils
 {
-    public enum LogLevel
+    public enum LogLevel : int
     {
         /// <summary>
         ///     无日志模式
@@ -77,13 +77,14 @@ namespace P2PSocket.Core.Utils
         protected virtual void DoWriteLine()
         {
             bool isError = false;
-            do {
+            do
+            {
                 isError = false;
                 try
                 {
-                    do
+                    using (StreamWriter fileStream = new StreamWriter(FilePath, true))
                     {
-                        StreamWriter fileStream = new StreamWriter(FilePath, true);
+                        Thread.Sleep(500);
                         do
                         {
                             if (!m_logList.IsEmpty)
@@ -95,15 +96,14 @@ namespace P2PSocket.Core.Utils
                                     {
                                         RecordLogEvent?.Invoke(fileStream, logInfo);
                                     }
-                                    catch
+                                    catch(Exception ex)
                                     {
+                                        fileStream.WriteLine($"文件写入失败：{Environment.NewLine}{ex.Message}");
                                     }
                                 }
                             }
                         } while (m_logList.Count > 0);
-                        Thread.Sleep(1000);
-                        fileStream.Close();
-                    } while (m_logList.Count > 0);
+                    }
                 }
                 catch
                 {

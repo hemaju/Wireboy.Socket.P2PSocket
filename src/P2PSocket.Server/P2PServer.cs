@@ -65,6 +65,7 @@ namespace P2PSocket.Server
             try
             {
                 listener.Start();
+                LogUtils.Info($"【成功】启动服务，端口：{Global.LocalPort}.");
             }
             catch
             {
@@ -107,9 +108,26 @@ namespace P2PSocket.Server
             LogUtils.Show($"【成功】端口映射：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}");
             Global.TaskFactory.StartNew(() =>
             {
+                TcpManage tcpManage = null;
+                if (item.RemotePort == 3389)
+                {
+                    tcpManage = new TcpManage(6);
+                }
                 while (true)
                 {
                     Socket socket = listener.AcceptSocket();
+                    string remoteAddress = ((IPEndPoint) socket.RemoteEndPoint).Address.ToString();
+                    if (tcpManage != null)
+                    {
+                        tcpManage.AddTcp(remoteAddress);
+                        if (!tcpManage.IsAllowConnect(remoteAddress))
+                        {
+                            LogUtils.Show($"【安全策略】阻止内网穿透：{remoteAddress}->{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}");
+                            socket.Close();
+                            continue;
+                        }
+                    }
+                    LogUtils.Show($"开始内网穿透：{remoteAddress}->{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}");
                     P2PTcpClient tcpClient = new P2PTcpClient(socket);
                     Global.TaskFactory.StartNew(() =>
                     {
@@ -120,7 +138,7 @@ namespace P2PSocket.Server
                             //加入待连接集合
                             Global.WaiteConnetctTcp.Add(token, tcpClient);
                             //发送p2p申请
-                            Models.Send.Send_0x0211 packet = new Models.Send.Send_0x0211(token, item.RemotePort);
+                            Models.Send.Send_0x0211 packet = new Models.Send.Send_0x0211(token, item.RemotePort, tcpClient.RemoteEndPoint);
                             Global.TcpMap[item.RemoteAddress].TcpClient.Client.Send(packet.PackData());
                             Global.TaskFactory.StartNew(() =>
                             {

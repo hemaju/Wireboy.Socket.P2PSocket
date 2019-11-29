@@ -43,28 +43,26 @@ namespace P2PSocket.Server
                             if (refData.Length <= 0) break;
                         }
                     }
-                    else
-                    {
-                        if (Global.TcpMap.ContainsKey(tcpClient.ClientName))
-                        {
-                            if (Global.TcpMap[tcpClient.ClientName].TcpClient == tcpClient)
-                                Global.TcpMap.Remove(tcpClient.ClientName);
-                        }
-                        //如果tcp已关闭，需要关闭相关tcp
-                        try
-                        {
-                            tcpClient.ToClient?.Close();
-                        }
-                        catch { }
-                        LogUtils.Debug($"tcp连接{tcpClient.RemoteEndPoint}已断开");
-                        break;
-                    }
+                    else break;
                 }
             }
             catch (Exception ex)
             {
                 LogUtils.Error($"【错误】Global_Func.ListenTcp：{Environment.NewLine}{ex}");
             }
+
+            if (Global.TcpMap.ContainsKey(tcpClient.ClientName))
+            {
+                if (Global.TcpMap[tcpClient.ClientName].TcpClient == tcpClient)
+                    Global.TcpMap.Remove(tcpClient.ClientName);
+            }
+            //如果tcp已关闭，需要关闭相关tcp
+            try
+            {
+                tcpClient.ToClient?.Close();
+            }
+            catch { }
+            LogUtils.Debug($"tcp连接{tcpClient.RemoteEndPoint}已断开");
         }
 
         /// <summary>

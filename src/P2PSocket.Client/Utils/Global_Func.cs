@@ -44,13 +44,6 @@ namespace P2PSocket.Client
                     }
                     else
                     {
-                        //如果tcp已关闭，需要关闭相关tcp
-                        try
-                        {
-                            tcpClient.ToClient?.Close();
-                        }
-                        catch { }
-                        LogUtils.Debug($"tcp连接{tcpClient.RemoteEndPoint}已断开");
                         break;
                     }
                 }
@@ -59,6 +52,14 @@ namespace P2PSocket.Client
             {
                 LogUtils.Error($"【错误】Global_Func.ListenTcp：{Environment.NewLine}{ex}");
             }
+            //如果tcp已关闭，需要关闭相关tcp
+            try
+            {
+                tcpClient.ToClient?.Close();
+            }
+            catch { }
+            LogUtils.Debug($"tcp连接{tcpClient.RemoteEndPoint}已断开");
+
         }
 
         /// <summary>

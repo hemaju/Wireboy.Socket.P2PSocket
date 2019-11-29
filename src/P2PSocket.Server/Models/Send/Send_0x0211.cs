@@ -13,10 +13,11 @@ namespace P2PSocket.Server.Models.Send
     /// </summary>
     public class Send_0x0211 : SendPacket
     {
-        public Send_0x0211(string token, int port) : base(P2PCommandType.P2P0x0211)
+        public Send_0x0211(string token, int port,string remoteEndPoint) : base(P2PCommandType.P2P0x0211)
         {
             BinaryUtils.Write(Data, token);
             BinaryUtils.Write(Data, port);
+            BinaryUtils.Write(Data, remoteEndPoint);
         }
     }
 }

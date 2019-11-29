@@ -33,16 +33,26 @@ namespace P2PSocket.Server.Commands
                 item.TcpClient = m_tcpClient;
                 if (Global.TcpMap.ContainsKey(clientName))
                 {
-                    if (Global.TcpMap[clientName].TcpClient.Connected)
+                    if (Global.TcpMap[clientName].TcpClient.IsDisConnected)
+                    {
+                        Global.TcpMap[clientName].TcpClient.Close();
+                        Global.TcpMap[clientName] = item;
+                    }
+                    else
                     {
                         isSuccess = false;
                         Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, false, $"ClientName:{clientName} 已被使用");
                         m_tcpClient.Client.Send(sendPacket.PackData());
                         m_tcpClient.Close();
-                    }
-                    else
-                    {
-                        Global.TcpMap[clientName] = item;
+
+                        try
+                        {
+                            Global.TcpMap[clientName].TcpClient.Client.Send(new Send_0x0052().PackData());
+                        }
+                        catch (Exception)
+                        {
+                            Global.TcpMap.Remove(clientName);
+                        }
                     }
                 }
                 else

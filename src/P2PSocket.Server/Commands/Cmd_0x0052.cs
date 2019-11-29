@@ -18,6 +18,7 @@ namespace P2PSocket.Server.Commands
         }
         public override bool Excute()
         {
+            m_tcpClient.LastHeartTime = DateTime.Now;
             //throw new NotImplementedException();
             return true;
         }

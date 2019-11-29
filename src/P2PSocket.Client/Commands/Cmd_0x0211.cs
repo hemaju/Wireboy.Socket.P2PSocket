@@ -28,6 +28,7 @@ namespace P2PSocket.Client.Commands
             {
                 string token = BinaryUtils.ReadString(m_data);
                 int mapPort = BinaryUtils.ReadInt(m_data);
+                string remoteEndPoint = BinaryUtils.ReadString(m_data); ;
                 if (Global.AllowPortList.Any(t => t.Match(mapPort, m_tcpClient.ClientName)))
                 {
                     P2PTcpClient portClient = new P2PTcpClient("127.0.0.1", mapPort);
@@ -39,7 +40,7 @@ namespace P2PSocket.Client.Commands
 
                     Models.Send.Send_0x0211 sendPacket = new Models.Send.Send_0x0211(token);
                     int length = serverClient.Client.Send(sendPacket.PackData());
-                    LogUtils.Debug($"命令：0x0211  绑定Tcp：{portClient.LocalEndPoint}->{serverClient.LocalEndPoint}");
+                    LogUtils.Info($"命令：0x0211  内网穿透Tcp绑定：{portClient.RemoteEndPoint}->{serverClient.RemoteEndPoint}->{remoteEndPoint}");
                     Global.TaskFactory.StartNew(() => { Global_Func.ListenTcp<Models.Receive.Packet_0x0212>(portClient); });
                     Global.TaskFactory.StartNew(() => { Global_Func.ListenTcp<Models.Receive.Packet_ToPort>(serverClient); });
                 }

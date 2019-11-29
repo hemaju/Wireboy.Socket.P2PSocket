@@ -16,15 +16,16 @@ namespace P2PSocket.Server
         /// <summary>
         ///     通讯协议版本
         /// </summary>
-        public const string DataVerSion = "1.0.3";
-        /// <summary>
-        ///     配置文件路径
-        /// </summary>
-        public const string ConfigFile = @"P2PSocket/Server.ini";
         /// <summary>
         ///     运行目录
         /// </summary>
         public static string RuntimePath { get { return AppDomain.CurrentDomain.BaseDirectory; } }
+        public const string DataVerSion = "1.0.3";
+        /// <summary>
+        ///     配置文件路径
+        /// </summary>
+        public static string ConfigFile { get { return $"{RuntimePath}P2PSocket/Server.ini"; } }
+
         /// <summary>
         ///     服务端口
         /// </summary>

@@ -110,13 +110,13 @@ namespace P2PSocket.Core.Models
             string header = "";
             if (string.IsNullOrEmpty(Proxy.UserName))
             {
-                header = String.Format("CONNECT {1}:{2} HTTP/1.1{0}Host: {1}:{2}{0}Proxy-Connection: keep-alive{0}User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3800.0 Safari/537.36 Edg/76.0.167.1{0}{0}", 
+                header = String.Format("CONNECT {1}:{2} HTTP/1.1{0}Host: {1}:{2}{0}Proxy-Connection: keep-alive{0}User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3800.0 Safari/537.36 Edg/76.0.167.1{0}{0}",
                     Environment.NewLine, hostname, port);
             }
             else
             {
                 string authrity = Convert.ToBase64String(Encoding.UTF8.GetBytes(string.Format("{0}:{1}", Proxy.UserName, Proxy.Password)));
-                header = String.Format("CONNECT {1}:{2} HTTP/1.1{0}Host: {1}:{2}{0}Proxy-Connection: keep-alive{0}User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3800.0 Safari/537.36 Edg/76.0.167.1{0}Proxy-Authorization: Basic {3} {0}{0}", 
+                header = String.Format("CONNECT {1}:{2} HTTP/1.1{0}Host: {1}:{2}{0}Proxy-Connection: keep-alive{0}User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3800.0 Safari/537.36 Edg/76.0.167.1{0}Proxy-Authorization: Basic {3} {0}{0}",
                     Environment.NewLine, hostname, port, authrity);
             }
             byte[] request = System.Text.Encoding.ASCII.GetBytes(header);
@@ -248,6 +248,10 @@ namespace P2PSocket.Core.Models
         public static P2PTcpProxy Proxy { set; get; } = new P2PTcpProxy();
 
         public string ClientName { set; get; }
+
+        public DateTime LastHeartTime { set; get; } = DateTime.Now;
+
+        public bool IsDisConnected { get => LastHeartTime.AddSeconds(15) <= DateTime.Now; }
 
         String m_remoteEndPoint = "";
         String m_localEndPoint = "";
