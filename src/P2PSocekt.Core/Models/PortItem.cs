@@ -30,9 +30,9 @@ namespace P2PSocket.Core.Models
             if (centerSplit > -1)
             {
                 //  有客户端限制
-                string portRange = data.Substring(0, centerSplit + 1);
+                string portRange = data.Substring(0, centerSplit);
                 ParsePort(portRange);
-                string clientRange = data.Substring(centerSplit);
+                string clientRange = data.Substring(centerSplit + 1);
                 ParseClient(clientRange);
             }
             else
