@@ -2,11 +2,12 @@
 using P2PSocket.Core.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace P2PSocket.Client
 {
-    
+
     public static class Global
     {
         /// <summary>
@@ -24,7 +25,7 @@ namespace P2PSocket.Client
         /// <summary>
         ///     配置文件路径
         /// </summary>
-        public static string ConfigFile { get { return $"{RuntimePath}P2PSocket\\Client.ini"; } }
+        public static string ConfigFile { get { return Path.Combine(RuntimePath, "P2PSocket", "Client.ini"); } }
         /// <summary>
         ///     服务器Tcp连接
         /// </summary>

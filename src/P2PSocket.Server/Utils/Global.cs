@@ -3,6 +3,7 @@ using P2PSocket.Core.Models;
 using P2PSocket.Server.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace P2PSocket.Server
@@ -24,7 +25,7 @@ namespace P2PSocket.Server
         /// <summary>
         ///     配置文件路径
         /// </summary>
-        public static string ConfigFile { get { return $"{RuntimePath}P2PSocket/Server.ini"; } }
+        public static string ConfigFile { get { return Path.Combine(RuntimePath, "P2PSocket", "Server.ini"); } }
 
         /// <summary>
         ///     服务端口

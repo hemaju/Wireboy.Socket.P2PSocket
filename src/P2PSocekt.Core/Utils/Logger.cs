@@ -43,7 +43,7 @@ namespace P2PSocket.Core.Utils
 
         public string LogDirect = "";
         public string PreFix = "";
-        public LogLevel LogLevel { set; get; } = LogLevel.None;
+        public LogLevel LogLevel { set; get; } = LogLevel.Error;
         private TaskFactory m_taskFactory = new TaskFactory();
         private Task m_curTask = null;
         private object m_obj = new object();

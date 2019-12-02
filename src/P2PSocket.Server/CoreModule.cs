@@ -38,12 +38,14 @@ namespace P2PSocket.Server
                 }
                 else
                 {
-                    LogUtils.Show("启动失败，配置文件不存在.");
+                    LogUtils.Error($"找不到配置文件.{Global.ConfigFile}");
                 }
             }
             catch(Exception ex)
             {
+                LogUtils.Error($"启动失败：{ex}");
             }
+            System.Threading.Thread.Sleep(1000);
         }
 
         public void Stop()

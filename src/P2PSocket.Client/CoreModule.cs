@@ -40,8 +40,9 @@ namespace P2PSocket.Client
             }
             else
             {
-                LogUtils.Error($"找不到配置文件：\"{ Global.ConfigFile}\"");
+                LogUtils.Error($"找不到配置文件.{Global.ConfigFile}");
             }
+            System.Threading.Thread.Sleep(1000);
         }
 
         public void Stop()
