@@ -32,7 +32,7 @@ namespace P2PSocket.Client
                 }
                 catch (Exception ex)
                 {
-                    LogUtils.Error($"配置文件格式错误.");
+                    LogUtils.Error($"配置文件格式错误.{ex}");
                     return;
                 }
                 //启动服务
