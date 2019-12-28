@@ -145,7 +145,8 @@ namespace P2PSocket.Core.Utils
         public static List<int> ReadIntList(BinaryReader handle)
         {
             List<int> retList = new List<int>();
-            if (ReadInt(handle) > 0)
+            int listCount = ReadInt(handle);
+            while (listCount > 0 && retList.Count < listCount)
             {
                 retList.Add(ReadInt(handle));
             }
@@ -155,7 +156,8 @@ namespace P2PSocket.Core.Utils
         public static List<string> ReadStringList(BinaryReader handle)
         {
             List<string> retList = new List<string>();
-            if (ReadInt(handle) > 0)
+            int listCount = ReadInt(handle);
+            while (listCount > 0 && retList.Count < listCount)
             {
                 retList.Add(ReadString(handle));
             }
@@ -165,21 +167,12 @@ namespace P2PSocket.Core.Utils
         public static List<T> ReadObjectList<T>(BinaryReader handle) where T : IObjectToString
         {
             List<T> retList = new List<T>();
-            //if (ReadInt(handle) > 0)
-            //{
-                //IObjectToString instance = Activator.CreateInstance(typeof(T)) as IObjectToString;
-                //instance.ToObject(ReadString(handle));
-              //retList.Add((T)instance);
-            //}
-            //这里是用于被控端打开多端口时，读取配置信息，上面那种写法会导致只读取第一个，
-            //而多端口应该把多个AllowPortItem信息发送给服务端
-            int index = ReadInt(handle);
-            while (index > 0)
+            int listCount = ReadInt(handle);
+            while (listCount > 0 && retList.Count < listCount)
             {
                 IObjectToString instance = Activator.CreateInstance(typeof(T)) as IObjectToString;
                 instance.ToObject(ReadString(handle));
                 retList.Add((T)instance);
-                index--;
             }
             return retList;
         }

@@ -13,7 +13,7 @@ namespace P2PSocket.Server
         /// <summary>
         ///     软件版本
         /// </summary>
-        public const string SoftVerSion = "2.0.3";
+        public const string SoftVerSion = "2.0.5";
         /// <summary>
         ///     通讯协议版本
         /// </summary>

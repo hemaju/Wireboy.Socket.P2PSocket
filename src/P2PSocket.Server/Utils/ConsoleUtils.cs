@@ -11,7 +11,7 @@ namespace P2PSocket.Server.Utils
         public static void Show(LogLevel logLevel, string log)
         {
             if (LogUtils.Instance.LogLevel >= logLevel)
-                Instance.WriteLine($"【Server】{log}");
+                Instance.WriteLine($"Server> {log}");
         }
     }
 }

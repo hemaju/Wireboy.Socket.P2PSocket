@@ -19,7 +19,7 @@ namespace P2PSocket.Server
                 ss.WriteLine($"{logInfo.Time.ToString("[HH:mm:ss]")}{logInfo.Msg}");
         }
 
-        public static Logger Instance { get; } = new Logger($"{Global.RuntimePath}P2PSocket/Logs","Server_");
+        public static Logger Instance { get; } = new Logger($"{Global.RuntimePath}P2PSocket/Logs", "Server_");
         public static void Show(string log)
         {
             ConsoleUtils.Show(LogLevel.None, log);
@@ -45,6 +45,11 @@ namespace P2PSocket.Server
         {
             ConsoleUtils.Show(logLevel, log);
             Instance.WriteLine(logLevel, log);
+        }
+        public static void WriteLine(LogInfo log)
+        {
+            ConsoleUtils.Show(log.LogLevel, log.Msg);
+            Instance.WriteLine(log);
         }
     }
 }

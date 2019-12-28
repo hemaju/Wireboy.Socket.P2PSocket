@@ -19,13 +19,13 @@ namespace P2PSocket.Core.Utils
         /// </summary>
         Error = 1,
         /// <summary>
-        ///     一般模式
-        /// </summary>
-        Info = 2,
-        /// <summary>
         ///     警告模式
         /// </summary>
-        Warning = 3,
+        Warning = 2,
+        /// <summary>
+        ///     一般模式
+        /// </summary>
+        Info = 3,
         /// <summary>
         ///     调试模式
         /// </summary>
@@ -43,7 +43,7 @@ namespace P2PSocket.Core.Utils
 
         public string LogDirect = "";
         public string PreFix = "";
-        public LogLevel LogLevel { set; get; } = LogLevel.Error;
+        public LogLevel LogLevel { set; get; } = LogLevel.Debug;
         private TaskFactory m_taskFactory = new TaskFactory();
         private Task m_curTask = null;
         private object m_obj = new object();
@@ -61,7 +61,12 @@ namespace P2PSocket.Core.Utils
         public virtual void WriteLine(LogLevel logLevel, string log)
         {
             if (logLevel == LogLevel.None) return;
-            m_logList.Enqueue(new LogInfo() { LogLevel = logLevel, Msg = log, Time = DateTime.Now });
+            WriteLine(new LogInfo() { LogLevel = logLevel, Msg = log, Time = DateTime.Now });
+        }
+        public virtual void WriteLine(LogInfo log)
+        {
+            if (log.LogLevel == LogLevel.None) return;
+            m_logList.Enqueue(log);
             if (m_curTask == null)
             {
                 lock (m_obj)

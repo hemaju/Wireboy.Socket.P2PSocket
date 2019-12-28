@@ -59,6 +59,7 @@ namespace P2PSocket.Client.Commands
             try
             {
                 Models.Send.Send_0x0201_Bind sendPacket = new Models.Send.Send_0x0201_Bind(token);
+                Utils.LogUtils.Info($"命令：0x0201  正在绑定内网穿透（3端）通道 token:{token}");
                 int port = BinaryUtils.ReadInt(m_data);
                 PortMapItem destMap = Global.PortMapList.FirstOrDefault(t => t.LocalPort == port && string.IsNullOrEmpty(t.LocalAddress));
 
@@ -82,7 +83,7 @@ namespace P2PSocket.Client.Commands
             }
             catch (Exception ex)
             {
-                LogUtils.Error($"【P2P】命令：0x0201 错误：{Environment.NewLine}{ex.ToString()}");
+                LogUtils.Error($"命令：0x0201 绑定内网穿透（3端）通道错误：{Environment.NewLine}{ex.Message}");
             }
         }
 
@@ -93,6 +94,7 @@ namespace P2PSocket.Client.Commands
         public void CreateTcpFromSource(string token)
         {
             Models.Send.Send_0x0201_Bind sendPacket = new Models.Send.Send_0x0201_Bind(token);
+            Utils.LogUtils.Info($"命令：0x0201  正在绑定内网穿透（3端）通道 token:{token}");
             if (Global.WaiteConnetctTcp.ContainsKey(token))
             {
                 P2PTcpClient portClient = Global.WaiteConnetctTcp[token];
@@ -106,7 +108,7 @@ namespace P2PSocket.Client.Commands
             }
             else
             {
-                LogUtils.Warning($"【P2P】命令：0x0201 接收到P2P命令，但已超时.");
+                LogUtils.Warning($"命令：0x0201 接收到P2P命令，但已超时. token:{token}");
             }
         }
 

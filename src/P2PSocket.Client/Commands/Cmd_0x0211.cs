@@ -39,8 +39,8 @@ namespace P2PSocket.Client.Commands
 
 
                     Models.Send.Send_0x0211 sendPacket = new Models.Send.Send_0x0211(token);
+                    LogUtils.Info($"命令：0x0211 正在绑定内网穿透（2端）通道 {portClient.RemoteEndPoint}->服务器->{remoteEndPoint}{Environment.NewLine}token:{token} ");
                     int length = serverClient.Client.Send(sendPacket.PackData());
-                    LogUtils.Info($"命令：0x0211  内网穿透Tcp绑定：{portClient.RemoteEndPoint}->{serverClient.RemoteEndPoint}->{remoteEndPoint}");
                     Global.TaskFactory.StartNew(() => { Global_Func.ListenTcp<Models.Receive.Packet_0x0212>(portClient); });
                     Global.TaskFactory.StartNew(() => { Global_Func.ListenTcp<Models.Receive.Packet_ToPort>(serverClient); });
                 }

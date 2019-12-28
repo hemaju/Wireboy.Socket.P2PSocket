@@ -45,5 +45,10 @@ namespace P2PSocket.Client.Utils
             ConsoleUtils.Show(logLevel, log);
             Instance.WriteLine(logLevel, log);
         }
+        public static void WriteLine(LogInfo log)
+        {
+            ConsoleUtils.Show(log.LogLevel, log.Msg);
+            Instance.WriteLine(log);
+        }
     }
 }

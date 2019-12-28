@@ -22,7 +22,7 @@ namespace P2PSocket.Client.Commands
         }
         public override bool Excute()
         {
-            LogUtils.Debug($"命令：0x0202 From:{m_tcpClient.ToClient.RemoteEndPoint} Length:{((MemoryStream)m_data.BaseStream).Length}");
+            LogUtils.Debug($"命令：0x0202 P2P（3端）数据转发 From:{m_tcpClient.ToClient.RemoteEndPoint} Length:{((MemoryStream)m_data.BaseStream).Length}");
 
             //是否来自端口
             if (BinaryUtils.ReadBool(m_data))
