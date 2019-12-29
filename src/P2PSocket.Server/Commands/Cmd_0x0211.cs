@@ -32,14 +32,14 @@ namespace P2PSocket.Server.Commands
                 client.IsAuth = m_tcpClient.IsAuth = true;
                 client.ToClient = m_tcpClient;
                 m_tcpClient.ToClient = client;
-                LogUtils.Debug($"[服务器]转发{client.RemoteEndPoint}->{m_tcpClient.RemoteEndPoint}");
+                LogUtils.Debug($"命令：0x0211 已绑定内网穿透（2端）通道 {client.RemoteEndPoint}->{m_tcpClient.RemoteEndPoint}");
                 //监听client
                 Global.TaskFactory.StartNew(() => { Global_Func.ListenTcp<Packet_0x0212>(client); });
             }
             else
             {
                 m_tcpClient.Close();
-                throw new Exception("连接已关闭");
+                throw new Exception("绑定内网穿透（2端）通道失败，目标Tcp连接已断开");
             }
             return true;
         }

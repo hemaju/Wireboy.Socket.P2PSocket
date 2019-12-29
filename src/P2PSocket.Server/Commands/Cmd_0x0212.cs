@@ -22,17 +22,16 @@ namespace P2PSocket.Server.Commands
         }
         public override bool Excute()
         {
+            LogUtils.Debug($"命令：0x0212 P2P（2端）数据转发 From:{m_tcpClient.ToClient.RemoteEndPoint} Length:{((MemoryStream)m_data.BaseStream).Length}");
             if (BinaryUtils.ReadBool(m_data))
             {
                 //Port->Client
-                LogUtils.Debug("[服务器]Port->Client");
                 Send_0x0212_ToClient sendPacket = new Send_0x0212_ToClient(BinaryUtils.ReadBytes(m_data));
                 m_tcpClient.ToClient.Client.Send(sendPacket.PackData());
             }
             else
             {
                 //Client->Port
-                LogUtils.Debug("[服务器]Client->Port");
                 Send_0x0212_ToPort sendPacket = new Send_0x0212_ToPort(BinaryUtils.ReadBytes(m_data));
                 m_tcpClient.ToClient.Client.Send(sendPacket.PackData());
             }
