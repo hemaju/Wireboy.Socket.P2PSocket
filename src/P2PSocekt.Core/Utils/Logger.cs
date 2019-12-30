@@ -66,6 +66,11 @@ namespace P2PSocket.Core.Utils
         public virtual void WriteLine(LogInfo log)
         {
             if (log.LogLevel == LogLevel.None) return;
+            if (m_logList.Count > 100)
+            {
+                //如果堆栈中有100条消息未处理，则不再继续处理日志
+                return;
+            }
             m_logList.Enqueue(log);
             if (m_curTask == null)
             {
@@ -87,6 +92,10 @@ namespace P2PSocket.Core.Utils
                 isError = false;
                 try
                 {
+                    if (!Directory.Exists(LogDirect))
+                    {
+                        Directory.CreateDirectory(LogDirect);
+                    }
                     using (StreamWriter fileStream = new StreamWriter(FilePath, true))
                     {
                         Thread.Sleep(500);
