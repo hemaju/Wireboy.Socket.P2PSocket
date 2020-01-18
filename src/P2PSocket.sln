@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
+# Blend for Visual Studio 15
 VisualStudioVersion = 15.0.28010.2016
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "P2PSocket.Test", "P2PSocket.Test\P2PSocket.Test.csproj", "{8861BBCD-644F-49D1-848B-A91A79BBC48D}"
@@ -16,6 +16,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "P2PSocket.StartUp", "P2PSocket.StartUp\P2PSocket.StartUp.csproj", "{7AA04E3A-24BB-46CF-99E9-0A7208331D6B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "P2PSocket.StartUp-WinService", "P2PSocket.StartUp-WinService\P2PSocket.StartUp-WinService.csproj", "{4A9FB22A-C6F6-42F5-9530-C52DDA095094}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "P2PSocket.ConfigWindow", "P2PSocket.ConfigWindow\P2PSocket.ConfigWindow.csproj", "{8CCACFBD-EF3B-491C-AA2C-5B3BEB86E04E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,10 +53,10 @@ Global
 		{4A9FB22A-C6F6-42F5-9530-C52DDA095094}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4A9FB22A-C6F6-42F5-9530-C52DDA095094}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4A9FB22A-C6F6-42F5-9530-C52DDA095094}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B534805C-611A-45B2-BE99-B3361E8C81D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B534805C-611A-45B2-BE99-B3361E8C81D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B534805C-611A-45B2-BE99-B3361E8C81D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B534805C-611A-45B2-BE99-B3361E8C81D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8CCACFBD-EF3B-491C-AA2C-5B3BEB86E04E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8CCACFBD-EF3B-491C-AA2C-5B3BEB86E04E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8CCACFBD-EF3B-491C-AA2C-5B3BEB86E04E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8CCACFBD-EF3B-491C-AA2C-5B3BEB86E04E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

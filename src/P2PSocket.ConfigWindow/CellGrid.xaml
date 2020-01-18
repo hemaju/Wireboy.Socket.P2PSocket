@@ -1,0 +1,54 @@
+﻿<UserControl x:Class="P2PSocket.ConfigWindow.CellGrid"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:P2PSocket.ConfigWindow"
+             mc:Ignorable="d" 
+             d:DesignHeight="400" d:DesignWidth="792">
+    <UserControl.Resources>
+        <Style TargetType="TextBlock">
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontWeight" Value="{Binding FontWeight, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:CellGrid}}}"/>
+            <Setter Property="FontFamily" Value="{Binding FontFamily, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:CellGrid}}}"/>
+            <Setter Property="FontStyle" Value="{Binding FontStyle, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:CellGrid}}}"/>
+            <Setter Property="FontSize" Value="{Binding FontSize, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:CellGrid}}}"/>
+        </Style>
+        <Style x:Key="LabelImageGifStyle" TargetType="local:LabelImageGif">
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontWeight" Value="{Binding FontWeight, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:CellGrid}}}"/>
+            <Setter Property="FontFamily" Value="{Binding FontFamily, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:CellGrid}}}"/>
+            <Setter Property="FontStyle" Value="{Binding FontStyle, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:CellGrid}}}"/>
+            <Setter Property="FontSize" Value="{Binding FontSize, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:CellGrid}}}"/>
+        </Style>
+        <Style x:Key="LeftSymbolStyle" TargetType="local:LabelImageGif" BasedOn="{StaticResource LabelImageGifStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding LeftText, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:CellGrid}}}" Value="">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="RightSymbolStyle" TargetType="local:LabelImageGif" BasedOn="{StaticResource LabelImageGifStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding RightText, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:CellGrid}}}" Value="">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+    <Grid >
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <TextBlock Text="{Binding LeftText, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:CellGrid}}}"></TextBlock>
+        <local:LabelImageGif  Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding LeftSymbol,RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:CellGrid}}}" Style="{StaticResource LeftSymbolStyle}"/>
+        <TextBlock Grid.Column="1" Text="{Binding CenterText, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:CellGrid}}}"></TextBlock>
+        <local:LabelImageGif  Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding RightSymbol,RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:CellGrid}}}" Style="{StaticResource RightSymbolStyle}"/>
+        <TextBlock Grid.Column="2" Text="{Binding RightText, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:CellGrid}}}"></TextBlock>
+    </Grid>
+
+</UserControl>
