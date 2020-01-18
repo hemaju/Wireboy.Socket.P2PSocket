@@ -24,7 +24,7 @@ namespace P2PSocket.Client.Models.Receive
             BinaryUtils.Write(writer, true);
             BinaryUtils.Write(writer, data);
             writer.Close();
-            this.DataBuffer = ((MemoryStream)writer.BaseStream).ToArray();
+            this.Data = ((MemoryStream)writer.BaseStream).ToArray();
             data = new byte[0];
             return true;
         }

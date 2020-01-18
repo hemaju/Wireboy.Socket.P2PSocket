@@ -5,6 +5,7 @@ using System;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Net;
+using System.Net.Sockets;
 
 namespace P2PSocket.ConsoleTest
 {
@@ -12,10 +13,25 @@ namespace P2PSocket.ConsoleTest
     {
         static void Main(string[] args)
         {
-            Guid guid1 = Guid.NewGuid();
-            Guid guid2 = guid1;
-            bool flag = guid1 == guid2;
-            guid1 = Guid.NewGuid();
+            TcpListener listen = new TcpListener(IPAddress.Any, 11122);
+            listen.Start();
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    while (true)
+                    {
+                        listen.AcceptSocket();
+                    }
+                }
+                catch (Exception ex)
+                {
+
+                }
+            });
+            Console.ReadKey();
+            listen.Stop();
+            Console.ReadKey();
         }
     }
 }

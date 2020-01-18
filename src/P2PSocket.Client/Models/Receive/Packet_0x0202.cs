@@ -20,7 +20,7 @@ namespace P2PSocket.Client.Models.Receive
             //来自外部
             BinaryUtils.Write(writer, true);
             BinaryUtils.Write(writer, data);
-            this.DataBuffer = ((MemoryStream)writer.BaseStream).ToArray();
+            this.Data = ((MemoryStream)writer.BaseStream).ToArray();
             writer.Close();
             data = new byte[0];
             return true;

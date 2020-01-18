@@ -26,7 +26,7 @@ namespace P2PSocket.Test.Core
             {
                 if (ReceivePacket.ParseData(ref data))
                 {
-                    string str = ReceivePacket.GetBytes().ToStringUnicode();
+                    string str = ReceivePacket.Data.ToStringUnicode();
                     Console.WriteLine(str);
                     Assert.AreEqual("这是一条测试数据", str);
                     ReceivePacket = new ReceivePacket();

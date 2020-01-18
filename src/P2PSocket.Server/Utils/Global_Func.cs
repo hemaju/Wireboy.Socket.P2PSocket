@@ -79,7 +79,7 @@ namespace P2PSocket.Server
                 if (Global.CommandDict.ContainsKey(packet.CommandType))
                 {
                     Type type = Global.CommandDict[packet.CommandType];
-                    command = Activator.CreateInstance(type, tcpClient, packet.GetBytes()) as P2PCommand;
+                    command = Activator.CreateInstance(type, tcpClient, packet.Data) as P2PCommand;
                 }
                 else
                 {

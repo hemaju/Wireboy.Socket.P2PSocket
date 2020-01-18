@@ -3,6 +3,7 @@ using P2PSocket.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace P2PSocket.Server.Models.Receive
@@ -19,8 +20,8 @@ namespace P2PSocket.Server.Models.Receive
 
         public override bool ParseData(ref byte[] data)
         {
-            this.DataBuffer = new byte[data.Length];
-            data.CopyTo(DataBuffer, 0);
+            this.Data = new byte[data.Length];
+            data.CopyTo(this.Data, 0);
             data = new byte[0];
             return true;
         }
