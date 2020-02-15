@@ -124,6 +124,8 @@ namespace P2PSocket.Client.Models.ConfigIO
                 case "info": LogUtils.Instance.LogLevel = Core.Utils.LogLevel.Info; break;
                 case "none": LogUtils.Instance.LogLevel = Core.Utils.LogLevel.None; break;
                 case "warning": LogUtils.Instance.LogLevel = Core.Utils.LogLevel.Warning; break;
+                case "fatal": LogUtils.Instance.LogLevel = Core.Utils.LogLevel.Fatal; break;
+                case "trace": LogUtils.Instance.LogLevel = Core.Utils.LogLevel.Trace; break;
                 default: throw new ArgumentException("LogLevel格式错误，请参考https://github.com/bobowire/Wireboy.Socket.P2PSocket/wiki"); 
             }
         }

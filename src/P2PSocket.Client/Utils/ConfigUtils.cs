@@ -18,23 +18,45 @@ namespace P2PSocket.Client.Utils
         {
             using (StreamReader fs = new StreamReader(Global.ConfigFile))
             {
-                Dictionary<string, IConfigIO> handleDictionary = GetConfigIOInstanceList();
+                DoLoadConfig(fs);
+            }
+        }
+
+        internal static void DoLoadConfig(StreamReader fs)
+        {
+
+            Dictionary<string, IConfigIO> handleDictionary = GetConfigIOInstanceList();
+            IConfigIO instance = null;
+            while (!fs.EndOfStream)
+            {
+                string lineStr = fs.ReadLine().Trim();
+                if (lineStr.Length > 0 && !lineStr.StartsWith("#"))
+                {
+                    if (handleDictionary.ContainsKey(lineStr))
+                        instance = handleDictionary[lineStr];
+                    else
+                        instance?.ReadConfig(lineStr);
+                }
+            }
+            foreach (string key in handleDictionary.Keys)
+            {
+                handleDictionary[key].WriteLog();
+            }
+        }
+
+        public static void LoadFromString(string data)
+        {
+            if (string.IsNullOrEmpty(data)) throw new Exception("LoadFromString参数为为空");
+            using (MemoryStream ms = new MemoryStream())
+            {
                 IConfigIO instance = null;
-                while (!fs.EndOfStream)
-                {
-                    string lineStr = fs.ReadLine().Trim();
-                    if (lineStr.Length > 0 && !lineStr.StartsWith("#"))
-                    {
-                        if (handleDictionary.ContainsKey(lineStr))
-                            instance = handleDictionary[lineStr];
-                        else
-                            instance?.ReadConfig(lineStr);
-                    }
-                }
-                foreach (string key in handleDictionary.Keys)
-                {
-                    handleDictionary[key].WriteLog();
-                }
+                StreamWriter sw = new StreamWriter(ms);
+                sw.Write(data);
+                sw.Flush();
+                StreamReader sr = new StreamReader(ms);
+                sr.BaseStream.Position = 0;
+                DoLoadConfig(sr);
+                ms.Close();
             }
         }
 

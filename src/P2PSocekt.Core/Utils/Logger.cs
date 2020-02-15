@@ -15,21 +15,29 @@ namespace P2PSocket.Core.Utils
         /// </summary>
         None = 0,
         /// <summary>
-        ///     错误模式
+        ///     致命消息
         /// </summary>
-        Error = 1,
+        Fatal = 1,
         /// <summary>
-        ///     警告模式
+        ///     错误消息
         /// </summary>
-        Warning = 2,
+        Error = 2,
         /// <summary>
-        ///     一般模式
+        ///     警告消息
         /// </summary>
-        Info = 3,
+        Warning = 3,
         /// <summary>
-        ///     调试模式
+        ///     一般消息
         /// </summary>
-        Debug = 4
+        Info = 4,
+        /// <summary>
+        ///     调试消息
+        /// </summary>
+        Debug = 5,
+        /// <summary>
+        ///     跟踪消息
+        /// </summary>
+        Trace = 6
     }
     public class Logger
     {
@@ -101,20 +109,9 @@ namespace P2PSocket.Core.Utils
                         Thread.Sleep(500);
                         do
                         {
-                            if (!m_logList.IsEmpty)
+                            if (!m_logList.IsEmpty && m_logList.TryDequeue(out LogInfo logInfo))
                             {
-                                LogInfo logInfo = null;
-                                if (m_logList.TryDequeue(out logInfo))
-                                {
-                                    try
-                                    {
-                                        RecordLogEvent?.Invoke(fileStream, logInfo);
-                                    }
-                                    catch(Exception ex)
-                                    {
-                                        fileStream.WriteLine($"文件写入失败：{Environment.NewLine}{ex.Message}");
-                                    }
-                                }
+                                RecordLogEvent?.Invoke(fileStream, logInfo);
                             }
                         } while (m_logList.Count > 0);
                     }

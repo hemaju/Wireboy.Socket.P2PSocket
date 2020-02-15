@@ -33,13 +33,21 @@ namespace P2PSocket.StartUp
             {
                 while (true)
                 {
-                    Thread.Sleep(10000);
+                    ConsoleKey key = Console.ReadKey().Key;
+                    if (key == ConsoleKey.Q)
+                    {
+                        break;
+                    }
+                    else
+                    {
+
+                    }
                 }
             }
             else
             {
                 Console.WriteLine($"在目录{AppDomain.CurrentDomain.BaseDirectory}P2PSocket中，未找到P2PSocket.Client.dll和P2PSocket.Server.dll.");
-                Thread.Sleep(10000);
+                Console.ReadKey()
             }
         }
     }

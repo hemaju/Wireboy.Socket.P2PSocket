@@ -66,20 +66,20 @@ namespace P2PSocket.Core.Models
         {
             CurStreamReadLength = 0;
             //包头
-            if (ParseHeader(data))
+            if (ParseHeader(data)
                 //命令
-                if (ParseCommand(data))
-                    //数据长度
-                    if (ParsePacketLength(data))
-                        //数据
-                        if (ParseBody(data))
-                            //包尾
-                            if (ParseFooter(data))
-                            {
-                                //说明读取一个完整包
-                                data = data.Skip(CurStreamReadLength).ToArray();
-                                return true;
-                            }
+                && ParseCommand(data)
+                //数据长度
+                && ParsePacketLength(data)
+                //数据
+                && ParseBody(data)
+                //包尾
+                && ParseFooter(data))
+            {
+                //成功读取一个完整包
+                data = data.Skip(CurStreamReadLength).ToArray();
+                return true;
+            }
             return false;
         }
 

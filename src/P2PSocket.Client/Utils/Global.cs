@@ -10,6 +10,21 @@ namespace P2PSocket.Client
 
     public static class Global
     {
+        static Global()
+        {
+            Init();
+        }
+
+        public static void Init()
+        {
+            ServerAddress = "";
+            ServerPort = 3488;
+            PortMapList = new List<PortMapItem>();
+            ClientName = "";
+            AuthCode = "";
+            AllowPortList.Clear();
+            BlackClients.Clear();
+        }
         /// <summary>
         ///     软件版本
         /// </summary>
@@ -21,15 +36,15 @@ namespace P2PSocket.Client
         /// <summary>
         ///     运行目录
         /// </summary>
-        public static string RuntimePath { get { return AppDomain.CurrentDomain.BaseDirectory; } }
+        internal static string RuntimePath { get { return AppDomain.CurrentDomain.BaseDirectory; } }
         /// <summary>
         ///     配置文件路径
         /// </summary>
-        public static string ConfigFile { get { return Path.Combine(RuntimePath, "P2PSocket", "Client.ini"); } }
+        internal static string ConfigFile { get { return Path.Combine(RuntimePath, "P2PSocket", "Client.ini"); } }
         /// <summary>
         ///     服务器Tcp连接
         /// </summary>
-        public static P2PTcpClient P2PServerTcp { set; get; }
+        internal static P2PTcpClient P2PServerTcp { set; get; }
         /// <summary>
         ///     服务器地址
         /// </summary>
@@ -41,7 +56,7 @@ namespace P2PSocket.Client
         /// <summary>
         ///     全局的线程工厂
         /// </summary>
-        public static TaskFactory TaskFactory { set; get; } = new TaskFactory();
+        internal static TaskFactory TaskFactory { set; get; } = new TaskFactory();
         /// <summary>
         ///     等待中的tcp连接
         /// </summary>
@@ -49,7 +64,7 @@ namespace P2PSocket.Client
         /// <summary>
         ///     允许处理不经过身份验证的消息类型
         /// </summary>
-        public static List<P2PCommandType> AllowAnonymous { get; } = new List<P2PCommandType>() { P2PCommandType.Heart0x0052, P2PCommandType.Login0x0101, P2PCommandType.P2P0x0211, P2PCommandType.P2P0x0201 };
+        internal static List<P2PCommandType> AllowAnonymous { get; } = new List<P2PCommandType>() { P2PCommandType.Heart0x0052, P2PCommandType.Login0x0101, P2PCommandType.P2P0x0211, P2PCommandType.P2P0x0201 };
         /// <summary>
         ///     P2P内网穿透超时时间
         /// </summary>
@@ -57,14 +72,14 @@ namespace P2PSocket.Client
         /// <summary>
         ///     当前主服务Guid
         /// </summary>
-        public static Guid CurrentGuid { set; get; } = Guid.NewGuid();
+        internal static Guid CurrentGuid { set; get; } = Guid.NewGuid();
 
 
 
         /// <summary>
         ///     所有命令集合（需要启动时初始化）
         /// </summary>
-        public static Dictionary<P2PCommandType, Type> CommandDict { set; get; } = new Dictionary<P2PCommandType, Type>();
+        internal static Dictionary<P2PCommandType, Type> CommandDict { set; get; } = new Dictionary<P2PCommandType, Type>();
         /// <summary>
         ///     本地端口映射（需要启动时初始化）
         /// </summary>

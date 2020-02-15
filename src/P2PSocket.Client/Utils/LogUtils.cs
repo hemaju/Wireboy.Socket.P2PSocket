@@ -18,36 +18,40 @@ namespace P2PSocket.Client.Utils
                 ss.WriteLine($"{logInfo.Time.ToString("[HH:mm:ss]")}{logInfo.Msg}");
         }
 
-        public static Logger Instance { get; } = new Logger($"{Global.RuntimePath}P2PSocket/Logs","Client_");
-        public static void Show(string log)
+        public static Logger Instance { get; } = new Logger($"{Global.RuntimePath}P2PSocket/Logs", "Client_");
+
+        public static void Debug(string log, bool autoConsole = true)
         {
-            ConsoleUtils.Show(LogLevel.None, log);
-            Instance.WriteLine(LogLevel.Info, log);
+            WriteLine(LogLevel.Debug, log, autoConsole);
         }
-        public static void Debug(string log)
+        public static void Error(string log, bool autoConsole = true)
         {
-            WriteLine(LogLevel.Debug, log);
+            WriteLine(LogLevel.Error, log, autoConsole);
         }
-        public static void Error(string log)
+        public static void Info(string log, bool autoConsole = true)
         {
-            WriteLine(LogLevel.Error, log);
+            WriteLine(LogLevel.Info, log, autoConsole);
         }
-        public static void Info(string log)
+        public static void Warning(string log, bool autoConsole = true)
         {
-            WriteLine(LogLevel.Info, log);
+            WriteLine(LogLevel.Warning, log, autoConsole);
         }
-        public static void Warning(string log)
+        public static void Trace(string log, bool autoConsole = true)
         {
-            WriteLine(LogLevel.Warning, log);
+            WriteLine(LogLevel.Trace, log, autoConsole);
         }
-        public static void WriteLine(LogLevel logLevel, string log)
+        public static void Fatal(string log, bool autoConsole = true)
         {
-            ConsoleUtils.Show(logLevel, log);
+            WriteLine(LogLevel.Fatal, log, autoConsole);
+        }
+        public static void WriteLine(LogLevel logLevel, string log, bool autoConsole = true)
+        {
+            ConsoleUtils.Show(autoConsole ? logLevel : LogLevel.None, log);
             Instance.WriteLine(logLevel, log);
         }
-        public static void WriteLine(LogInfo log)
+        public static void WriteLine(LogInfo log, bool autoConsole = true)
         {
-            ConsoleUtils.Show(log.LogLevel, log.Msg);
+            ConsoleUtils.Show(autoConsole ? log.LogLevel : LogLevel.None, log.Msg);
             Instance.WriteLine(log);
         }
     }
