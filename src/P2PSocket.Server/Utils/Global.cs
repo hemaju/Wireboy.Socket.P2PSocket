@@ -13,7 +13,7 @@ namespace P2PSocket.Server
         /// <summary>
         ///     软件版本
         /// </summary>
-        public const string SoftVerSion = "2.0.5";
+        public const string SoftVerSion = "3.0.0";
         /// <summary>
         ///     通讯协议版本
         /// </summary>
@@ -21,7 +21,6 @@ namespace P2PSocket.Server
         ///     运行目录
         /// </summary>
         public static string RuntimePath { get { return AppDomain.CurrentDomain.BaseDirectory; } }
-        public const string DataVerSion = "1.0.3";
         /// <summary>
         ///     配置文件路径
         /// </summary>

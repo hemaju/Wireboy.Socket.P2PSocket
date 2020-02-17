@@ -33,6 +33,25 @@ namespace P2PSocket.Client.Models.ConfigIO
                 if (!Global.PortMapList.Any(t => t.LocalPort == port))
                 {
                     Core.Models.PortMapItem item = new Core.Models.PortMapItem();
+
+                    int typeIndex = remoteStr.IndexOf("@");
+                    if (typeIndex >= 0)
+                    {
+                        try
+                        {
+                            item.P2PType = Convert.ToInt32(remoteStr.Substring(0, typeIndex));
+                            remoteStr = remoteStr.Substring(typeIndex + 1);
+                        }
+                        catch (Exception ex)
+                        {
+                            LogWarning($"【PortMapItem配置项】读取失败：无效的配置项 - {text}");
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        item.P2PType = 0;
+                    }
                     string[] remoteStrList = remoteStr.Split(':');
                     item.LocalPort = port;
                     item.LocalAddress = localIp;

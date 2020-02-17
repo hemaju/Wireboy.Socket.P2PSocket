@@ -81,6 +81,7 @@ namespace P2PSocket.Server
                     {
                         Socket socket = listener.AcceptSocket();
                         P2PTcpClient tcpClient = new P2PTcpClient(socket);
+                        LogUtils.Info($"端口{ Global.LocalPort}新连入Tcp：{tcpClient.Client.RemoteEndPoint.ToString()}");
                         //接收数据
                         Global.TaskFactory.StartNew(() => Global_Func.ListenTcp<ReceivePacket>(tcpClient));
                     }
@@ -105,7 +106,7 @@ namespace P2PSocket.Server
                 return;
             }
             ListenerList.Add(listener);
-            LogUtils.Show($"【成功】端口映射：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}");
+            LogUtils.Info($"【成功】端口映射：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}", false);
             Global.TaskFactory.StartNew(() =>
             {
                 TcpManage tcpManage = null;
@@ -116,18 +117,18 @@ namespace P2PSocket.Server
                 while (true)
                 {
                     Socket socket = listener.AcceptSocket();
-                    string remoteAddress = ((IPEndPoint) socket.RemoteEndPoint).Address.ToString();
+                    string remoteAddress = ((IPEndPoint)socket.RemoteEndPoint).Address.ToString();
                     if (tcpManage != null)
                     {
                         tcpManage.AddTcp(remoteAddress);
                         if (!tcpManage.IsAllowConnect(remoteAddress))
                         {
-                            LogUtils.Show($"【安全策略】阻止内网穿透：{remoteAddress}->{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}");
+                            LogUtils.Info($"【安全策略】阻止内网穿透：{remoteAddress}->{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}", false);
                             socket.Close();
                             continue;
                         }
                     }
-                    LogUtils.Show($"开始内网穿透：{remoteAddress}->{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}");
+                    LogUtils.Info($"开始内网穿透：{remoteAddress}->{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}", false);
                     P2PTcpClient tcpClient = new P2PTcpClient(socket);
                     Global.TaskFactory.StartNew(() =>
                     {
@@ -146,7 +147,7 @@ namespace P2PSocket.Server
                                 //如果5秒后没有匹配成功，则关闭连接
                                 if (Global.WaiteConnetctTcp.ContainsKey(token))
                                 {
-                                    LogUtils.Warning($"【失败】内网穿透：{Global.P2PTimeout}秒无响应，已超时.");
+                                    LogUtils.Warning($"【失败】内网穿透：{Global.P2PTimeout / 1000}秒无响应，已超时.");
                                     Global.WaiteConnetctTcp[token].Close();
                                     Global.WaiteConnetctTcp.Remove(token);
                                 }
@@ -179,7 +180,7 @@ namespace P2PSocket.Server
                 return;
             }
             ListenerList.Add(listener);
-            LogUtils.Show($"【成功】端口映射：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}");
+            LogUtils.Info($"【成功】端口映射：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}", false);
             Global.TaskFactory.StartNew(() =>
             {
                 while (true)

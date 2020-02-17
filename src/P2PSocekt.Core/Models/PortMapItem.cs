@@ -37,6 +37,7 @@ namespace P2PSocket.Core.Models
         ///     本地监听ip
         /// </summary>
         public string LocalAddress { set; get; }
+        public int P2PType { set; get; } = 0;
         /// <summary>
         ///     映射类型
         /// </summary>

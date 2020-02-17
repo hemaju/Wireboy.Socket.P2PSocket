@@ -52,7 +52,8 @@ namespace P2PSocket.Client
         public void Start()
         {
             LogUtils.InitConfig();
-            LogUtils.Info($"程序版本:{Global.SoftVerSion}  通讯协议:{Global.DataVerSion}", false);
+            LogUtils.Info($"客户端版本:{Global.SoftVerSion} 作者：wireboy", false);
+            LogUtils.Info($"github地址：https://github.com/bobowire/Wireboy.Socket.P2PSocket", false);
             //读取配置文件
             if (ConfigUtils.IsExistConfig())
             {

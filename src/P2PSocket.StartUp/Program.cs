@@ -47,7 +47,7 @@ namespace P2PSocket.StartUp
             else
             {
                 Console.WriteLine($"在目录{AppDomain.CurrentDomain.BaseDirectory}P2PSocket中，未找到P2PSocket.Client.dll和P2PSocket.Server.dll.");
-                Console.ReadKey()
+                Console.ReadKey();
             }
         }
     }

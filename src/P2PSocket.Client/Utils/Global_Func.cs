@@ -62,6 +62,56 @@ namespace P2PSocket.Client
 
         }
 
+        public static void BindTcp(P2PTcpClient readTcp, P2PTcpClient toTcp)
+        {
+            if (toTcp == null || !toTcp.Connected)
+            {
+                LogUtils.Warning($"【失败】IP数据转发：绑定的Tcp连接已断开.");
+                readTcp.Close();
+                return;
+            }
+            byte[] buffer = new byte[P2PGlobal.P2PSocketBufferSize];
+            NetworkStream readStream = readTcp.GetStream();
+            NetworkStream toStream = toTcp.GetStream();
+            try
+            {
+                while (readTcp.Connected)
+                {
+                    int curReadLength = readStream.ReadSafe(buffer, 0, buffer.Length);
+                    if (curReadLength > 0)
+                    {
+                        if (toTcp != null)
+                        {
+                            toStream.Write(buffer, 0, curReadLength);
+                        }
+                        else
+                        {
+                            LogUtils.Warning($"【失败】IP数据转发：目标Tcp连接已释放.");
+                            readTcp.Close();
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        LogUtils.Warning($"【失败】IP数据转发：Tcp连接已断开.");
+                        //如果tcp已关闭，需要关闭相关tcp
+                        try
+                        {
+                            toTcp?.Close();
+                        }
+                        finally { }
+                        break;
+                    }
+                }
+            }
+            finally
+            {
+                LogUtils.Warning($"【失败】IP数据转发：目标Tcp连接已断开.");
+                readTcp.Close();
+            }
+
+        }
+
         /// <summary>
         ///     匹配对应的Command命令
         /// </summary>
