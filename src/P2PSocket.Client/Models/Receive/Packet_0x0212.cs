@@ -15,11 +15,11 @@ namespace P2PSocket.Client.Models.Receive
     {
         public Packet_0x0212() : base()
         {
-            CommandType = P2PCommandType.P2P0x0212;
         }
 
         public override bool ParseData(ref byte[] data)
         {
+            CommandType = P2PCommandType.P2P0x0212;
             BinaryWriter writer = new BinaryWriter(new MemoryStream());
             BinaryUtils.Write(writer, true);
             BinaryUtils.Write(writer, data);
