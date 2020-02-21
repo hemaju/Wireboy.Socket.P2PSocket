@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -9,7 +9,6 @@ namespace P2PSocket.Core.Models
 {
     public class ReceivePacket
     {
-        protected int StreamOffset { set; get; }
 
         protected int CurStep { set; get; }
         /// <summary>
@@ -42,7 +41,6 @@ namespace P2PSocket.Core.Models
 
         public void Init()
         {
-            StreamOffset = 0;
             CurStep = 0;
             DataBuffer.Clear();
             Header = new byte[0];
@@ -86,10 +84,9 @@ namespace P2PSocket.Core.Models
         protected virtual void ReadBytes(int count, byte[] data)
         {
             int dataCount = count - DataBuffer.Count;
-            int readLength = (data.Length - StreamOffset) >= dataCount ? dataCount : 0;
+            int readLength = (data.Length - CurStreamReadLength) >= dataCount ? dataCount : (data.Length - CurStreamReadLength);
+            DataBuffer.AddRange(data.Skip(CurStreamReadLength).Take(readLength));
             CurStreamReadLength += readLength;
-            DataBuffer.AddRange(data.Skip(StreamOffset).Take(readLength));
-            StreamOffset += readLength;
         }
 
         /// <summary>
@@ -106,6 +103,7 @@ namespace P2PSocket.Core.Models
                 if (DataBuffer.Count == 2)
                 {
                     Header = DataBuffer.ToArray();
+                    if (DataBuffer[0] != P2PGlobal.PacketHeader[0] || DataBuffer[1] != P2PGlobal.PacketHeader[1]) { throw new InvalidDataException("非法的tcp数据包"); }
                     DataBuffer.Clear();
                     CurStep |= 0x1;
                     ret = true;
