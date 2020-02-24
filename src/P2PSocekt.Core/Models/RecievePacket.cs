@@ -85,6 +85,8 @@ namespace P2PSocket.Core.Models
         {
             int dataCount = count - DataBuffer.Count;
             int readLength = (data.Length - CurStreamReadLength) >= dataCount ? dataCount : (data.Length - CurStreamReadLength);
+            if (readLength == 0) return;
+            if (readLength < 0) throw new OverflowException("数据包解析错误-逻辑错误");
             DataBuffer.AddRange(data.Skip(CurStreamReadLength).Take(readLength));
             CurStreamReadLength += readLength;
         }
