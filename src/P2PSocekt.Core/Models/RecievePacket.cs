@@ -105,10 +105,16 @@ namespace P2PSocket.Core.Models
                 if (DataBuffer.Count == 2)
                 {
                     Header = DataBuffer.ToArray();
-                    if (DataBuffer[0] != P2PGlobal.PacketHeader[0] || DataBuffer[1] != P2PGlobal.PacketHeader[1]) { throw new InvalidDataException("非法的tcp数据包"); }
-                    DataBuffer.Clear();
-                    CurStep |= 0x1;
-                    ret = true;
+                    if (DataBuffer[0] == P2PGlobal.PacketHeader[0] && DataBuffer[1] == P2PGlobal.PacketHeader[1])
+                    {
+                        DataBuffer.Clear();
+                        CurStep |= 0x1;
+                        ret = true;
+                    }
+                    else
+                    {
+                        throw new InvalidDataException("非法的tcp数据包");
+                    }
                 }
             }
             else
