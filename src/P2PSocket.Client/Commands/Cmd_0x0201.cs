@@ -88,6 +88,7 @@ namespace P2PSocket.Client.Commands
                     {
                         p2pClient.Client.Bind(new IPEndPoint(IPAddress.Any, bindPort));
                         p2pClient.Connect(ip, port);
+                        p2pClient.UpdateEndPoint();
                         isConnected = true;
                         break;
                     }
@@ -100,12 +101,15 @@ namespace P2PSocket.Client.Commands
                 }
                 if (isConnected)
                 {
-                    LogUtils.Info($"命令：0x0201  内网穿透（P2P模式）连接成功 token:{token}");
+                    LogUtils.Info($"命令：0x0201  内网穿透（P2P模式）连接成功 port:{bindPort} token:{token}");
                     P2PBind_DirectConnect(p2pClient, token);
                 }
                 else
                 {
-                    LogUtils.Info($"命令：0x0201  内网穿透（P2P模式）连接失败 token:{token}");
+                    P2PTcpClient portClient = Global.WaiteConnetctTcp[token];
+                    portClient.Close();
+                    Global.WaiteConnetctTcp.Remove(token);
+                    LogUtils.Info($"命令：0x0201  内网穿透（P2P模式）连接失败 port:{bindPort} token:{token}");
                 }
             });
         }
@@ -172,6 +176,7 @@ namespace P2PSocket.Client.Commands
                 serverClient.Connect(Global.ServerAddress, Global.ServerPort);
                 serverClient.IsAuth = true;
                 serverClient.P2PLocalPort = port;
+                serverClient.UpdateEndPoint();
                 serverClient.Client.Send(sendPacket.PackData());
                 Global.TaskFactory.StartNew(() => { Global_Func.ListenTcp<ReceivePacket>(serverClient); });
             }
@@ -190,6 +195,7 @@ namespace P2PSocket.Client.Commands
                 serverClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 serverClient.Connect(Global.ServerAddress, Global.ServerPort);
                 serverClient.IsAuth = true;
+                serverClient.UpdateEndPoint();
                 serverClient.Client.Send(sendPacket.PackData());
                 Global.TaskFactory.StartNew(() => { Global_Func.ListenTcp<ReceivePacket>(serverClient); });
             }

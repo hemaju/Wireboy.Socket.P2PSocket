@@ -5,6 +5,7 @@ using P2PSocket.Core.Extends;
 using P2PSocket.Core.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Reflection;
@@ -64,50 +65,38 @@ namespace P2PSocket.Client
 
         public static void BindTcp(P2PTcpClient readTcp, P2PTcpClient toTcp)
         {
-            if (toTcp == null || !toTcp.Connected)
-            {
-                LogUtils.Warning($"【失败】IP数据转发：绑定的Tcp连接已断开.");
-                readTcp.Close();
-                return;
-            }
             byte[] buffer = new byte[P2PGlobal.P2PSocketBufferSize];
             NetworkStream readStream = readTcp.GetStream();
             NetworkStream toStream = toTcp.GetStream();
-            try
+            while (readTcp.Connected)
             {
-                while (readTcp.Connected)
+                int curReadLength = readStream.ReadSafe(buffer, 0, buffer.Length);
+                if (curReadLength > 0)
                 {
-                    int curReadLength = readStream.ReadSafe(buffer, 0, buffer.Length);
-                    if (curReadLength > 0)
+                    bool isError = true;
+                    if (toTcp != null && toTcp.Connected)
                     {
-                        if (toTcp != null)
-                        {
-                            toStream.Write(buffer, 0, curReadLength);
-                        }
-                        else
-                        {
-                            LogUtils.Warning($"【失败】IP数据转发：目标Tcp连接已释放.");
-                            readTcp.Close();
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        LogUtils.Warning($"【失败】IP数据转发：Tcp连接已断开.");
-                        //如果tcp已关闭，需要关闭相关tcp
                         try
                         {
-                            toTcp?.Close();
+                            toStream.Write(buffer, 0, curReadLength);
+                            isError = false;
                         }
-                        finally { }
+                        catch { }
+                    }
+                    if(isError)
+                    {
+                        LogUtils.Warning($"Tcp连接{toTcp.RemoteEndPoint}已断开.");
+                        readTcp.Close();
                         break;
                     }
                 }
-            }
-            finally
-            {
-                LogUtils.Warning($"【失败】IP数据转发：目标Tcp连接已断开.");
-                readTcp.Close();
+                else
+                {
+                    LogUtils.Warning($"Tcp连接{readTcp.RemoteEndPoint}已断开.");
+                    //如果tcp已关闭，需要关闭相关tcp
+                    toTcp?.Close();
+                    break;
+                }
             }
 
         }

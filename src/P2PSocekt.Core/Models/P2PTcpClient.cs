@@ -27,6 +27,13 @@ namespace P2PSocket.Core.Models
             m_localEndPoint = socket.LocalEndPoint.ToString();
             this.NoDelay = true;
         }
+
+        public void UpdateEndPoint()
+        {
+            m_remoteEndPoint = Client.RemoteEndPoint.ToString();
+            m_localEndPoint = Client.LocalEndPoint.ToString();
+        }
+
         public P2PTcpClient(string hostname, int port) : base()
         {
             this.NoDelay = true;
