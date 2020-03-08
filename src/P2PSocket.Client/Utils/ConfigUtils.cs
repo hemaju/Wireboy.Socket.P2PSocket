@@ -12,20 +12,22 @@ namespace P2PSocket.Client.Utils
     {
         public static bool IsExistConfig()
         {
-            return File.Exists(Global.ConfigFile);
+            return File.Exists(AppCenter.Instance.ConfigFile);
         }
-        public static void LoadFromFile()
+        public static ConfigCenter LoadFromFile()
         {
-            using (StreamReader fs = new StreamReader(Global.ConfigFile))
+            ConfigCenter config = new ConfigCenter();
+            using (StreamReader fs = new StreamReader(AppCenter.Instance.ConfigFile))
             {
-                DoLoadConfig(fs);
+                config = DoLoadConfig(fs);
             }
+            return config;
         }
 
-        internal static void DoLoadConfig(StreamReader fs)
+        internal static ConfigCenter DoLoadConfig(StreamReader fs)
         {
-
-            Dictionary<string, IConfigIO> handleDictionary = GetConfigIOInstanceList();
+            ConfigCenter config = new ConfigCenter();
+            Dictionary<string, IConfigIO> handleDictionary = GetConfigIOInstanceList(config);
             IConfigIO instance = null;
             while (!fs.EndOfStream)
             {
@@ -42,10 +44,12 @@ namespace P2PSocket.Client.Utils
             {
                 handleDictionary[key].WriteLog();
             }
+            return config;
         }
 
-        public static void LoadFromString(string data)
+        public static ConfigCenter LoadFromString(string data)
         {
+            ConfigCenter config = new ConfigCenter();
             if (string.IsNullOrEmpty(data)) throw new Exception("LoadFromString参数为为空");
             using (MemoryStream ms = new MemoryStream())
             {
@@ -55,22 +59,23 @@ namespace P2PSocket.Client.Utils
                 sw.Flush();
                 StreamReader sr = new StreamReader(ms);
                 sr.BaseStream.Position = 0;
-                DoLoadConfig(sr);
+                config = DoLoadConfig(sr);
                 ms.Close();
             }
+            return config;
         }
 
         public static void SaveToFile()
         {
 
         }
-        public static Dictionary<string, IConfigIO> GetConfigIOInstanceList()
+        public static Dictionary<string, IConfigIO> GetConfigIOInstanceList(ConfigCenter config)
         {
             Dictionary<string, IConfigIO> retDic = new Dictionary<string, IConfigIO>();
             Type[] configIOList = Assembly.GetExecutingAssembly().GetTypes().Where(t => t.GetCustomAttribute<ConfigIOAttr>() != null).ToArray();
             foreach (Type type in configIOList)
             {
-                retDic.Add(type.GetCustomAttribute<ConfigIOAttr>().Name, Activator.CreateInstance(type) as IConfigIO);
+                retDic.Add(type.GetCustomAttribute<ConfigIOAttr>().Name, Activator.CreateInstance(type,new object[] { config }) as IConfigIO);
             }
             return retDic;
         }

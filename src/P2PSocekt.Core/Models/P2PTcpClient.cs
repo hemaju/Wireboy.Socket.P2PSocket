@@ -245,6 +245,21 @@ namespace P2PSocket.Core.Models
             return client;
         }
 
+        public void SafeClose()
+        {
+            if(this.Connected)
+            {
+                try
+                {
+                    this.Close();
+                }
+                finally
+                {
+
+                }
+            }
+        }
+
         public string Token { set; get; } = Guid.NewGuid().ToString();
         public P2PTcpClient ToClient { set; get; }
         /// <summary>

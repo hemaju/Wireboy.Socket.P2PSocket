@@ -9,6 +9,7 @@ using System.Threading;
 using System.Linq;
 using P2PSocket.Core.Utils;
 using P2PSocket.Client.Utils;
+using System.Threading.Tasks;
 
 namespace P2PSocket.Client.Commands
 {
@@ -16,23 +17,23 @@ namespace P2PSocket.Client.Commands
     public class Cmd_0x0211 : P2PCommand
     {
         readonly P2PTcpClient m_tcpClient;
-        BinaryReader m_data { get; }
+        BinaryReader data { get; }
         public Cmd_0x0211(P2PTcpClient tcpClient, byte[] data)
         {
             m_tcpClient = tcpClient;
-            m_data = new BinaryReader(new MemoryStream(data));
+            this.data = new BinaryReader(new MemoryStream(data));
         }
         public override bool Excute()
         {
             try
             {
-                string token = BinaryUtils.ReadString(m_data);
-                int mapPort = BinaryUtils.ReadInt(m_data);
-                string remoteEndPoint = BinaryUtils.ReadString(m_data); ;
-                if (Global.AllowPortList.Any(t => t.Match(mapPort, m_tcpClient.ClientName)))
+                string token = BinaryUtils.ReadString(data);
+                int mapPort = BinaryUtils.ReadInt(data);
+                string remoteEndPoint = BinaryUtils.ReadString(data); ;
+                if (ConfigCenter.Instance.AllowPortList.Any(t => t.Match(mapPort, m_tcpClient.ClientName)))
                 {
                     P2PTcpClient portClient = new P2PTcpClient("127.0.0.1", mapPort);
-                    P2PTcpClient serverClient = new P2PTcpClient(Global.ServerAddress, Global.ServerPort);
+                    P2PTcpClient serverClient = new P2PTcpClient(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
                     portClient.IsAuth = serverClient.IsAuth = true;
                     portClient.ToClient = serverClient;
                     serverClient.ToClient = portClient;
@@ -41,13 +42,13 @@ namespace P2PSocket.Client.Commands
                     Models.Send.Send_0x0211 sendPacket = new Models.Send.Send_0x0211(token);
                     LogUtils.Info($"命令：0x0211 正在绑定内网穿透（2端）通道 {portClient.RemoteEndPoint}->服务器->{remoteEndPoint}{Environment.NewLine}token:{token} ");
                     int length = serverClient.Client.Send(sendPacket.PackData());
-                    Global.TaskFactory.StartNew(() => { Global_Func.ListenTcp<Models.Receive.Packet_0x0212>(portClient); });
-                    Global.TaskFactory.StartNew(() => { Global_Func.ListenTcp<Models.Receive.Packet_ToPort>(serverClient); });
+                    AppCenter.Instance.StartNewTask(() => { Global_Func.ListenTcp<Models.Receive.Packet_0x0212>(portClient); });
+                    AppCenter.Instance.StartNewTask(() => { Global_Func.ListenTcp<Models.Receive.Packet_ToPort>(serverClient); });
                 }
                 else
                 {
                     LogUtils.Warning($"命令：0x0211 无权限，端口:{mapPort}");
-                    m_tcpClient.Close();
+                    m_tcpClient.SafeClose();
                 }
             }
             catch (Exception ex)

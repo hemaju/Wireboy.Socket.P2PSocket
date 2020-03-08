@@ -14,8 +14,8 @@ namespace P2PSocket.Test.Client
         [TestMethod]
         public void LoadFromFile_Test()
         {
-            ConfigUtils.LoadFromFile();
-            Assert.AreNotEqual(Global.AllowPortList.Count, 0);
+            ConfigCenter config = ConfigUtils.LoadFromFile();
+            Assert.AreNotEqual(config.AllowPortList.Count, 0);
         }
 
         [TestMethod]

@@ -20,11 +20,11 @@ namespace P2PSocket.Client
         {
             try
             {
-                Guid curGuid = Global.CurrentGuid;
+                Guid curGuid = AppCenter.Instance.CurrentGuid;
                 byte[] buffer = new byte[P2PGlobal.P2PSocketBufferSize];
                 NetworkStream tcpStream = tcpClient.GetStream();
                 ReceivePacket msgReceive = Activator.CreateInstance(typeof(T)) as ReceivePacket;
-                while (tcpClient.Connected && curGuid == Global.CurrentGuid)
+                while (tcpClient.Connected && curGuid == AppCenter.Instance.CurrentGuid)
                 {
                     int curReadLength = tcpStream.ReadSafe(buffer, 0, buffer.Length);
                     if (curReadLength > 0)
@@ -56,7 +56,7 @@ namespace P2PSocket.Client
             //如果tcp已关闭，需要关闭相关tcp
             try
             {
-                tcpClient.ToClient?.Close();
+                tcpClient.ToClient?.SafeClose();
             }
             catch { }
             LogUtils.Debug($"tcp连接{tcpClient.RemoteEndPoint}已断开");
@@ -86,7 +86,7 @@ namespace P2PSocket.Client
                     if(isError)
                     {
                         LogUtils.Warning($"Tcp连接{toTcp.RemoteEndPoint}已断开.");
-                        readTcp.Close();
+                        readTcp.SafeClose();
                         break;
                     }
                 }
@@ -94,7 +94,7 @@ namespace P2PSocket.Client
                 {
                     LogUtils.Warning($"Tcp连接{readTcp.RemoteEndPoint}已断开.");
                     //如果tcp已关闭，需要关闭相关tcp
-                    toTcp?.Close();
+                    toTcp?.SafeClose();
                     break;
                 }
             }
@@ -110,11 +110,11 @@ namespace P2PSocket.Client
         public static P2PCommand FindCommand(P2PTcpClient tcpClient, ReceivePacket packet)
         {
             P2PCommand command = null;
-            if (Global.AllowAnonymous.Contains(packet.CommandType) || tcpClient.IsAuth)
+            if (AppCenter.Instance.AllowAnonymous.Contains(packet.CommandType) || tcpClient.IsAuth)
             {
-                if (Global.CommandDict.ContainsKey(packet.CommandType))
+                if (AppCenter.Instance.CommandDict.ContainsKey(packet.CommandType))
                 {
-                    Type type = Global.CommandDict[packet.CommandType];
+                    Type type = AppCenter.Instance.CommandDict[packet.CommandType];
                     command = Activator.CreateInstance(type, tcpClient, packet.Data) as P2PCommand;
                 }
                 else
@@ -124,10 +124,10 @@ namespace P2PSocket.Client
             }
             else
             {
-                tcpClient.Close();
+                tcpClient.SafeClose();
                 if (tcpClient.ToClient != null && tcpClient.ToClient.Connected)
                 {
-                    tcpClient.ToClient.Close();
+                    tcpClient.ToClient.SafeClose();
                 }
                 LogUtils.Warning($"拦截{tcpClient.RemoteEndPoint}未授权命令");
             }

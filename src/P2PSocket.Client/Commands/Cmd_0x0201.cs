@@ -20,22 +20,22 @@ namespace P2PSocket.Client.Commands
     public class Cmd_0x0201 : P2PCommand
     {
         readonly P2PTcpClient m_tcpClient;
-        BinaryReader m_data { get; }
+        BinaryReader data { get; }
         public Cmd_0x0201(P2PTcpClient tcpClient, byte[] data)
         {
             m_tcpClient = tcpClient;
-            m_data = new BinaryReader(new MemoryStream(data));
+            this.data = new BinaryReader(new MemoryStream(data));
         }
         public override bool Excute()
         {
-            int step = m_data.ReadInt32();
+            int step = data.ReadInt32();
             switch (step)
             {
                 case 2:
                     {
-                        bool isDestClient = BinaryUtils.ReadBool(m_data);
-                        string token = BinaryUtils.ReadString(m_data);
-                        int p2pType = BinaryUtils.ReadInt(m_data);
+                        bool isDestClient = BinaryUtils.ReadBool(data);
+                        string token = BinaryUtils.ReadString(data);
+                        int p2pType = BinaryUtils.ReadInt(data);
                         if (p2pType == 0)
                         {
                             if (isDestClient) CreateTcpFromDest(token);
@@ -60,9 +60,9 @@ namespace P2PSocket.Client.Commands
                     break;
                 case -1:
                     {
-                        string message = BinaryUtils.ReadString(m_data);
+                        string message = BinaryUtils.ReadString(data);
                         LogUtils.Warning($"内网穿透失败，错误消息：{Environment.NewLine}{message}");
-                        m_tcpClient.Close();
+                        m_tcpClient.SafeClose();
                     }
                     break;
             }
@@ -71,22 +71,22 @@ namespace P2PSocket.Client.Commands
 
         public void TryBindP2PTcp()
         {
-            string ip = BinaryUtils.ReadString(m_data);
-            int port = BinaryUtils.ReadInt(m_data);
-            string token = BinaryUtils.ReadString(m_data);
-            int maxTryCount = 25;
+            string ip = BinaryUtils.ReadString(data);
+            int port = BinaryUtils.ReadInt(data);
+            string token = BinaryUtils.ReadString(data);
+            int maxTryCount = 1;
             bool isConnected = false;
+            int bindPort = Convert.ToInt32(m_tcpClient.Client.LocalEndPoint.ToString().Split(':')[1]);
             Task.Factory.StartNew(() =>
             {
-                int bindPort = Convert.ToInt32(m_tcpClient.Client.LocalEndPoint.ToString().Split(':')[1]);
                 P2PTcpClient p2pClient = new P2PTcpClient();
                 p2pClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                p2pClient.Client.Bind(new IPEndPoint(IPAddress.Any, bindPort));
                 while (maxTryCount > 0)
                 {
                     maxTryCount--;
                     try
                     {
-                        p2pClient.Client.Bind(new IPEndPoint(IPAddress.Any, bindPort));
                         p2pClient.Connect(ip, port);
                         p2pClient.UpdateEndPoint();
                         isConnected = true;
@@ -106,11 +106,16 @@ namespace P2PSocket.Client.Commands
                 }
                 else
                 {
-                    P2PTcpClient portClient = Global.WaiteConnetctTcp[token];
-                    portClient.Close();
-                    Global.WaiteConnetctTcp.Remove(token);
                     LogUtils.Info($"命令：0x0201  内网穿透（P2P模式）连接失败 port:{bindPort} token:{token}");
+                    p2pClient.SafeClose();
+                    if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
+                    {
+                        P2PTcpClient portClient = TcpCenter.Instance.WaiteConnetctTcp[token];
+                        portClient.SafeClose();
+                        TcpCenter.Instance.WaiteConnetctTcp.Remove(token);
+                    }
                 }
+                m_tcpClient.SafeClose();
             });
         }
 
@@ -121,7 +126,7 @@ namespace P2PSocket.Client.Commands
                 if (m_tcpClient.P2PLocalPort > 0)
                 {
                     int port = m_tcpClient.P2PLocalPort;
-                    PortMapItem destMap = Global.PortMapList.FirstOrDefault(t => t.LocalPort == port && string.IsNullOrEmpty(t.LocalAddress));
+                    PortMapItem destMap = ConfigCenter.Instance.PortMapList.FirstOrDefault(t => t.LocalPort == port && string.IsNullOrEmpty(t.LocalAddress));
 
                     P2PTcpClient portClient = null;
 
@@ -137,20 +142,20 @@ namespace P2PSocket.Client.Commands
                     portClient.IsAuth = p2pClient.IsAuth = true;
                     portClient.ToClient = p2pClient;
                     p2pClient.ToClient = portClient;
-                    Global.TaskFactory.StartNew(() => { Global_Func.BindTcp(p2pClient, portClient); });
-                    Global.TaskFactory.StartNew(() => { Global_Func.BindTcp(portClient, p2pClient); });
+                    AppCenter.Instance.StartNewTask(() => { Global_Func.BindTcp(p2pClient, portClient); });
+                    AppCenter.Instance.StartNewTask(() => { Global_Func.BindTcp(portClient, p2pClient); });
                 }
                 else
                 {
-                    if (Global.WaiteConnetctTcp.ContainsKey(token))
+                    if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
                     {
-                        P2PTcpClient portClient = Global.WaiteConnetctTcp[token];
-                        Global.WaiteConnetctTcp.Remove(token);
+                        P2PTcpClient portClient = TcpCenter.Instance.WaiteConnetctTcp[token];
+                        TcpCenter.Instance.WaiteConnetctTcp.Remove(token);
                         portClient.IsAuth = p2pClient.IsAuth = true;
                         portClient.ToClient = p2pClient;
                         p2pClient.ToClient = portClient;
-                        Global.TaskFactory.StartNew(() => { Global_Func.BindTcp(p2pClient, portClient); });
-                        Global.TaskFactory.StartNew(() => { Global_Func.BindTcp(portClient, p2pClient); });
+                        AppCenter.Instance.StartNewTask(() => { Global_Func.BindTcp(p2pClient, portClient); });
+                        AppCenter.Instance.StartNewTask(() => { Global_Func.BindTcp(portClient, p2pClient); });
                     }
                     else
                     {
@@ -158,7 +163,7 @@ namespace P2PSocket.Client.Commands
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 LogUtils.Error(ex.Message);
             }
@@ -168,17 +173,17 @@ namespace P2PSocket.Client.Commands
         {
             try
             {
-                int port = BinaryUtils.ReadInt(m_data);
+                int port = BinaryUtils.ReadInt(data);
                 Models.Send.Send_0x0201_Bind sendPacket = new Models.Send.Send_0x0201_Bind(token);
                 Utils.LogUtils.Info($"命令：0x0201  正尝试内网穿透(P2P模式) token:{token}");
                 P2PTcpClient serverClient = new P2PTcpClient();
                 serverClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                serverClient.Connect(Global.ServerAddress, Global.ServerPort);
+                serverClient.Connect(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
                 serverClient.IsAuth = true;
                 serverClient.P2PLocalPort = port;
                 serverClient.UpdateEndPoint();
                 serverClient.Client.Send(sendPacket.PackData());
-                Global.TaskFactory.StartNew(() => { Global_Func.ListenTcp<ReceivePacket>(serverClient); });
+                AppCenter.Instance.StartNewTask(() => { Global_Func.ListenTcp<ReceivePacket>(serverClient); });
             }
             catch (Exception ex)
             {
@@ -189,15 +194,15 @@ namespace P2PSocket.Client.Commands
         {
             Models.Send.Send_0x0201_Bind sendPacket = new Models.Send.Send_0x0201_Bind(token);
             Utils.LogUtils.Info($"命令：0x0201  正尝试内网穿透（P2P模式）token:{token}");
-            if (Global.WaiteConnetctTcp.ContainsKey(token))
+            if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
             {
                 P2PTcpClient serverClient = new P2PTcpClient();
                 serverClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                serverClient.Connect(Global.ServerAddress, Global.ServerPort);
+                serverClient.Connect(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
                 serverClient.IsAuth = true;
                 serverClient.UpdateEndPoint();
                 serverClient.Client.Send(sendPacket.PackData());
-                Global.TaskFactory.StartNew(() => { Global_Func.ListenTcp<ReceivePacket>(serverClient); });
+                AppCenter.Instance.StartNewTask(() => { Global_Func.ListenTcp<ReceivePacket>(serverClient); });
             }
             else
             {
@@ -215,8 +220,8 @@ namespace P2PSocket.Client.Commands
             {
                 Models.Send.Send_0x0201_Bind sendPacket = new Models.Send.Send_0x0201_Bind(token);
                 Utils.LogUtils.Info($"命令：0x0201  正在绑定内网穿透（3端）通道 token:{token}");
-                int port = BinaryUtils.ReadInt(m_data);
-                PortMapItem destMap = Global.PortMapList.FirstOrDefault(t => t.LocalPort == port && string.IsNullOrEmpty(t.LocalAddress));
+                int port = BinaryUtils.ReadInt(data);
+                PortMapItem destMap = ConfigCenter.Instance.PortMapList.FirstOrDefault(t => t.LocalPort == port && string.IsNullOrEmpty(t.LocalAddress));
 
                 P2PTcpClient portClient = null;
 
@@ -229,12 +234,12 @@ namespace P2PSocket.Client.Commands
                     portClient = new P2PTcpClient("127.0.0.1", port);
 
 
-                P2PTcpClient serverClient = new P2PTcpClient(Global.ServerAddress, Global.ServerPort);
+                P2PTcpClient serverClient = new P2PTcpClient(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
                 portClient.IsAuth = serverClient.IsAuth = true;
                 portClient.ToClient = serverClient;
                 serverClient.ToClient = portClient;
                 serverClient.Client.Send(sendPacket.PackData());
-                Global.TaskFactory.StartNew(() => { Global_Func.ListenTcp<ReceivePacket>(serverClient); });
+                AppCenter.Instance.StartNewTask(() => { Global_Func.ListenTcp<ReceivePacket>(serverClient); });
             }
             catch (Exception ex)
             {
@@ -250,16 +255,16 @@ namespace P2PSocket.Client.Commands
         {
             Models.Send.Send_0x0201_Bind sendPacket = new Models.Send.Send_0x0201_Bind(token);
             Utils.LogUtils.Info($"命令：0x0201  正尝试内网穿透（转发模式）token:{token}");
-            if (Global.WaiteConnetctTcp.ContainsKey(token))
+            if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
             {
-                P2PTcpClient portClient = Global.WaiteConnetctTcp[token];
-                Global.WaiteConnetctTcp.Remove(token);
-                P2PTcpClient serverClient = new P2PTcpClient(Global.ServerAddress, Global.ServerPort);
+                P2PTcpClient portClient = TcpCenter.Instance.WaiteConnetctTcp[token];
+                TcpCenter.Instance.WaiteConnetctTcp.Remove(token);
+                P2PTcpClient serverClient = new P2PTcpClient(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
                 portClient.IsAuth = serverClient.IsAuth = true;
                 portClient.ToClient = serverClient;
                 serverClient.ToClient = portClient;
                 serverClient.Client.Send(sendPacket.PackData());
-                Global.TaskFactory.StartNew(() => { Global_Func.ListenTcp<ReceivePacket>(serverClient); });
+                AppCenter.Instance.StartNewTask(() => { Global_Func.ListenTcp<ReceivePacket>(serverClient); });
             }
             else
             {
@@ -273,7 +278,7 @@ namespace P2PSocket.Client.Commands
         public void ListenPort()
         {
             //  监听端口
-            Global.TaskFactory.StartNew(() => { Global_Func.ListenTcp<Packet_0x0202>(m_tcpClient.ToClient); });
+            AppCenter.Instance.StartNewTask(() => { Global_Func.ListenTcp<Packet_0x0202>(m_tcpClient.ToClient); });
         }
     }
 }

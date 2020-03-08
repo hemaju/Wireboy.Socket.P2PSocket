@@ -13,9 +13,9 @@ namespace P2PSocket.Client.Models.Send
         public Send_0x0101() : base(P2PCommandType.Login0x0101)
         {
             //  客户端名称
-            BinaryUtils.Write(Data, Global.ClientName);
+            BinaryUtils.Write(Data, ConfigCenter.Instance.ClientName);
             //  授权码
-            BinaryUtils.Write(Data, Global.AuthCode);
+            BinaryUtils.Write(Data, ConfigCenter.Instance.AuthCode);
         }
     }
 }

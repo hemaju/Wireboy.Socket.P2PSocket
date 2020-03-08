@@ -18,7 +18,7 @@ namespace P2PSocket.Client.Models.Send
             //  P2P标志
             BinaryUtils.Write(Data, (int)3);
             //  客户端名称
-            BinaryUtils.Write(Data, Global.ClientName);
+            BinaryUtils.Write(Data, ConfigCenter.Instance.ClientName);
             //  P2P穿透唯一标志
             BinaryUtils.Write(Data, token);
         }

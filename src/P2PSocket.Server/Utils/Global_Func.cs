@@ -59,7 +59,7 @@ namespace P2PSocket.Server
             //如果tcp已关闭，需要关闭相关tcp
             try
             {
-                tcpClient.ToClient?.Close();
+                tcpClient.ToClient?.SafeClose();
             }
             catch { }
             LogUtils.Debug($"tcp连接{tcpClient.RemoteEndPoint}已断开");
@@ -88,10 +88,10 @@ namespace P2PSocket.Server
             }
             else
             {
-                tcpClient.Close();
+                tcpClient.SafeClose();
                 if (tcpClient.ToClient != null && tcpClient.ToClient.Connected)
                 {
-                    tcpClient.ToClient.Close();
+                    tcpClient.ToClient.SafeClose();
                 }
                 LogUtils.Warning($"拦截{tcpClient.RemoteEndPoint}未授权命令");
             }

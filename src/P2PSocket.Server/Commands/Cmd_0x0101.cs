@@ -35,7 +35,7 @@ namespace P2PSocket.Server.Commands
                 {
                     if (Global.TcpMap[clientName].TcpClient.IsDisConnected)
                     {
-                        Global.TcpMap[clientName].TcpClient.Close();
+                        Global.TcpMap[clientName].TcpClient.SafeClose();
                         Global.TcpMap[clientName] = item;
                     }
                     else
@@ -43,7 +43,7 @@ namespace P2PSocket.Server.Commands
                         isSuccess = false;
                         Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, false, $"ClientName:{clientName} 已被使用");
                         m_tcpClient.Client.Send(sendPacket.PackData());
-                        m_tcpClient.Close();
+                        m_tcpClient.SafeClose();
 
                         try
                         {
@@ -68,7 +68,7 @@ namespace P2PSocket.Server.Commands
             {
                 Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, false, $"客户端{clientName}认证失败");
                 m_tcpClient.Client.Send(sendPacket.PackData());
-                m_tcpClient.Close();
+                m_tcpClient.SafeClose();
             }
 
             return true;

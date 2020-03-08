@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using static P2PSocket.Core.Utils.Logger;
 
 namespace P2PSocket.Client.Utils
 {
@@ -9,8 +10,10 @@ namespace P2PSocket.Client.Utils
     {
         public static void InitConfig()
         {
-            Instance.RecordLogEvent += Instance_RecordLogEvent;
+            Instance.RecordLogEvent += ClientRecordLogHandler;
         }
+
+        public static RecordLogHandler ClientRecordLogHandler = Instance_RecordLogEvent;
 
         private static void Instance_RecordLogEvent(System.IO.StreamWriter ss, LogInfo logInfo)
         {
@@ -18,7 +21,7 @@ namespace P2PSocket.Client.Utils
                 ss.WriteLine($"{logInfo.Time.ToString("[HH:mm:ss]")}{logInfo.Msg}");
         }
 
-        public static Logger Instance { get; } = new Logger($"{Global.RuntimePath}P2PSocket/Logs", "Client_");
+        public static Logger Instance { get; } = new Logger($"{AppCenter.Instance.RuntimePath}P2PSocket/Logs", "Client_");
 
         public static void Debug(string log, bool autoConsole = true)
         {

@@ -13,8 +13,10 @@ namespace P2PSocket.Client.Models.ConfigIO
     public class PortMapItem : IConfigIO
     {
         public List<LogInfo> MessageList = new List<LogInfo>();
-        public PortMapItem()
+        ConfigCenter config = null;
+        public PortMapItem(ConfigCenter config)
         {
+            this.config = config;
         }
 
         public void ReadConfig(string text)
@@ -30,7 +32,7 @@ namespace P2PSocket.Client.Models.ConfigIO
             int port = 0;
             if (int.TryParse(portStr, out port) && port > 0)
             {
-                if (!Global.PortMapList.Any(t => t.LocalPort == port))
+                if (!config.PortMapList.Any(t => t.LocalPort == port))
                 {
                     Core.Models.PortMapItem item = new Core.Models.PortMapItem();
 
@@ -66,7 +68,7 @@ namespace P2PSocket.Client.Models.ConfigIO
                         item.RemoteAddress = remoteStrList[0];
                     }
                     item.RemotePort = Convert.ToInt32(remoteStrList[1]);
-                    Global.PortMapList.Add(item);
+                    config.PortMapList.Add(item);
                     LogDebug($"【PortMapItem配置项】读取成功：{item.LocalAddress}{(item.LocalAddress == "" ? "" : ":")}{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}");
                 }
                 else

@@ -13,6 +13,7 @@ using P2PSocket.Server.Models;
 using P2PSocket.Core.Utils;
 using System.Linq;
 using P2PSocket.Server.Utils;
+using System.Threading.Tasks;
 
 namespace P2PSocket.Server.Commands
 {
@@ -72,7 +73,7 @@ namespace P2PSocket.Server.Commands
                         if (Global.WaiteConnetctTcp.ContainsKey(token))
                         {
                             LogUtils.Debug("【P2P】已超时，内网穿透失败.");
-                            Global.WaiteConnetctTcp[token].Close();
+                            Global.WaiteConnetctTcp[token].SafeClose();
                             Global.WaiteConnetctTcp.Remove(token);
                             p2pTypeDict.Remove(token);
                         }
@@ -145,8 +146,12 @@ namespace P2PSocket.Server.Commands
             clientA.Client.Send(sendPacketA.PackData());
             clientB.Client.Send(sendPacketB.PackData());
 
-            clientA.Close();
-            clientB.Close();
+            Task.Factory.StartNew(() =>
+            {
+                Thread.Sleep(5000);
+                clientA.SafeClose();
+                clientB.SafeClose();
+            });
         }
     }
 }

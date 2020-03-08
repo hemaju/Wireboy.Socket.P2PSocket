@@ -124,7 +124,7 @@ namespace P2PSocket.Server
                         if (!tcpManage.IsAllowConnect(remoteAddress))
                         {
                             LogUtils.Info($"【安全策略】阻止内网穿透：{remoteAddress}->{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}", false);
-                            socket.Close();
+                            socket.SafeClose();
                             continue;
                         }
                     }
@@ -148,7 +148,7 @@ namespace P2PSocket.Server
                                 if (Global.WaiteConnetctTcp.ContainsKey(token))
                                 {
                                     LogUtils.Warning($"【失败】内网穿透：{Global.P2PTimeout / 1000}秒无响应，已超时.");
-                                    Global.WaiteConnetctTcp[token].Close();
+                                    Global.WaiteConnetctTcp[token].SafeClose();
                                     Global.WaiteConnetctTcp.Remove(token);
                                 }
                             });
@@ -156,7 +156,7 @@ namespace P2PSocket.Server
                         else
                         {
                             LogUtils.Warning($"【失败】内网穿透：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort} 客户端不在线!");
-                            tcpClient.Close();
+                            tcpClient.SafeClose();
                         }
                     });
                 }
@@ -197,7 +197,7 @@ namespace P2PSocket.Server
                         }
                         catch (Exception ex)
                         {
-                            tcpClient.Close();
+                            tcpClient.SafeClose();
                             LogUtils.Error($"【失败】内网穿透：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}{Environment.NewLine}{ex.ToString()}");
                         }
                         if (tcpClient.Connected)
@@ -219,7 +219,7 @@ namespace P2PSocket.Server
             if (readClient.ToClient == null || !readClient.ToClient.Connected)
             {
                 LogUtils.Warning($"【失败】IP数据转发：绑定的Tcp连接已断开.");
-                readClient.Close();
+                readClient.SafeClose();
                 return;
             }
             byte[] buffer = new byte[P2PGlobal.P2PSocketBufferSize];
@@ -239,7 +239,7 @@ namespace P2PSocket.Server
                         else
                         {
                             LogUtils.Warning($"【失败】IP数据转发：目标Tcp连接已释放.");
-                            readClient.Close();
+                            readClient.SafeClose();
                             break;
                         }
                     }
@@ -249,7 +249,7 @@ namespace P2PSocket.Server
                         //如果tcp已关闭，需要关闭相关tcp
                         try
                         {
-                            readClient.ToClient?.Close();
+                            readClient.ToClient?.SafeClose();
                         }
                         finally { }
                         break;
@@ -259,7 +259,7 @@ namespace P2PSocket.Server
             finally
             {
                 LogUtils.Warning($"【失败】IP数据转发：目标Tcp连接已断开.");
-                readClient.Close();
+                readClient.SafeClose();
             }
         }
     }

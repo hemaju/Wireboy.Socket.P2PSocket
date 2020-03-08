@@ -42,9 +42,9 @@ namespace P2PSocket.Client
                     continue;
                 }
                 CommandFlag flag = attributes.First(t => t is CommandFlag) as CommandFlag;
-                if (!Global.CommandDict.ContainsKey(flag.CommandType))
+                if (!AppCenter.Instance.CommandDict.ContainsKey(flag.CommandType))
                 {
-                    Global.CommandDict.Add(flag.CommandType, type);
+                    AppCenter.Instance.CommandDict.Add(flag.CommandType, type);
                 }
             }
         }
@@ -52,7 +52,7 @@ namespace P2PSocket.Client
         public void Start()
         {
             LogUtils.InitConfig();
-            LogUtils.Info($"客户端版本:{Global.SoftVerSion} 作者：wireboy", false);
+            LogUtils.Info($"客户端版本:{AppCenter.SoftVerSion} 作者：wireboy", false);
             LogUtils.Info($"github地址：https://github.com/bobowire/Wireboy.Socket.P2PSocket", false);
             //读取配置文件
             if (ConfigUtils.IsExistConfig())
@@ -60,60 +60,94 @@ namespace P2PSocket.Client
                 //加载配置文件
                 try
                 {
-                    ConfigUtils.LoadFromFile();
-                    FileSystemWatcher fw = new FileSystemWatcher(Path.Combine(Global.RuntimePath, "P2PSocket"),"*.ini");
-                    fw.NotifyFilter = NotifyFilters.LastWrite;
+                    ConfigCenter config = ConfigUtils.LoadFromFile();
+                    ConfigCenter.LoadConfig(config);
+                    FileSystemWatcher fw = new FileSystemWatcher(Path.Combine(AppCenter.Instance.RuntimePath, "P2PSocket"), "*.ini")
+                    {
+                        NotifyFilter = NotifyFilters.LastWrite
+                    };
                     fw.Changed += Fw_Changed;
                     fw.EnableRaisingEvents = true;
-
                 }
                 catch (Exception ex)
                 {
                     LogUtils.Error($"加载配置文件Client.ini失败：{Environment.NewLine}{ex}");
                     return;
                 }
-                //启动服务
-                Global.CurrentGuid = Guid.NewGuid();
-                //连接服务器
-                P2PClient.ConnectServer();
-                Global.TaskFactory.StartNew(() => P2PClient.TestAndReconnectServer());
-                //启动端口映射
-                P2PClient.StartPortMap();
             }
             else
             {
-                LogUtils.Error($"找不到配置文件.{Global.ConfigFile}");
+                LogUtils.Error($"找不到配置文件.{AppCenter.Instance.ConfigFile}");
+                return;
             }
+            //启动服务
+            AppCenter.Instance.CurrentGuid = Guid.NewGuid();
+            //连接服务器
+            P2PClient.ConnectServer();
+            AppCenter.Instance.StartNewTask(() => P2PClient.TestAndReconnectServer());
+            //启动端口映射
+            P2PClient.StartPortMap();
             System.Threading.Thread.Sleep(1000);
         }
 
-        private void Fw_Changed(object sender, FileSystemEventArgs e)
+        public void Restart(ConfigCenter config)
         {
-            Stop();
+            CloseTcp();
             System.Threading.Thread.Sleep(2000);
-            Start();
-        }
-
-        public void ReloadConfig(bool isServerAddressChanged = false)
-        {
-            if (isServerAddressChanged)
+            if (config == null)
             {
-                LogUtils.Trace($"服务器地址变化，{Global.P2PServerTcp.RemoteEndPoint.ToString()} -> {Global.ServerAddress}:{Global.ServerPort}");
-                Global.P2PServerTcp.Close();
+                //读取配置文件
+                if (ConfigUtils.IsExistConfig())
+                {
+                    //加载配置文件
+                    try
+                    {
+                        config = ConfigUtils.LoadFromFile();
+                    }
+                    catch (Exception ex)
+                    {
+                        LogUtils.Error($"加载配置文件Client.ini失败：{Environment.NewLine}{ex}");
+                        return;
+                    }
+                }
+                else
+                {
+                    LogUtils.Error($"找不到配置文件.{AppCenter.Instance.ConfigFile}");
+                    return;
+                }
             }
-            LogUtils.Trace("开始更新本地监听端口");
+            ConfigCenter.LoadConfig(config);
+            //启动服务
+            AppCenter.Instance.CurrentGuid = Guid.NewGuid();
+            //连接服务器
+            P2PClient.ConnectServer();
+            AppCenter.Instance.StartNewTask(() => P2PClient.TestAndReconnectServer());
+            //启动端口映射
             P2PClient.StartPortMap();
         }
 
-        public void Stop()
+        DateTime lastUpdateConfig = DateTime.Now;
+        object fwObj = new object();
+        private void Fw_Changed(object sender, FileSystemEventArgs e)
         {
-            Global.CurrentGuid = Guid.NewGuid();
-            Global.P2PServerTcp?.Close();
-            foreach (var listener in P2PClient.ListenerList.Values)
+            DateTime curTime = DateTime.Now;
+            lock (fwObj)
+            {
+                if (DateTime.Compare(lastUpdateConfig.AddSeconds(5), curTime) > 0) return;
+                lastUpdateConfig = DateTime.Now;
+                Restart(null);
+            }
+        }
+
+        public void CloseTcp()
+        {
+            AppCenter.Instance.CurrentGuid = Guid.NewGuid();
+            TcpCenter.Instance.P2PServerTcp?.SafeClose();
+            foreach (var listener in TcpCenter.Instance.ListenerList.Values)
             {
                 listener.Stop();
             }
-            Global.Init();
+            TcpCenter.Instance.ListenerList.Clear();
         }
 
     }
