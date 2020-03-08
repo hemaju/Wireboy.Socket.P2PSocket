@@ -1,8 +1,10 @@
-﻿using P2PSocket.Core;
+﻿using P2PSocket.Client.Utils;
+using P2PSocket.Core;
 using P2PSocket.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace P2PSocket.Client
@@ -75,6 +77,64 @@ namespace P2PSocket.Client
         ///     客户端黑名单
         /// </summary>
         public List<string> BlackClients { get; } = new List<string>();
+
+        public static string GetConfigText()
+        {
+            StringBuilder sb = new StringBuilder();
+            using (TextWriter tw = new StringWriter(sb))
+            {
+                tw.WriteLine($"[Common]");
+                tw.WriteLine($"ServerAddress={Instance.ServerAddress}:{Instance.ServerPort}");
+                tw.WriteLine($"ClientName={Instance.ClientName}");
+                if (!string.IsNullOrEmpty(Instance.AuthCode))
+                    tw.WriteLine($"AuthCode={Instance.AuthCode}");
+                string allowPort = "";
+                for (int i = 0; i < Instance.AllowPortList.Count; i++)
+                {
+                    AllowPortItem item = Instance.AllowPortList[i];
+                    if (i != 0)
+                    {
+                        allowPort += ",";
+                    }
+                    if (item.MaxValue == item.MinValue)
+                    {
+                        allowPort += item.MaxValue;
+                    }
+                    else
+                    {
+                        allowPort += $"{item.MinValue}-{item.MaxValue}";
+                    }
+                    if (item.AllowClients.Count > 0)
+                    {
+                        allowPort += ":" + string.Join("|", item.AllowClients);
+                    }
+
+                }
+                if (!string.IsNullOrEmpty(allowPort))
+                    tw.WriteLine($"AllowPort={allowPort}");
+                string blackList = string.Join(",", Instance.BlackClients);
+                if (!string.IsNullOrEmpty(blackList))
+                    tw.WriteLine($"BlackList={blackList}");
+                tw.WriteLine($"LogLevel={Enum.GetName(typeof(Core.Utils.LogLevel), LogUtils.Instance.LogLevel)}");
+                if (!string.IsNullOrEmpty(P2PTcpClient.Proxy.IP))
+                    tw.WriteLine($"Proxy_Ip={P2PTcpClient.Proxy.IP}");
+                if (!string.IsNullOrEmpty(P2PTcpClient.Proxy.UserName))
+                    tw.WriteLine($"Proxy_UserName={P2PTcpClient.Proxy.UserName}");
+                if (!string.IsNullOrEmpty(P2PTcpClient.Proxy.Password))
+                    tw.WriteLine($"Proxy_Password={P2PTcpClient.Proxy.Password}");
+                if (Instance.PortMapList.Count > 0)
+                {
+                    tw.WriteLine($"[PortMapItem]");
+                    Instance.PortMapList.ForEach(t =>
+                    {
+                        string item = (string.IsNullOrEmpty(t.LocalAddress) ? $"{t.LocalPort}" : $"{t.LocalAddress}:{t.LocalPort}") + "->" +
+                            (t.MapType == PortMapType.ip ? ($"{t.RemoteAddress}:{t.RemotePort}") : ($"[{t.RemoteAddress}]:{t.RemotePort}"));
+                        tw.WriteLine(item);
+                    });
+                }
+            }
+            return sb.ToString();
+        }
     }
 
 

@@ -249,6 +249,7 @@ namespace P2PSocket.Client
                 readClient.SafeClose();
                 return;
             }
+            TcpCenter.Instance.ConnectedTcpList.Add(readClient);
             byte[] buffer = new byte[P2PGlobal.P2PSocketBufferSize];
             try
             {
@@ -281,6 +282,7 @@ namespace P2PSocket.Client
                 LogUtils.Warning($"端口映射转发（ip模式）：目标Tcp连接已断开.");
                 readClient.SafeClose();
             }
+            TcpCenter.Instance.ConnectedTcpList.Remove(readClient);
         }
     }
 }

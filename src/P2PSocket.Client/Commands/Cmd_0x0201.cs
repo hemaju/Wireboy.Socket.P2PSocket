@@ -62,7 +62,6 @@ namespace P2PSocket.Client.Commands
                     {
                         string message = BinaryUtils.ReadString(data);
                         LogUtils.Warning($"内网穿透失败，错误消息：{Environment.NewLine}{message}");
-                        m_tcpClient.SafeClose();
                     }
                     break;
             }

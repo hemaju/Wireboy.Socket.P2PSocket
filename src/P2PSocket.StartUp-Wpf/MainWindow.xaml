@@ -1,0 +1,28 @@
+﻿<Window x:Class="P2PSocket.StartUp_Wpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:P2PSocket.StartUp_Wpf"
+        mc:Ignorable="d"
+        Title="P2PClient v3.0.2" Height="300" Width="550" WindowStartupLocation="CenterScreen">
+    <Grid>
+        <StackPanel Margin="0" Orientation="Horizontal" Height="35" VerticalAlignment="Top">
+            <TextBlock Text="服务器：" Margin="10 10 0 10"></TextBlock>
+            <TextBlock Text="{Binding ServerAddress}" Margin="0 10"></TextBlock>
+            <TextBlock Text="当前Tcp数量：" Margin="10 10 0 10"></TextBlock>
+            <TextBlock Text="{Binding TcpCount}" Margin="10 10 0 10"></TextBlock>
+        </StackPanel>
+        <ScrollViewer HorizontalAlignment="Left"  Margin="10,35,10,10" VerticalScrollBarVisibility="Auto">
+            <RichTextBox Width="{Binding ActualWidth,RelativeSource={RelativeSource AncestorType=ScrollViewer,Mode=FindAncestor}}" IsReadOnly="True">
+                <FlowDocument>
+                    <Paragraph>
+                        <Run Text="{Binding LogMessage}"/>
+                    </Paragraph>
+                </FlowDocument>
+            </RichTextBox>
+        </ScrollViewer>
+        <Button Content="端口映射" HorizontalAlignment="Right" Margin="0,10,10,10" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
+
+    </Grid>
+</Window>

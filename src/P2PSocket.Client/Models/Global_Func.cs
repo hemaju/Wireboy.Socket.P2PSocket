@@ -18,6 +18,7 @@ namespace P2PSocket.Client
     {
         public static void ListenTcp<T>(P2PTcpClient tcpClient) where T : ReceivePacket
         {
+            TcpCenter.Instance.ConnectedTcpList.Add(tcpClient);
             try
             {
                 Guid curGuid = AppCenter.Instance.CurrentGuid;
@@ -60,11 +61,13 @@ namespace P2PSocket.Client
             }
             catch { }
             LogUtils.Debug($"tcp连接{tcpClient.RemoteEndPoint}已断开");
+            TcpCenter.Instance.ConnectedTcpList.Remove(tcpClient);
 
         }
 
         public static void BindTcp(P2PTcpClient readTcp, P2PTcpClient toTcp)
         {
+            TcpCenter.Instance.ConnectedTcpList.Add(readTcp);
             byte[] buffer = new byte[P2PGlobal.P2PSocketBufferSize];
             NetworkStream readStream = readTcp.GetStream();
             NetworkStream toStream = toTcp.GetStream();
@@ -98,6 +101,7 @@ namespace P2PSocket.Client
                     break;
                 }
             }
+            TcpCenter.Instance.ConnectedTcpList.Remove(readTcp);
 
         }
 
