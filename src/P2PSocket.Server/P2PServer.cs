@@ -65,7 +65,7 @@ namespace P2PSocket.Server
             try
             {
                 listener.Start();
-                LogUtils.Info($"【成功】启动服务，端口：{ConfigCenter.Instance.LocalPort}.");
+                LogUtils.Info($"【成功】启动服务，端口：{ConfigCenter.Instance.LocalPort}");
             }
             catch
             {

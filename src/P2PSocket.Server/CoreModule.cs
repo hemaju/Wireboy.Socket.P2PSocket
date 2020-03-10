@@ -34,9 +34,14 @@ namespace P2PSocket.Server
                     //加载配置文件
                     ConfigCenter config = ConfigUtils.LoadFromFile();
                     ConfigCenter.LoadConfig(config);
+                    FileSystemWatcher fw = new FileSystemWatcher(Path.Combine(AppCenter.Instance.RuntimePath, "P2PSocket"), "Server.ini")
+                    {
+                        NotifyFilter = NotifyFilters.LastWrite
+                    };
+                    fw.Changed += Fw_Changed;
+                    fw.EnableRaisingEvents = true;
                     //启动服务
                     P2PServer.StartServer();
-                    //todo:控制台显示
                 }
                 else
                 {
@@ -57,6 +62,12 @@ namespace P2PSocket.Server
             {
                 listener.Stop();
             }
+            P2PServer.ListenerList.Clear();
+            foreach (var tcpItem in ClientCenter.Instance.TcpMap)
+            {
+                tcpItem.Value.TcpClient.Close();
+            }
+            ClientCenter.Instance.TcpMap.Clear();
         }
         /// <summary>
         ///     初始化全局变量
@@ -86,6 +97,52 @@ namespace P2PSocket.Server
                 {
                     AppCenter.Instance.CommandDict.Add(flag.CommandType, type);
                 }
+            }
+        }
+
+        public void Restart(ConfigCenter config)
+        {
+            Stop();
+            System.Threading.Thread.Sleep(2000);
+            if (config == null)
+            {
+                //读取配置文件
+                if (ConfigUtils.IsExistConfig())
+                {
+                    //加载配置文件
+                    try
+                    {
+                        config = ConfigUtils.LoadFromFile();
+                    }
+                    catch (Exception ex)
+                    {
+                        LogUtils.Error($"加载配置文件Server.ini失败：{Environment.NewLine}{ex}");
+                        return;
+                    }
+                }
+                else
+                {
+                    LogUtils.Error($"找不到配置文件.{AppCenter.Instance.ConfigFile}");
+                    return;
+                }
+            }
+            //启动服务
+            AppCenter.Instance.CurrentGuid = Guid.NewGuid();
+            ConfigCenter.LoadConfig(config);
+            //启动服务
+            P2PServer.StartServer();
+        }
+
+        DateTime lastUpdateConfig = DateTime.Now;
+        object fwObj = new object();
+        private void Fw_Changed(object sender, FileSystemEventArgs e)
+        {
+            DateTime curTime = DateTime.Now;
+            lock (fwObj)
+            {
+                if (DateTime.Compare(lastUpdateConfig.AddSeconds(5), curTime) > 0) return;
+                lastUpdateConfig = DateTime.Now;
+                Restart(null);
             }
         }
     }

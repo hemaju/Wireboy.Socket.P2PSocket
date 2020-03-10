@@ -62,7 +62,7 @@ namespace P2PSocket.Client
                 {
                     ConfigCenter config = ConfigUtils.LoadFromFile();
                     ConfigCenter.LoadConfig(config);
-                    FileSystemWatcher fw = new FileSystemWatcher(Path.Combine(AppCenter.Instance.RuntimePath, "P2PSocket"), "*.ini")
+                    FileSystemWatcher fw = new FileSystemWatcher(Path.Combine(AppCenter.Instance.RuntimePath, "P2PSocket"), "Client.ini")
                     {
                         NotifyFilter = NotifyFilters.LastWrite
                     };
