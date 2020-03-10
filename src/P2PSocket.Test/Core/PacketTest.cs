@@ -43,13 +43,13 @@ namespace P2PSocket.Test.Core
         {
             CoreModule coreModule = new CoreModule();
             coreModule.InitCommandList();
-            Assert.AreNotEqual(Global.CommandDict.Count, 0);
+            Assert.AreNotEqual(AppCenter.Instance.CommandDict.Count, 0);
         }
         [TestMethod]
         public void TestConfig_LoadFile()
         {
-            ConfigUtils.LoadFromFile();
-            Assert.AreNotEqual(Global.PortMapList.Count, 0);
+            ConfigCenter config = ConfigUtils.LoadFromFile();
+            Assert.AreNotEqual(config.PortMapList.Count, 0);
         }
         [TestMethod]
         public void TestServerStart()

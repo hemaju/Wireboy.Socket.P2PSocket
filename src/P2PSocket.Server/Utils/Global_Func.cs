@@ -20,11 +20,11 @@ namespace P2PSocket.Server
         {
             try
             {
-                Guid curGuid = Global.CurrentGuid;
+                Guid curGuid = AppCenter.Instance.CurrentGuid;
                 byte[] buffer = new byte[P2PGlobal.P2PSocketBufferSize];
                 NetworkStream tcpStream = tcpClient.GetStream();
                 ReceivePacket msgReceive = Activator.CreateInstance(typeof(T)) as ReceivePacket;
-                while (tcpClient.Connected && curGuid == Global.CurrentGuid)
+                while (tcpClient.Connected && curGuid == AppCenter.Instance.CurrentGuid)
                 {
                     int curReadLength = tcpStream.ReadSafe(buffer, 0, buffer.Length);
                     if (curReadLength > 0)
@@ -51,10 +51,10 @@ namespace P2PSocket.Server
                 LogUtils.Error($"【错误】Global_Func.ListenTcp：{Environment.NewLine}{ex}");
             }
 
-            if (Global.TcpMap.ContainsKey(tcpClient.ClientName))
+            if (ClientCenter.Instance.TcpMap.ContainsKey(tcpClient.ClientName))
             {
-                if (Global.TcpMap[tcpClient.ClientName].TcpClient == tcpClient)
-                    Global.TcpMap.Remove(tcpClient.ClientName);
+                if (ClientCenter.Instance.TcpMap[tcpClient.ClientName].TcpClient == tcpClient)
+                    ClientCenter.Instance.TcpMap.Remove(tcpClient.ClientName);
             }
             //如果tcp已关闭，需要关闭相关tcp
             try
@@ -74,11 +74,11 @@ namespace P2PSocket.Server
         public static P2PCommand FindCommand(P2PTcpClient tcpClient, ReceivePacket packet)
         {
             P2PCommand command = null;
-            if (Global.AllowAnonymous.Contains(packet.CommandType) || tcpClient.IsAuth)
+            if (AppCenter.Instance.AllowAnonymous.Contains(packet.CommandType) || tcpClient.IsAuth)
             {
-                if (Global.CommandDict.ContainsKey(packet.CommandType))
+                if (AppCenter.Instance.CommandDict.ContainsKey(packet.CommandType))
                 {
-                    Type type = Global.CommandDict[packet.CommandType];
+                    Type type = AppCenter.Instance.CommandDict[packet.CommandType];
                     command = Activator.CreateInstance(type, tcpClient, packet.Data) as P2PCommand;
                 }
                 else

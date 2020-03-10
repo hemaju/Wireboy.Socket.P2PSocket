@@ -21,9 +21,9 @@ namespace P2PSocket.Server.Commands
         }
         public override bool Excute()
         {
-            if (Global.TcpMap.ContainsKey(m_tcpClient.ClientName))
+            if (ClientCenter.Instance.TcpMap.ContainsKey(m_tcpClient.ClientName))
             {
-                P2PTcpItem item = Global.TcpMap[m_tcpClient.ClientName];
+                P2PTcpItem item = ClientCenter.Instance.TcpMap[m_tcpClient.ClientName];
                 item.AllowPorts = BinaryUtils.ReadObjectList<AllowPortItem>(m_data);
                 item.BlackClients = BinaryUtils.ReadStringList(m_data);
             }

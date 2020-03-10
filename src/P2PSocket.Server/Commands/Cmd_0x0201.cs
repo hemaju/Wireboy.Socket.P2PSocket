@@ -51,7 +51,7 @@ namespace P2PSocket.Server.Commands
                 string clientName = BinaryUtils.ReadString(m_data);
                 m_tcpClient.ClientName = clientName;
                 string token = BinaryUtils.ReadString(m_data);
-                if (Global.WaiteConnetctTcp.ContainsKey(token))
+                if (ClientCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
                 {
                     if (p2pTypeDict.ContainsKey(token) && p2pTypeDict[token] == 1)
                     {
@@ -65,16 +65,16 @@ namespace P2PSocket.Server.Commands
                 }
                 else
                 {
-                    Global.WaiteConnetctTcp.Add(token, m_tcpClient);
+                    ClientCenter.Instance.WaiteConnetctTcp.Add(token, m_tcpClient);
                     LogUtils.Debug("【P2P】等待目标tcp.");
-                    Global.TaskFactory.StartNew(() =>
+                    AppCenter.Instance.StartNewTask(() =>
                     {
-                        Thread.Sleep(Global.P2PTimeout);
-                        if (Global.WaiteConnetctTcp.ContainsKey(token))
+                        Thread.Sleep(ConfigCenter.Instance.P2PTimeout);
+                        if (ClientCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
                         {
                             LogUtils.Debug("【P2P】已超时，内网穿透失败.");
-                            Global.WaiteConnetctTcp[token].SafeClose();
-                            Global.WaiteConnetctTcp.Remove(token);
+                            ClientCenter.Instance.WaiteConnetctTcp[token].SafeClose();
+                            ClientCenter.Instance.WaiteConnetctTcp.Remove(token);
                             p2pTypeDict.Remove(token);
                         }
                     });
@@ -85,9 +85,9 @@ namespace P2PSocket.Server.Commands
         public void P2PStart_ServerTransfer(string token, string clientName, int clientPort, int p2pType)
         {
             P2PTcpItem item = null;
-            if (Global.TcpMap.ContainsKey(clientName))
+            if (ClientCenter.Instance.TcpMap.ContainsKey(clientName))
             {
-                item = Global.TcpMap[clientName];
+                item = ClientCenter.Instance.TcpMap[clientName];
             }
             if (item != null && item.TcpClient.Connected)
             {
@@ -102,7 +102,7 @@ namespace P2PSocket.Server.Commands
                     LogUtils.Debug("【P2P】等待Tcp连接，进行绑定");
                     Send_0x0201_Success sendDPacket = new Send_0x0201_Success(token, clientPort, p2pType);
                     Send_0x0201_Success sendSPacket = new Send_0x0201_Success(token, p2pType);
-                    Global.TcpMap[clientName].TcpClient.Client.Send(sendDPacket.PackData());
+                    ClientCenter.Instance.TcpMap[clientName].TcpClient.Client.Send(sendDPacket.PackData());
                     m_tcpClient.Client.Send(sendSPacket.PackData());
                 }
                 else
@@ -123,8 +123,8 @@ namespace P2PSocket.Server.Commands
         public void P2PBind_ServerTransfer(string token)
         {
             LogUtils.Debug($"【P2P】内网穿透成功");
-            P2PTcpClient client = Global.WaiteConnetctTcp[token];
-            Global.WaiteConnetctTcp.Remove(token);
+            P2PTcpClient client = ClientCenter.Instance.WaiteConnetctTcp[token];
+            ClientCenter.Instance.WaiteConnetctTcp.Remove(token);
             client.IsAuth = m_tcpClient.IsAuth = true;
             client.ToClient = m_tcpClient;
             m_tcpClient.ToClient = client;
@@ -135,7 +135,7 @@ namespace P2PSocket.Server.Commands
 
         public void P2PBind_DirectConnect(string token)
         {
-            P2PTcpClient clientA = Global.WaiteConnetctTcp[token];
+            P2PTcpClient clientA = ClientCenter.Instance.WaiteConnetctTcp[token];
             P2PTcpClient clientB = m_tcpClient;
 
             Send_0x0201_Success sendPacketA = new Send_0x0201_Success(14);

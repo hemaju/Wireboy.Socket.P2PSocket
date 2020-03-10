@@ -13,8 +13,10 @@ namespace P2PSocket.Server.Models.ConfigIO
     {
         public List<LogInfo> MessageList = new List<LogInfo>();
         private Dictionary<string, MethodInfo> MethodDic = new Dictionary<string, MethodInfo>();
-        public Common()
+        ConfigCenter config = null;
+        public Common(ConfigCenter config)
         {
+            this.config = config;
             var methods = GetType().GetMethods().Where(t => t.GetCustomAttribute<ConfigMethodAttr>() != null);
             foreach (MethodInfo method in methods)
             {
@@ -73,7 +75,7 @@ namespace P2PSocket.Server.Models.ConfigIO
         {
             if (int.TryParse(data, out int port))
             {
-                Global.LocalPort = port;
+                config.LocalPort = port;
             }
             else
             {
@@ -86,11 +88,11 @@ namespace P2PSocket.Server.Models.ConfigIO
             string levelName = data.ToLower();
             switch (levelName)
             {
-                case "debug": LogUtils.Instance.LogLevel = Core.Utils.LogLevel.Debug; break;
-                case "error": LogUtils.Instance.LogLevel = Core.Utils.LogLevel.Error; break;
-                case "info": LogUtils.Instance.LogLevel = Core.Utils.LogLevel.Info; break;
-                case "none": LogUtils.Instance.LogLevel = Core.Utils.LogLevel.None; break;
-                case "warning": LogUtils.Instance.LogLevel = Core.Utils.LogLevel.Warning; break;
+                case "debug": LogUtils.Instance.LogLevel = LogLevel.Debug; break;
+                case "error": LogUtils.Instance.LogLevel = LogLevel.Error; break;
+                case "info": LogUtils.Instance.LogLevel = LogLevel.Info; break;
+                case "none": LogUtils.Instance.LogLevel = LogLevel.None; break;
+                case "warning": LogUtils.Instance.LogLevel = LogLevel.Warning; break;
                 default: throw new ArgumentException("LogLevel格式错误，请参考https://github.com/bobowire/Wireboy.Socket.P2PSocket/wiki");
             }
         }
@@ -115,7 +117,7 @@ namespace P2PSocket.Server.Models.ConfigIO
                 {
                     throw new ArgumentException($"AllowClient格式错误，错误内容：\"{clientItem}\"请参考https://github.com/bobowire/Wireboy.Socket.P2PSocket/wiki");
                 }
-                Global.ClientAuthList.Add(item);
+                config.ClientAuthList.Add(item);
             }
         }
     }

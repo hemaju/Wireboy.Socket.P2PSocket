@@ -26,17 +26,17 @@ namespace P2PSocket.Server.Commands
         {
             string clientName = BinaryUtils.ReadString(m_data);
             string authCode = BinaryUtils.ReadString(m_data);
-            if (Global.ClientAuthList.Count == 0 || Global.ClientAuthList.Any(t => t.Match(clientName, authCode)))
+            if (ConfigCenter.Instance.ClientAuthList.Count == 0 || ConfigCenter.Instance.ClientAuthList.Any(t => t.Match(clientName, authCode)))
             {
                 bool isSuccess = true;
                 P2PTcpItem item = new P2PTcpItem();
                 item.TcpClient = m_tcpClient;
-                if (Global.TcpMap.ContainsKey(clientName))
+                if (ClientCenter.Instance.TcpMap.ContainsKey(clientName))
                 {
-                    if (Global.TcpMap[clientName].TcpClient.IsDisConnected)
+                    if (ClientCenter.Instance.TcpMap[clientName].TcpClient.IsDisConnected)
                     {
-                        Global.TcpMap[clientName].TcpClient.SafeClose();
-                        Global.TcpMap[clientName] = item;
+                        ClientCenter.Instance.TcpMap[clientName].TcpClient.SafeClose();
+                        ClientCenter.Instance.TcpMap[clientName] = item;
                     }
                     else
                     {
@@ -47,16 +47,16 @@ namespace P2PSocket.Server.Commands
 
                         try
                         {
-                            Global.TcpMap[clientName].TcpClient.Client.Send(new Send_0x0052().PackData());
+                            ClientCenter.Instance.TcpMap[clientName].TcpClient.Client.Send(new Send_0x0052().PackData());
                         }
                         catch (Exception)
                         {
-                            Global.TcpMap.Remove(clientName);
+                            ClientCenter.Instance.TcpMap.Remove(clientName);
                         }
                     }
                 }
                 else
-                    Global.TcpMap.Add(clientName, item);
+                    ClientCenter.Instance.TcpMap.Add(clientName, item);
                 if (isSuccess)
                 {
                     m_tcpClient.ClientName = clientName;

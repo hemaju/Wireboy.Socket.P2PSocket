@@ -12,8 +12,10 @@ namespace P2PSocket.Server.Models.ConfigIO
     public class PortMapItem : IConfigIO
     {
         public List<LogInfo> MessageList = new List<LogInfo>();
-        public PortMapItem()
+        ConfigCenter config = null;
+        public PortMapItem(ConfigCenter config)
         {
+            this.config = config;
         }
 
         public void ReadConfig(string text)
@@ -29,9 +31,28 @@ namespace P2PSocket.Server.Models.ConfigIO
             int port = 0;
             if (int.TryParse(portStr, out port) && port > 0)
             {
-                if (!Global.PortMapList.Any(t => t.LocalPort == port))
+                if (!config.PortMapList.Any(t => t.LocalPort == port))
                 {
                     Core.Models.PortMapItem item = new Core.Models.PortMapItem();
+
+                    int typeIndex = remoteStr.IndexOf("@");
+                    if (typeIndex >= 0)
+                    {
+                        try
+                        {
+                            item.P2PType = Convert.ToInt32(remoteStr.Substring(0, typeIndex));
+                            remoteStr = remoteStr.Substring(typeIndex + 1);
+                        }
+                        catch (Exception ex)
+                        {
+                            LogWarning($"【PortMapItem配置项】读取失败：无效的配置项 - {text}");
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        item.P2PType = 0;
+                    }
                     string[] remoteStrList = remoteStr.Split(':');
                     item.LocalPort = port;
                     item.LocalAddress = localIp;
@@ -46,7 +67,7 @@ namespace P2PSocket.Server.Models.ConfigIO
                         item.RemoteAddress = remoteStrList[0];
                     }
                     item.RemotePort = Convert.ToInt32(remoteStrList[1]);
-                    Global.PortMapList.Add(item);
+                    config.PortMapList.Add(item);
                     LogDebug($"【PortMapItem配置项】读取成功：{item.LocalAddress}{(item.LocalAddress == "" ? "" : ":")}{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}");
                 }
                 else

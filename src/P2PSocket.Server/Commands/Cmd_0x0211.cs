@@ -25,16 +25,16 @@ namespace P2PSocket.Server.Commands
         {
             int tokenLength = m_data.ReadInt32();
             string token = m_data.ReadBytes(tokenLength).ToStringUnicode();
-            if (Global.WaiteConnetctTcp.ContainsKey(token))
+            if (ClientCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
             {
-                P2PTcpClient client = Global.WaiteConnetctTcp[token];
-                Global.WaiteConnetctTcp.Remove(token);
+                P2PTcpClient client = ClientCenter.Instance.WaiteConnetctTcp[token];
+                ClientCenter.Instance.WaiteConnetctTcp.Remove(token);
                 client.IsAuth = m_tcpClient.IsAuth = true;
                 client.ToClient = m_tcpClient;
                 m_tcpClient.ToClient = client;
                 LogUtils.Debug($"命令：0x0211 已绑定内网穿透（2端）通道 {client.RemoteEndPoint}->{m_tcpClient.RemoteEndPoint}");
                 //监听client
-                Global.TaskFactory.StartNew(() => { Global_Func.ListenTcp<Packet_0x0212>(client); });
+                AppCenter.Instance.StartNewTask(() => { Global_Func.ListenTcp<Packet_0x0212>(client); });
             }
             else
             {

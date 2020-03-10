@@ -24,7 +24,7 @@ namespace P2PSocket.Server
             try
             {
                 LogUtils.InitConfig();
-                LogUtils.Info($"客户端版本:{Global.SoftVerSion} 作者：wireboy", false);
+                LogUtils.Info($"客户端版本:{AppCenter.Instance.SoftVerSion} 作者：wireboy", false);
                 LogUtils.Info($"github地址：https://github.com/bobowire/Wireboy.Socket.P2PSocket", false);
                 //读取配置文件
                 if (ConfigUtils.IsExistConfig())
@@ -32,14 +32,15 @@ namespace P2PSocket.Server
                     //初始化全局变量
                     InitGlobal();
                     //加载配置文件
-                    ConfigUtils.LoadFromFile();
+                    ConfigCenter config = ConfigUtils.LoadFromFile();
+                    ConfigCenter.LoadConfig(config);
                     //启动服务
                     P2PServer.StartServer();
                     //todo:控制台显示
                 }
                 else
                 {
-                    LogUtils.Error($"找不到配置文件.{Global.ConfigFile}");
+                    LogUtils.Error($"找不到配置文件.{AppCenter.Instance.ConfigFile}");
                 }
             }
             catch(Exception ex)
@@ -51,7 +52,7 @@ namespace P2PSocket.Server
 
         public void Stop()
         {
-            Global.CurrentGuid = Guid.NewGuid();
+            AppCenter.Instance.CurrentGuid = Guid.NewGuid();
             foreach (var listener in P2PServer.ListenerList)
             {
                 listener.Stop();
@@ -81,9 +82,9 @@ namespace P2PSocket.Server
                     continue;
                 }
                 CommandFlag flag = attributes.First(t => t is CommandFlag) as CommandFlag;
-                if (!Global.CommandDict.ContainsKey(flag.CommandType))
+                if (!AppCenter.Instance.CommandDict.ContainsKey(flag.CommandType))
                 {
-                    Global.CommandDict.Add(flag.CommandType, type);
+                    AppCenter.Instance.CommandDict.Add(flag.CommandType, type);
                 }
             }
         }

@@ -32,11 +32,11 @@ namespace P2PSocket.Server.Commands
             else
             {
                 //  给指定客户端的消息
-                if (Global.TcpMap.ContainsKey(destName))
+                if (ClientCenter.Instance.TcpMap.ContainsKey(destName))
                 {
                     //  将消息转发至指定客户端
                     Msg_0x0301 sendPacket = new Msg_0x0301(logLevel, msg, m_tcpClient.ClientName);
-                    Global.TcpMap[destName].TcpClient.Client.Send(sendPacket.PackData());
+                    ClientCenter.Instance.TcpMap[destName].TcpClient.Client.Send(sendPacket.PackData());
                 }
                 else
                 {

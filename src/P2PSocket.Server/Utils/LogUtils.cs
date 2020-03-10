@@ -19,7 +19,7 @@ namespace P2PSocket.Server
                 ss.WriteLine($"{logInfo.Time.ToString("[HH:mm:ss]")}{logInfo.Msg}");
         }
 
-        public static Logger Instance { get; } = new Logger($"{Global.RuntimePath}P2PSocket/Logs", "Server_");
+        public static Logger Instance { get; } = new Logger($"{AppCenter.Instance.RuntimePath}P2PSocket/Logs", "Server_");
 
         public static void Debug(string log, bool autoConsole = true)
         {
