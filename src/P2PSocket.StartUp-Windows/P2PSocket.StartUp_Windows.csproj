@@ -3,10 +3,11 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-    <RootNamespace>P2PSocket.StartUp_WinService</RootNamespace>
+    <RootNamespace>P2PSocket.StartUp_Windows</RootNamespace>
     <TargetLatestRuntimePatch>false</TargetLatestRuntimePatch>
     <ApplicationIcon />
     <StartupObject />
+    <AssemblyName>P2PSocket.StartUp_Windows</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -25,16 +26,22 @@
     <Reference Include="System">
       <HintPath>System</HintPath>
     </Reference>
+    <Reference Include="System.Configuration.Install">
+      <HintPath>..\..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.2\System.Configuration.Install.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="DeleteServer.bat">
+    <None Update="P2PSocket.StartUp_Windows（install）.lnk">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="RegisterServer.bat">
+    <None Update="windows服务脚本\DeleteServer.bat">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="StartServer.bat">
+    <None Update="windows服务脚本\RegisterServer.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="windows服务脚本\StartServer.bat">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

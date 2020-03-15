@@ -1,4 +1,4 @@
-﻿namespace P2PSocket.StartUp_WinService
+﻿namespace P2PSocket.StartUp_Windows
 {
     partial class P2PSocket
     {

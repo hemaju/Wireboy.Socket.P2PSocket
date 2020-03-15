@@ -53,7 +53,6 @@ namespace P2PSocket.Client.Utils
             if (string.IsNullOrEmpty(data)) throw new Exception("LoadFromString参数为为空");
             using (MemoryStream ms = new MemoryStream())
             {
-                IConfigIO instance = null;
                 StreamWriter sw = new StreamWriter(ms);
                 sw.Write(data);
                 sw.Flush();
