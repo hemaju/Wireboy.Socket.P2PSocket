@@ -33,6 +33,6 @@ namespace P2PSocket.Client
         /// <summary>
         ///     等待中的tcp连接
         /// </summary>
-        public Dictionary<string, P2PTcpClient> WaiteConnetctTcp = new Dictionary<string, P2PTcpClient>();
+        public Dictionary<string, P2PTcpClient> WaiteConnetctTcp { get; } = new Dictionary<string, P2PTcpClient>();
     }
 }

@@ -1,6 +1,7 @@
 .vs
 obj
 bin
-Properties
+PublishProfiles
+launchSettings.json
 *.user
 OutPut
