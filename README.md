@@ -26,6 +26,12 @@
 
 2.dev分支版本为开发者活跃版本，dev版本稳定后，将与master分支合并。
 
+## 视频教程
+
+1. [P2PSocket如何编译可执行文件](https://www.bilibili.com/video/BV1ue41147p1/)
+
+2. [简单使用P2PSocket进行远程桌面](https://www.bilibili.com/video/BV1XE411K7ca/)
+
 ## 网络结构
 
 ### 内网穿透结构
