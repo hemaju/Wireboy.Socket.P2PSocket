@@ -40,12 +40,13 @@ namespace P2PSocket.Server
                         byte[] refData = buffer.Take(curReadLength).ToArray();
                         if (tcpClient.IsSpeedLimit)
                         {
+                            int curSecond = DateTime.Now.Second;
                             if (DateTime.Now.Second != lastSecond)
                             {
-                                recieveLength[DateTime.Now.Second % 2] = 0;
+                                recieveLength[curSecond % 2] = 0;
                             }
-                            lastSecond = DateTime.Now.Second;
-                            recieveLength[DateTime.Now.Second % 2] += curReadLength;
+                            lastSecond = curSecond;
+                            recieveLength[curSecond % 2] += curReadLength;
                             if (recieveLength.Sum() > maxTotal)
                             {
                                 Thread.Sleep(1000);
