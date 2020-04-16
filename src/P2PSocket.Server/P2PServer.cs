@@ -223,6 +223,7 @@ namespace P2PSocket.Server
                 return;
             }
             byte[] buffer = new byte[P2PGlobal.P2PSocketBufferSize];
+            readClient.ReceiveBufferSize = P2PGlobal.P2PSocketBufferSize;
             NetworkStream readStream = readClient.GetStream();
             NetworkStream toStream = readClient.ToClient.GetStream();
             try

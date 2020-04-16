@@ -275,6 +275,8 @@ namespace P2PSocket.Core.Models
 
         public bool IsDisConnected { get => LastHeartTime.AddSeconds(15) <= DateTime.Now; }
 
+        public bool IsSpeedLimit { set; get; } = false;
+
         public int P2PLocalPort { set; get; } = -1;
         String m_remoteEndPoint = "";
         String m_localEndPoint = "";

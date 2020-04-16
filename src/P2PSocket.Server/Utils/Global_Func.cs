@@ -10,6 +10,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 
 namespace P2PSocket.Server
 {
@@ -23,13 +24,35 @@ namespace P2PSocket.Server
                 Guid curGuid = AppCenter.Instance.CurrentGuid;
                 byte[] buffer = new byte[P2PGlobal.P2PSocketBufferSize];
                 NetworkStream tcpStream = tcpClient.GetStream();
+                tcpClient.ReceiveBufferSize = P2PGlobal.P2PSocketBufferSize;
                 ReceivePacket msgReceive = Activator.CreateInstance(typeof(T)) as ReceivePacket;
+
+                int maxTotal = 1024 * 50 * 2;
+                int[] recieveLength = new int[2];
+                int lastSecond = -1;
+
+
                 while (tcpClient.Connected && curGuid == AppCenter.Instance.CurrentGuid)
                 {
                     int curReadLength = tcpStream.ReadSafe(buffer, 0, buffer.Length);
                     if (curReadLength > 0)
                     {
                         byte[] refData = buffer.Take(curReadLength).ToArray();
+                        if (tcpClient.IsSpeedLimit)
+                        {
+                            if (DateTime.Now.Second != lastSecond)
+                            {
+                                recieveLength[DateTime.Now.Second % 2] = 0;
+                            }
+                            lastSecond = DateTime.Now.Second;
+                            recieveLength[DateTime.Now.Second % 2] += curReadLength;
+                            if (recieveLength.Sum() > maxTotal)
+                            {
+                                Thread.Sleep(1000);
+                            }
+                        }
+
+
                         while (msgReceive.ParseData(ref refData))
                         {
                             LogUtils.Debug($"命令类型:{msgReceive.CommandType}");
