@@ -13,7 +13,6 @@ namespace P2PSocket.StartUp_Windows
     {
         static void Main(string[] args)
         {
-            Console.WriteLine(args);
             if (args.Length > 0)
             {
                 if (args.Any(t => t.ToLower() == "-install"))
