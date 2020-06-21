@@ -3,10 +3,91 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:P2PSocket.StartUp_Wpf"
+        xmlns:local="clr-namespace:P2PSocket.StartUp_Wpf" 
         mc:Ignorable="d"
-        Title="P2PClient v3.0.2" Height="300" Width="550" WindowStartupLocation="CenterScreen">
+        AllowsTransparency="True"
+        Background="Transparent"
+        Title="P2PClient v3.0.2" Height="300" Width="350" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" WindowStyle="None">
+    <WindowChrome.WindowChrome>
+        <WindowChrome GlassFrameThickness="1" UseAeroCaptionButtons="False"  NonClientFrameEdges="None"  CornerRadius="0" CaptionHeight="25"  />
+    </WindowChrome.WindowChrome>
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="25"/>
+            <RowDefinition/>
+            <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
+        <Grid Height="25" VerticalAlignment="Top">
+            <Grid.Background>
+                <SolidColorBrush Color="Gray"/>
+            </Grid.Background>
+            <Grid Margin="10 5">
+                <TextBlock Text="P2PSocket客户端 v3.0.2"></TextBlock>
+            </Grid>
+        </Grid>
+        <Grid Grid.Row="1" Margin="0 3" Background="#FF303030">
+            <Grid>
+                <Grid.Resources>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="White"></Setter>
+                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                        <Setter Property="VerticalAlignment" Value="Center"/>
+                    </Style>
+                </Grid.Resources>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="105"/>
+                    <ColumnDefinition Width="105"/>
+                    <ColumnDefinition Width="60"/>
+                    <ColumnDefinition Width="80"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="40"/>
+                    <RowDefinition Height="40"/>
+                    <RowDefinition Height="40"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="本机地址"></TextBlock>
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="映射地址"></TextBlock>
+                <TextBlock Grid.Row="0" Grid.Column="2" Text="类型"></TextBlock>
+                <TextBlock Grid.Row="0" Grid.Column="3" Text="网速"></TextBlock>
+                <TextBlock Grid.Row="1" Text="127.0.0.1:12255"></TextBlock>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="ClientB:3389"></TextBlock>
+                <TextBlock Grid.Row="1" Grid.Column="2" Text="P2P"></TextBlock>
+                <StackPanel Orientation="Vertical" Grid.Row="1" Grid.Column="3" VerticalAlignment="Center">
+                    <TextBlock Text="上行 255kb/s" HorizontalAlignment="Left"></TextBlock>
+                    <TextBlock Text="下行 55kb/s" HorizontalAlignment="Left"></TextBlock>
+                </StackPanel>
+
+
+                <TextBlock Grid.Row="2" Text="127.0.0.1:12256"></TextBlock>
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="ClientC:3389"></TextBlock>
+                <TextBlock Grid.Row="2" Grid.Column="2" Text="transfer"></TextBlock>
+                <StackPanel Orientation="Vertical" Grid.Row="2" Grid.Column="3" VerticalAlignment="Center">
+                    <TextBlock Text="上行 155kb/s" HorizontalAlignment="Left"></TextBlock>
+                    <TextBlock Text="下行 25kb/s" HorizontalAlignment="Left"></TextBlock>
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <Grid Grid.Row="2" x:Name="footer">
+            <Grid.Background>
+                <SolidColorBrush Color="Gray"/>
+            </Grid.Background>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" >
+                <Button Content="添加映射" Margin="5 5"></Button>
+                <Button Content="客户端列表" Margin="5 5"></Button>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+
+                <Button Content="查看日志" Margin="5 5"></Button>
+            </StackPanel>
+        </Grid>
+        
+        <Grid Visibility="Collapsed">
         <StackPanel Margin="0" Orientation="Horizontal" Height="35" VerticalAlignment="Top">
             <TextBlock Text="服务器：" Margin="10 10 0 10"></TextBlock>
             <TextBlock Text="{Binding ServerAddress}" Margin="0 10"></TextBlock>
@@ -22,7 +103,8 @@
                 </FlowDocument>
             </RichTextBox>
         </ScrollViewer>
-        <Button Content="端口映射" HorizontalAlignment="Right" Margin="0,10,10,10" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
+            <Button Content="端口映射" HorizontalAlignment="Right" Margin="0,10,10,10" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
+        </Grid>
 
     </Grid>
 </Window>

@@ -1,5 +1,6 @@
 ﻿using P2PSocket.Core.Models;
 using P2PSocket.Server.Models;
+using P2PSocket.Server.Utils;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -31,6 +32,19 @@ namespace P2PSocket.Server
 
         }
 
+        public string RegisterMacAddress(string mac)
+        {
+            Random random = new Random();
+            string name = random.Next(303030, 909090).ToString();
+            while (MacAddressMap.ContainsKey(name))
+            {
+                name = random.Next(303030, 909090).ToString();
+            }
+            MacAddressMap.Add(mac, name);
+            ConfigUtils.SaveMacAddress(this);
+            return name;
+        }
+
         /// <summary>
         ///     服务端口
         /// </summary>
@@ -48,5 +62,10 @@ namespace P2PSocket.Server
         ///     客户端认证集合（为空时不验证AuthCode）
         /// </summary>
         public List<ClientItem> ClientAuthList { set; get; } = new List<ClientItem>();
+
+        /// <summary>
+        ///     mac与客户端地址映射
+        /// </summary>
+        public Dictionary<string, string> MacAddressMap = new Dictionary<string, string>();
     }
 }

@@ -44,6 +44,10 @@ namespace P2PSocket.Core
         /// </summary>
         Login0x0103 = 0x0103,
         /// <summary>
+        ///     mac认证
+        /// </summary>
+        Login0x0104 = 0x0104,
+        /// <summary>
         ///     P2P端口映射请求
         /// </summary>
         P2P0x0201 = 0x0201,

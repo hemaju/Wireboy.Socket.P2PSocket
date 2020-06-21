@@ -5,6 +5,7 @@ using System.Text;
 using P2PSocket.Client.Utils;
 using P2PSocket.Client;
 using P2PSocket.Core.Models;
+using P2PSocket.Client.Models.Send;
 
 namespace P2PSocket.Test.Client
 {
@@ -22,6 +23,13 @@ namespace P2PSocket.Test.Client
         public void TestParsePort()
         {
             AllowPortItem t = new AllowPortItem("0-900");
+        }
+
+        [TestMethod]
+        public void TestMacAddress()
+        {
+            Send_0x0104 send_0X0104 = new Send_0x0104();
+            send_0X0104.GetActiveMacAddress();
         }
     }
 }

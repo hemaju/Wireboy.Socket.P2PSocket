@@ -23,6 +23,14 @@ namespace P2PSocket.Server.Utils
             {
                 config = DoLoadConfig(fs);
             }
+            if (File.Exists(AppCenter.Instance.MacMapFile))
+            {
+                using (StreamReader fs = new StreamReader(AppCenter.Instance.MacMapFile))
+                {
+                    config = DoLoadMacAddress(config, fs);
+                }
+            }
+
             return config;
         }
 
@@ -49,6 +57,21 @@ namespace P2PSocket.Server.Utils
             return config;
         }
 
+        internal static ConfigCenter DoLoadMacAddress(ConfigCenter configCenter, StreamReader fs)
+        {
+            configCenter.MacAddressMap.Clear();
+            while (!fs.EndOfStream)
+            {
+                string lineStr = fs.ReadLine().Trim();
+                string[] oneData = lineStr.Split(' ').Where(t => !string.IsNullOrWhiteSpace(t)).ToArray();
+                if (oneData.Length == 2)
+                {
+                    configCenter.MacAddressMap.Add(oneData[0], oneData[1]);
+                }
+            }
+            return configCenter;
+        }
+
         public static ConfigCenter LoadFromString(string data)
         {
             ConfigCenter config = new ConfigCenter();
@@ -71,6 +94,22 @@ namespace P2PSocket.Server.Utils
         {
 
         }
+        private static bool isSaveMac = false;
+        public static void SaveMacAddress(ConfigCenter configCenter)
+        {
+            if (isSaveMac) return;
+            isSaveMac = true;
+            using (StreamWriter fs = new StreamWriter(AppCenter.Instance.MacMapFile, false))
+            {
+                Dictionary<string, string> macMap = configCenter.MacAddressMap;
+                foreach (string mac in macMap.Keys)
+                {
+                    fs.WriteLine($"{mac} {macMap[mac]}");
+                }
+            }
+            isSaveMac = false;
+        }
+
         public static Dictionary<string, IConfigIO> GetConfigIOInstanceList(ConfigCenter config)
         {
             Dictionary<string, IConfigIO> retDic = new Dictionary<string, IConfigIO>();

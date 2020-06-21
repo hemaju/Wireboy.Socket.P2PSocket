@@ -41,6 +41,12 @@ namespace P2PSocket.Client.Commands
             string msg = BinaryUtils.ReadString(m_data);
             LogUtils.Info($"命令：0x0101 {msg}");
             TcpCenter.Instance.P2PServerTcp.Token = BinaryUtils.ReadString(m_data);
+            if (m_data.PeekChar() >= 0)
+            {
+                string clientName = BinaryUtils.ReadString(m_data);
+                ConfigCenter.Instance.ClientName = clientName;
+                LogUtils.Info($"客户端名称：{ConfigCenter.Instance.ClientName}");
+            }
             //  发送客户端信息
             Send_0x0103 sendPacket = new Send_0x0103();
             Utils.LogUtils.Info("命令：0x0101 同步服务端数据");

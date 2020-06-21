@@ -32,5 +32,20 @@ namespace P2PSocket.Server
         ///     客户端的tcp映射<服务名,tcp>
         /// </summary>
         public Dictionary<string, P2PTcpItem> TcpMap = new Dictionary<string, P2PTcpItem>();
+
+
+        public string GetClientName(string macAddress)
+        {
+            string clientName = "";
+            if(ConfigCenter.Instance.MacAddressMap.ContainsKey(macAddress))
+            {
+                clientName = ConfigCenter.Instance.MacAddressMap[macAddress];
+            }
+            else
+            {
+                clientName = ConfigCenter.Instance.RegisterMacAddress(macAddress);
+            }
+            return clientName;
+        }
     }
 }

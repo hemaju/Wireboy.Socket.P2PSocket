@@ -41,6 +41,10 @@ namespace P2PSocket.Server
         /// </summary>
         public string ConfigFile { get { return Path.Combine(RuntimePath, "P2PSocket", "Server.ini"); } }
         /// <summary>
+        ///     配置文件路径
+        /// </summary>
+        public string MacMapFile { get { return Path.Combine(RuntimePath, "P2PSocket", "Server_mac.cfc"); } }
+        /// <summary>
         ///     当前主服务Guid
         /// </summary>
         public Guid CurrentGuid { set; get; } = Guid.NewGuid();
@@ -54,6 +58,7 @@ namespace P2PSocket.Server
         public List<P2PCommandType> AllowAnonymous { get; } = new List<P2PCommandType>() { P2PCommandType.Heart0x0052
             , P2PCommandType.Login0x0101
             , P2PCommandType.Login0x0103
+            , P2PCommandType.Login0x0104
             , P2PCommandType.P2P0x0211
             , P2PCommandType.P2P0x0201
             , P2PCommandType.Msg0x0301 };

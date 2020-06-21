@@ -41,7 +41,7 @@ namespace P2PSocket.Server.Commands
                     else
                     {
                         isSuccess = false;
-                        Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, false, $"ClientName:{clientName} 已被使用");
+                        Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, false, $"ClientName:{clientName} 已被使用", clientName);
                         m_tcpClient.Client.Send(sendPacket.PackData());
                         m_tcpClient.SafeClose();
 
@@ -60,13 +60,13 @@ namespace P2PSocket.Server.Commands
                 if (isSuccess)
                 {
                     m_tcpClient.ClientName = clientName;
-                    Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, true, $"客户端{clientName}认证通过");
+                    Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, true, $"客户端{clientName}认证通过", clientName);
                     m_tcpClient.Client.Send(sendPacket.PackData());
                 }
             }
             else
             {
-                Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, false, $"客户端{clientName}认证失败");
+                Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, false, $"客户端{clientName}认证失败", clientName);
                 m_tcpClient.Client.Send(sendPacket.PackData());
                 m_tcpClient.SafeClose();
             }

@@ -10,13 +10,14 @@ namespace P2PSocket.Server.Models.Send
 {
     public class Send_0x0101 : SendPacket
     {
-        public Send_0x0101(P2PTcpClient tcpClient, bool isSuccess, string msg) : base(P2PCommandType.Login0x0101)
+        public Send_0x0101(P2PTcpClient tcpClient, bool isSuccess, string msg, string clientName) : base(P2PCommandType.Login0x0101)
         {
             BinaryUtils.Write(Data, isSuccess);
             BinaryUtils.Write(Data, msg);
             if (isSuccess)
             {
                 BinaryUtils.Write(Data, tcpClient.Token);
+                BinaryUtils.Write(Data, clientName);
             }
         }
     }

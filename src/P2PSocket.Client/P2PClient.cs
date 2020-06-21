@@ -75,9 +75,17 @@ namespace P2PSocket.Client
         /// <param name="tcpClient"></param>
         private void InitServerInfo(P2PTcpClient tcpClient)
         {
-            Send_0x0101 sendPacket = new Send_0x0101();
-            LogUtils.Info($"客户端名称：{ConfigCenter.Instance.ClientName}");
-            tcpClient.Client.Send(sendPacket.PackData());
+            if (string.IsNullOrWhiteSpace(ConfigCenter.Instance.ClientName))
+            {
+                Send_0x0104 sendPacket = new Send_0x0104();
+                tcpClient.Client.Send(sendPacket.PackData());
+            }
+            else
+            {
+                Send_0x0101 sendPacket = new Send_0x0101();
+                LogUtils.Info($"客户端名称：{ConfigCenter.Instance.ClientName}");
+                tcpClient.Client.Send(sendPacket.PackData());
+            }
         }
 
 
