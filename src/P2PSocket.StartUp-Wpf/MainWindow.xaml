@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         AllowsTransparency="True"
         Background="Transparent"
-        Title="P2PClient v3.0.2" Height="300" Width="350" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" WindowStyle="None">
+        Title="P2PClient v3.0.3" Height="300" Width="350" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" WindowStyle="None">
     <WindowChrome.WindowChrome>
         <WindowChrome GlassFrameThickness="1" UseAeroCaptionButtons="False"  NonClientFrameEdges="None"  CornerRadius="0" CaptionHeight="25"  />
     </WindowChrome.WindowChrome>
@@ -22,7 +22,7 @@
                 <SolidColorBrush Color="Gray"/>
             </Grid.Background>
             <Grid Margin="10 5">
-                <TextBlock Text="P2PSocket客户端 v3.0.2"></TextBlock>
+                <TextBlock Text="P2PSocket客户端 v3.0.3"></TextBlock>
             </Grid>
         </Grid>
         <Grid Grid.Row="1" Margin="0 3" Background="#FF303030">
