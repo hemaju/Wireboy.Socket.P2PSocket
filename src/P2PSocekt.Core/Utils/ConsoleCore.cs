@@ -16,14 +16,17 @@ namespace P2PSocket.Core.Utils
 
         private void WriteConsole(string log)
         {
-            m_consoleLogList.Enqueue(log);
-            if (m_curConsoleTask == null)
+            if (m_consoleLogList.Count >= 200)
             {
-                lock (m_consoleObj)
+                m_consoleLogList.Enqueue(log);
+                if (m_curConsoleTask == null)
                 {
-                    if (m_curConsoleTask == null)
+                    lock (m_consoleObj)
                     {
-                        m_curConsoleTask = m_taskFactory.StartNew(() => DoWriteConsole());
+                        if (m_curConsoleTask == null || m_curConsoleTask.IsCompleted)
+                        {
+                            m_curConsoleTask = m_taskFactory.StartNew(() => DoWriteConsole());
+                        }
                     }
                 }
             }

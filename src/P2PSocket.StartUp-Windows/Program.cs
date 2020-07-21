@@ -6,6 +6,7 @@ using System.Linq;
 using System.Collections;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace P2PSocket.StartUp_Windows
 {
@@ -40,13 +41,16 @@ namespace P2PSocket.StartUp_Windows
                     catch (Exception ex)
                     {
                         Console.WriteLine(ex);
-                        Console.ReadKey();
                     }
                 }
                 else if (args.Any(t => t.ToLower() == "-ws"))
                 {
                     ServiceBase.Run(new P2PSocket());
                 }
+                new Task(() =>
+                {
+                    Monitor.Wait(new object());
+                }).Wait();
             }
             else
             {
@@ -54,32 +58,19 @@ namespace P2PSocket.StartUp_Windows
                 try
                 {
                     bool flag = P2PSocket.StartServer(AppDomain.CurrentDomain) | P2PSocket.StartClient(AppDomain.CurrentDomain);
-                    if (flag)
-                    {
-                        while (true)
-                        {
-                            ConsoleKey key = Console.ReadKey().Key;
-                            if (key == ConsoleKey.Q)
-                            {
-                                break;
-                            }
-                            else
-                            {
-
-                            }
-                        }
-                    }
-                    else
+                    if (!flag)
                     {
                         Console.WriteLine($"在目录{AppDomain.CurrentDomain.BaseDirectory}P2PSocket中，未找到P2PSocket.Client.dll和P2PSocket.Server.dll.");
-                        Console.ReadKey();
                     }
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex);
-                    Console.ReadKey();
                 }
+                new Task(() =>
+                {
+                    Monitor.Wait(new object());
+                }).Wait();
             }
         }
     }

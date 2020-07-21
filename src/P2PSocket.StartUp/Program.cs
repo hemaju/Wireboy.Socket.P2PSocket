@@ -3,6 +3,7 @@ using System.Reflection;
 using System.IO;
 using System.Threading;
 using System.ServiceProcess;
+using System.Threading.Tasks;
 
 namespace P2PSocket.StartUp
 {
@@ -29,26 +30,14 @@ namespace P2PSocket.StartUp
                 method.Invoke(obj, null);
                 flag = true;
             }
-            if (flag)
-            {
-                while (true)
-                {
-                    ConsoleKey key = Console.ReadKey().Key;
-                    if (key == ConsoleKey.Q)
-                    {
-                        break;
-                    }
-                    else
-                    {
-
-                    }
-                }
-            }
-            else
+            if (!flag)
             {
                 Console.WriteLine($"在目录{AppDomain.CurrentDomain.BaseDirectory}P2PSocket中，未找到P2PSocket.Client.dll和P2PSocket.Server.dll.");
-                Console.ReadKey();
             }
+            new Task(() =>
+            {
+                Monitor.Wait(new object());
+            }).Wait();
         }
     }
 }
