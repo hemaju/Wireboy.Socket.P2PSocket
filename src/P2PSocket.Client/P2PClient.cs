@@ -39,7 +39,7 @@ namespace P2PSocket.Client
                 //向服务器发送客户端信息
                 InitServerInfo(TcpCenter.Instance.P2PServerTcp);
                 //监听来自服务器的消息
-                Global_Func.ListenTcp<ReceivePacket>(TcpCenter.Instance.P2PServerTcp, Core.P2PGlobal.P2PSocketBufferSize_S);
+                Global_Func.ListenTcp<ReceivePacket>(TcpCenter.Instance.P2PServerTcp);
             });
         }
 

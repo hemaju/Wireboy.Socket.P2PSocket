@@ -10,7 +10,6 @@ namespace P2PSocket.Core
         ///     数据接收缓存区大小
         /// </summary>
         public const int P2PSocketBufferSize = 1024*10;
-        public const int P2PSocketBufferSize_S = 1024 * 10;
         /// <summary>
         ///     固定的包头数据
         /// </summary>

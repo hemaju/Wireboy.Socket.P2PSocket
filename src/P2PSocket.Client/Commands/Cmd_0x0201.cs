@@ -180,7 +180,7 @@ namespace P2PSocket.Client.Commands
                 serverClient.P2PLocalPort = port;
                 serverClient.UpdateEndPoint();
                 serverClient.Client.Send(sendPacket.PackData());
-                Global_Func.ListenTcp<ReceivePacket>(serverClient, Core.P2PGlobal.P2PSocketBufferSize_S);
+                Global_Func.ListenTcp<ReceivePacket>(serverClient);
             }
             catch (Exception ex)
             {
@@ -199,7 +199,7 @@ namespace P2PSocket.Client.Commands
                 serverClient.IsAuth = true;
                 serverClient.UpdateEndPoint();
                 serverClient.Client.Send(sendPacket.PackData());
-                Global_Func.ListenTcp<ReceivePacket>(serverClient, Core.P2PGlobal.P2PSocketBufferSize_S);
+                Global_Func.ListenTcp<ReceivePacket>(serverClient);
             }
             else
             {
@@ -236,7 +236,7 @@ namespace P2PSocket.Client.Commands
                 portClient.ToClient = serverClient;
                 serverClient.ToClient = portClient;
                 serverClient.Client.Send(sendPacket.PackData());
-                Global_Func.ListenTcp<ReceivePacket>(serverClient, Core.P2PGlobal.P2PSocketBufferSize_S);
+                Global_Func.ListenTcp<ReceivePacket>(serverClient);
             }
             catch (Exception ex)
             {
@@ -261,7 +261,7 @@ namespace P2PSocket.Client.Commands
                 portClient.ToClient = serverClient;
                 serverClient.ToClient = portClient;
                 serverClient.Client.Send(sendPacket.PackData());
-                Global_Func.ListenTcp<ReceivePacket>(serverClient, Core.P2PGlobal.P2PSocketBufferSize_S);
+                Global_Func.ListenTcp<ReceivePacket>(serverClient);
             }
             else
             {
@@ -275,7 +275,7 @@ namespace P2PSocket.Client.Commands
         public void ListenPort()
         {
             //  监听端口
-            Global_Func.ListenTcp<Packet_0x0202>(m_tcpClient.ToClient, Core.P2PGlobal.P2PSocketBufferSize);
+            Global_Func.ListenTcp<Packet_0x0202>(m_tcpClient.ToClient);
         }
     }
 }

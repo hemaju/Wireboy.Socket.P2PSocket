@@ -24,13 +24,13 @@ namespace P2PSocket.Client
             public ReceivePacket msgReceive;
             public Guid guid;
         }
-        public static void ListenTcp<T>(P2PTcpClient tcpClient,int bufferSize) where T : ReceivePacket
+        public static void ListenTcp<T>(P2PTcpClient tcpClient) where T : ReceivePacket
         {
             TcpCenter.Instance.ConnectedTcpList.Add(tcpClient);
             try
             {
                 RelationTcp_Server relationSt = new RelationTcp_Server();
-                relationSt.buffer = new byte[bufferSize];
+                relationSt.buffer = new byte[P2PGlobal.P2PSocketBufferSize];
                 relationSt.readTcp = tcpClient;
                 relationSt.readSs = tcpClient.GetStream();
                 relationSt.msgReceive = Activator.CreateInstance(typeof(T)) as ReceivePacket;
@@ -93,7 +93,7 @@ namespace P2PSocket.Client
             toRelation.readSs = readTcp.GetStream();
             toRelation.writeTcp = toTcp;
             toRelation.writeSs = toTcp.GetStream();
-            toRelation.buffer = new byte[P2PGlobal.P2PSocketBufferSize_S];
+            toRelation.buffer = new byte[P2PGlobal.P2PSocketBufferSize];
             RelationTcp_Ip fromRelation = new RelationTcp_Ip();
             fromRelation.readTcp = toRelation.writeTcp;
             fromRelation.readSs = toRelation.writeSs;
