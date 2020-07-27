@@ -34,7 +34,7 @@ namespace P2PSocket.Server.Commands
                 m_tcpClient.ToClient = client;
                 LogUtils.Debug($"命令：0x0211 已绑定内网穿透（2端）通道 {client.RemoteEndPoint}->{m_tcpClient.RemoteEndPoint}");
                 //监听client
-                AppCenter.Instance.StartNewTask(() => { Global_Func.ListenTcp<Packet_0x0212>(client); });
+                 Global_Func.ListenTcp<Packet_0x0212>(client);
             }
             else
             {

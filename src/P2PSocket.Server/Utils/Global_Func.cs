@@ -17,76 +17,69 @@ namespace P2PSocket.Server
 
     public static class Global_Func
     {
+        public struct RelationTcp_Server
+        {
+            public P2PTcpClient readTcp;
+            public NetworkStream readSs;
+            public byte[] buffer;
+            public ReceivePacket msgReceive;
+            public Guid guid;
+        }
         public static void ListenTcp<T>(P2PTcpClient tcpClient) where T : ReceivePacket
         {
             try
             {
-                Guid curGuid = AppCenter.Instance.CurrentGuid;
-                byte[] buffer = new byte[P2PGlobal.P2PSocketBufferSize];
-                NetworkStream tcpStream = tcpClient.GetStream();
-                tcpClient.ReceiveBufferSize = P2PGlobal.P2PSocketBufferSize;
-                ReceivePacket msgReceive = Activator.CreateInstance(typeof(T)) as ReceivePacket;
-
-                int maxTotal = 1024 * 50 * 2;
-                int[] recieveLength = new int[2];
-                int lastSecond = -1;
-
-
-                while (tcpClient.Connected && curGuid == AppCenter.Instance.CurrentGuid)
-                {
-                    int curReadLength = tcpStream.ReadSafe(buffer, 0, buffer.Length);
-                    if (curReadLength > 0)
-                    {
-                        byte[] refData = buffer.Take(curReadLength).ToArray();
-                        if (tcpClient.IsSpeedLimit)
-                        {
-                            int curSecond = DateTime.Now.Second;
-                            if (DateTime.Now.Second != lastSecond)
-                            {
-                                recieveLength[curSecond % 2] = 0;
-                            }
-                            lastSecond = curSecond;
-                            recieveLength[curSecond % 2] += curReadLength;
-                            if (recieveLength.Sum() > maxTotal)
-                            {
-                                Thread.Sleep(1000);
-                            }
-                        }
-
-
-                        while (msgReceive.ParseData(ref refData))
-                        {
-                            LogUtils.Debug($"命令类型:{msgReceive.CommandType}");
-                            // 执行command
-                            using (P2PCommand command = FindCommand(tcpClient, msgReceive))
-                            {
-                                command?.Excute();
-                            }
-                            //重置msgReceive
-                            msgReceive.Reset();
-                            if (refData.Length <= 0) break;
-                        }
-                    }
-                    else break;
-                }
+                RelationTcp_Server relationSt = new RelationTcp_Server();
+                relationSt.buffer = new byte[P2PGlobal.P2PSocketBufferSize];
+                relationSt.readTcp = tcpClient;
+                relationSt.readSs = tcpClient.GetStream();
+                relationSt.msgReceive = Activator.CreateInstance(typeof(T)) as ReceivePacket;
+                relationSt.guid = AppCenter.Instance.CurrentGuid;
+                relationSt.readSs.BeginRead(relationSt.buffer, 0, relationSt.buffer.Length, ReadTcp_Server, relationSt);
             }
             catch (Exception ex)
             {
                 LogUtils.Error($"【错误】Global_Func.ListenTcp：{Environment.NewLine}{ex}");
             }
 
-            if (ClientCenter.Instance.TcpMap.ContainsKey(tcpClient.ClientName))
-            {
-                if (ClientCenter.Instance.TcpMap[tcpClient.ClientName].TcpClient == tcpClient)
-                    ClientCenter.Instance.TcpMap.Remove(tcpClient.ClientName);
-            }
-            //如果tcp已关闭，需要关闭相关tcp
+        }
+
+        public static void ReadTcp_Server(IAsyncResult ar)
+        {
+            RelationTcp_Server relation = (RelationTcp_Server)ar.AsyncState;
             try
             {
-                tcpClient.ToClient?.SafeClose();
+                if (relation.guid == AppCenter.Instance.CurrentGuid)
+                {
+                    if (relation.readSs.CanRead)
+                    {
+                        int length = 0;
+                        length = relation.readSs.EndRead(ar);
+                        if (length > 0)
+                        {
+                            byte[] refData = relation.buffer.Take(length).ToArray();
+                            while (relation.msgReceive.ParseData(ref refData))
+                            {
+                                LogUtils.Debug($"命令类型:{relation.msgReceive.CommandType}");
+                                // 执行command
+                                using (P2PCommand command = FindCommand(relation.readTcp, relation.msgReceive))
+                                {
+                                    command?.Excute();
+                                }
+                                //重置msgReceive
+                                relation.msgReceive.Reset();
+                                if (refData.Length <= 0) break;
+                            }
+                            relation.readSs.BeginRead(relation.buffer, 0, relation.buffer.Length, ReadTcp_Server, relation);
+                            return;
+                        }
+                    }
+                }
             }
             catch { }
-            LogUtils.Debug($"tcp连接{tcpClient.RemoteEndPoint}已断开");
+            LogUtils.Debug($"tcp连接{relation.readTcp.RemoteEndPoint}已断开");
+            relation.readSs.Close(3000);
+            relation.readTcp.SafeClose();
         }
 
         /// <summary>
@@ -103,7 +96,7 @@ namespace P2PSocket.Server
                 if (AppCenter.Instance.CommandDict.ContainsKey(packet.CommandType))
                 {
                     Type type = AppCenter.Instance.CommandDict[packet.CommandType];
-                    command = Activator.CreateInstance(type, tcpClient, packet.Data) as P2PCommand;
+                    command = Activator.CreateInstance(type, tcpClient, packet.Data.Select(t => t).ToArray()) as P2PCommand;
                 }
                 else
                 {

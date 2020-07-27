@@ -60,7 +60,6 @@ namespace P2PSocket.Client
             {
                 action();
             });
-            //Task.Factory.StartNew(action);
         }
     }
 }
