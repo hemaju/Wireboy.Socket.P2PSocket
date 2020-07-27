@@ -84,7 +84,15 @@ namespace P2PSocket.Server
         {
             ListenSt st = (ListenSt)ar.AsyncState;
             TcpListener listener = st.listener;
-            Socket socket = listener.EndAcceptSocket(ar);
+            Socket socket = null;
+            try
+            {
+                socket = listener.EndAcceptSocket(ar);
+            }
+            catch (Exception ex)
+            {
+                LogUtils.Error(ex.ToString());
+            }
             listener.BeginAcceptSocket(AcceptSocket_Client, st);
             P2PTcpClient tcpClient = new P2PTcpClient(socket);
             LogUtils.Info($"端口{ ConfigCenter.Instance.LocalPort}新连入Tcp：{tcpClient.Client.RemoteEndPoint.ToString()}");
@@ -94,9 +102,10 @@ namespace P2PSocket.Server
 
         private void ListenPortMapPortWithServerName(PortMapItem item)
         {
-            TcpListener listener = new TcpListener(IPAddress.Any, item.LocalPort);
+            TcpListener listener = null;
             try
             {
+                listener = new TcpListener(IPAddress.Any, item.LocalPort);
                 listener.Start();
             }
             catch (Exception ex)
@@ -118,7 +127,16 @@ namespace P2PSocket.Server
             ListenSt st = (ListenSt)ar.AsyncState;
             TcpListener listener = st.listener;
             PortMapItem item = st.item;
-            Socket socket = listener.EndAcceptSocket(ar);
+            Socket socket = null;
+            try
+            {
+                socket = listener.EndAcceptSocket(ar);
+            }
+            catch (Exception ex)
+            {
+                LogUtils.Error(ex.ToString());
+                return;
+            }
             listener.BeginAcceptSocket(AcceptSocket_ClientName, ar);
 
             string remoteAddress = ((IPEndPoint)socket.RemoteEndPoint).Address.ToString();
@@ -184,7 +202,16 @@ namespace P2PSocket.Server
             ListenSt st = (ListenSt)ar.AsyncState;
             TcpListener listener = st.listener;
             PortMapItem item = st.item;
-            Socket socket = listener.EndAcceptSocket(ar);
+            Socket socket = null;
+            try
+            {
+                socket = listener.EndAcceptSocket(ar);
+            }
+            catch (Exception ex)
+            {
+                LogUtils.Error(ex.ToString());
+                return;
+            }
             listener.BeginAcceptSocket(AcceptSocket_Ip, st);
 
             P2PTcpClient tcpClient = new P2PTcpClient(socket);

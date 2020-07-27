@@ -34,14 +34,30 @@ namespace ProxyDemo
         void AcceptSocket_http(IAsyncResult ar)
         {
             TcpListener listen = (TcpListener)ar.AsyncState;
-            TcpClient socket = listen.EndAcceptTcpClient(ar);
+            TcpClient socket = null;
+            try
+            {
+                socket = listen.EndAcceptTcpClient(ar);
+            }
+            catch (Exception ex)
+            {
+                return;
+            }
             listen.BeginAcceptTcpClient(AcceptSocket_http, listen);
             HandleHttpProxy(socket);
         }
         void AcceptSocket_socks5(IAsyncResult ar)
         {
             TcpListener listen = (TcpListener)ar.AsyncState;
-            TcpClient socket = listen.EndAcceptTcpClient(ar);
+            TcpClient socket = null;
+            try
+            {
+                socket = listen.EndAcceptTcpClient(ar);
+            }
+            catch (Exception ex)
+            {
+                return;
+            }
             listen.BeginAcceptTcpClient(AcceptSocket_socks5, listen);
             HandleSocks5Proxy(socket);
         }

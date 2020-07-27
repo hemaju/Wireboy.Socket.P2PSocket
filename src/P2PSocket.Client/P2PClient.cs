@@ -151,7 +151,16 @@ namespace P2PSocket.Client
             ListenSt st = (ListenSt)ar.AsyncState;
             TcpListener listener = st.listener;
             PortMapItem item = st.item;
-            Socket socket = listener.EndAcceptSocket(ar);
+            Socket socket = null;
+            try
+            {
+                socket = listener.EndAcceptSocket(ar);
+            }
+            catch(Exception ex)
+            {
+                LogUtils.Error(ex.ToString());
+                return;
+            }
             listener.BeginAcceptSocket(AcceptSocket_Server, st);
             if (TcpCenter.Instance.P2PServerTcp != null && TcpCenter.Instance.P2PServerTcp.Connected)
             {
@@ -222,7 +231,16 @@ namespace P2PSocket.Client
             ListenSt st = (ListenSt)ar.AsyncState;
             TcpListener listener = st.listener;
             PortMapItem item = st.item;
-            Socket socket = listener.EndAcceptSocket(ar);
+            Socket socket = null;
+            try
+            {
+                socket = listener.EndAcceptSocket(ar);
+            }
+            catch(Exception ex)
+            {
+                LogUtils.Error(ex.ToString());
+                return;
+            }
             listener.BeginAcceptSocket(AcceptSocket_Server, st);
             P2PTcpClient tcpClient = new P2PTcpClient(socket);
             P2PTcpClient ipClient = null;
