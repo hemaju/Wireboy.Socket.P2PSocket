@@ -80,6 +80,8 @@ namespace P2PSocket.Server
             LogUtils.Debug($"tcp连接{relation.readTcp.RemoteEndPoint}已断开");
             relation.readSs.Close(3000);
             relation.readTcp.SafeClose();
+            if (relation.readTcp.ToClient != null)
+                relation.readTcp.ToClient.SafeClose();
         }
 
         /// <summary>

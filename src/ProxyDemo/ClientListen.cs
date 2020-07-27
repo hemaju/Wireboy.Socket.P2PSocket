@@ -21,32 +21,29 @@ namespace ProxyDemo
             Console.WriteLine("socks代理地址：127.0.0.1:13520");
             Console.WriteLine("http代理地址：127.0.0.1:13521");
             TaskFactory taskFactory = new TaskFactory();
-            taskFactory.StartNew(() => { StartSocksProxyListen(); });
-            taskFactory.StartNew(() => { StartHttpProxyListen(); });
+            StartSocksProxyListen();
+            StartHttpProxyListen();
         }
 
         void StartHttpProxyListen()
         {
             httpListener.Start();
-            while (true)
-            {
-                TcpClient socket = httpListener.AcceptTcpClient();
-                //Console.WriteLine($"tcp:{socket.Client.RemoteEndPoint.ToString()}");
+            httpListener.BeginAcceptTcpClient(AcceptSocket_http, httpListener);
+        }
 
-
-                task.StartNew(() =>
-                {
-                    try
-                    {
-                        HandleHttpProxy(socket);
-                    }
-                    catch (Exception)
-                    {
-                        socket.Close();
-                    }
-                });
-                //HandleHttpProxy(socket);
-            }
+        void AcceptSocket_http(IAsyncResult ar)
+        {
+            TcpListener listen = (TcpListener)ar.AsyncState;
+            TcpClient socket = listen.EndAcceptTcpClient(ar);
+            listen.BeginAcceptTcpClient(AcceptSocket_http, listen);
+            HandleHttpProxy(socket);
+        }
+        void AcceptSocket_socks5(IAsyncResult ar)
+        {
+            TcpListener listen = (TcpListener)ar.AsyncState;
+            TcpClient socket = listen.EndAcceptTcpClient(ar);
+            listen.BeginAcceptTcpClient(AcceptSocket_socks5, listen);
+            HandleSocks5Proxy(socket);
         }
 
         void HandleHttpProxy(TcpClient socket)
@@ -77,57 +74,39 @@ namespace ProxyDemo
                         port = Convert.ToInt32(ipDest[1]);
                     }
                 }
-
-
-
                 //Console.WriteLine($"地址：{domain}:{port}");
-                if (httpRequest.StartsWith("CONNECT"))
+                try
                 {
-                    TcpClient desttcp = new TcpClient(domain, port);
+                    if (httpRequest.StartsWith("CONNECT"))
+                    {
+                        TcpClient desttcp = new TcpClient(domain, port);
 
-                    //Console.WriteLine($"连接成功");
-                    socket.GetStream().Write(Encoding.UTF8.GetBytes("HTTP/1.1 200 Connection Established\r\n\r\n"));
-                    //task.StartNew(() => { bindTcp(socket, desttcp); });
-                    //task.StartNew(() => { bindTcp(desttcp, socket); });
-                    bindTcpClient(socket, desttcp);
+                        //Console.WriteLine($"连接成功");
+                        socket.GetStream().Write(Encoding.UTF8.GetBytes("HTTP/1.1 200 Connection Established\r\n\r\n"));
+                        bindTcpClient(socket, desttcp);
+                    }
+                    else
+                    {
+                        TcpClient desttcp = new TcpClient(domain, port);
+
+                        bindTcpClient(socket, desttcp);
+                        desttcp.GetStream().Write(data.Take(length).ToArray());
+                    }
                 }
-                else
+                catch
                 {
-                    TcpClient desttcp = new TcpClient(domain, port);
-                    //task.StartNew(() => { bindTcp(socket, desttcp); });
-                    //task.StartNew(() => { bindTcp(desttcp, socket); });
-
-                    bindTcpClient(socket, desttcp);
-                    desttcp.GetStream().Write(data.Take(length).ToArray());
+                    socket.Close();
                 }
                 //Console.WriteLine("数据：\r\n{0}", Encoding.UTF8.GetString(data.Take(length).ToArray()));
-
                 //desttcp.GetStream().Write(data.Take(length).ToArray());
                 //desttcp.GetStream().Write(Encoding.UTF8.GetBytes(httpRequest.Replace("CONNECT","GET")));
             }
-            //socket.Close();
         }
 
         void StartSocksProxyListen()
         {
             socksListener.Start();
-            while (true)
-            {
-                TcpClient socket = socksListener.AcceptTcpClient();
-                task.StartNew(() =>
-                {
-                    try
-                    {
-                        HandleSocks5Proxy(socket);
-                    }
-                    catch (Exception ex)
-                    {
-                        //Console.WriteLine(ex.ToString());
-                        socket.Close();
-                    }
-                });
-
-            }
+            socksListener.BeginAcceptTcpClient(AcceptSocket_socks5, socksListener);
         }
 
         void HandleSocks5Proxy(TcpClient socket)
@@ -164,10 +143,16 @@ namespace ProxyDemo
                             address = Encoding.UTF8.GetString(data.Skip(5).Take(length - 5 - 2).ToArray());
                             port = BitConverter.ToUInt16(data.Skip(length - 2).Take(2).Reverse().ToArray());
                             //Console.WriteLine("目标地址2：{0}", String.Format("{0}:{1}", address, port));
-                            isSuccess = true;
-                            IPAddress iPAddress = Dns.GetHostEntry(address).AddressList.FirstOrDefault();
-                            //Console.WriteLine(iPAddress.ToString());
-                            address = iPAddress.ToString();
+                            try
+                            {
+                                IPAddress iPAddress = Dns.GetHostEntry(address).AddressList.FirstOrDefault();
+                                //Console.WriteLine(iPAddress.ToString());
+                                address = iPAddress.ToString();
+                                isSuccess = true;
+                            }
+                            catch
+                            {
+                            }
                             break;
                         }
                 }
@@ -175,16 +160,26 @@ namespace ProxyDemo
                 {
                     //Console.WriteLine("实际地址：{0}", String.Format("{0}:{1}", address, port));
                     TcpClient desttcp = null;
-                    if (address == "0.0.0.0")
+                    try
                     {
-                        desttcp = new TcpClient(new IPEndPoint(IPAddress.Any, port));
+                        if (address == "0.0.0.0")
+                        {
+                            desttcp = new TcpClient(new IPEndPoint(IPAddress.Any, port));
+                        }
+                        else
+                            desttcp = new TcpClient(address, port);
+                        bindTcpClient(socket, desttcp);
+                        if (fromSt.CanWrite)
+                            fromSt.Write(new byte[] { 0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
                     }
-                    else
-                        desttcp = new TcpClient(address, port);
-                    //task.StartNew(() => { bindTcp(socket, desttcp); });
-                    //task.StartNew(() => { bindTcp(desttcp, socket); });
-                    bindTcpClient(socket, desttcp);
-                    fromSt.Write(new byte[] { 0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
+                    catch
+                    {
+                        socket.Close();
+                    }
+                }
+                else
+                {
+                    socket.Close();
                 }
 
             }
@@ -258,48 +253,6 @@ namespace ProxyDemo
             relation.writeTcp.Close();
         }
 
-        private void bindTcp(TcpClient readClient, TcpClient writeClient)
-        {
-            //if (writeClient == null || !writeClient.Connected)
-            //{
-            //    Console.WriteLine($"数据转发失败：绑定的Tcp连接已断开.");
-            //    readClient.Close();
-            //    return;
-            //}
-            byte[] buffer = new byte[10240];
-            try
-            {
-                NetworkStream readStream = readClient.GetStream();
-                NetworkStream toStream = writeClient.GetStream();
-                while (readClient.Connected)
-                {
-                    int curReadLength = readStream.Read(buffer, 0, buffer.Length);
-                    if (curReadLength > 0)
-                    {
-                        //Console.WriteLine("接收的数据：\r\n{0}", Encoding.UTF8.GetString(buffer.Take(curReadLength).ToArray()));
-                        toStream.Write(buffer, 0, curReadLength);
-                    }
-                    else
-                    {
-                        Console.WriteLine($"源Tcp连接已断开.");
-                        //如果tcp已关闭，需要关闭相关tcp
-                        try
-                        {
-                            writeClient.Close();
-                        }
-                        finally
-                        {
-                        }
-                        break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                //Console.WriteLine($"端口映射转发（ip模式）：目标Tcp连接已断开.");
-                readClient.Close();
-            }
-        }
     }
 
     public struct RelationTcp

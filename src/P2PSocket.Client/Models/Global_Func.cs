@@ -41,7 +41,6 @@ namespace P2PSocket.Client
             {
                 LogUtils.Error($"【错误】Global_Func.ListenTcp：{Environment.NewLine}{ex}");
             }
-
         }
 
         public static void ReadTcp_Server(IAsyncResult ar)
@@ -80,6 +79,8 @@ namespace P2PSocket.Client
             LogUtils.Debug($"tcp连接{relation.readTcp.RemoteEndPoint}已断开");
             relation.readSs.Close(3000);
             relation.readTcp.SafeClose();
+            if (relation.readTcp.ToClient != null)
+                relation.readTcp.ToClient.SafeClose();
             if (TcpCenter.Instance.ConnectedTcpList.Contains(relation.readTcp)) TcpCenter.Instance.ConnectedTcpList.Remove(relation.readTcp);
         }
 
@@ -164,7 +165,7 @@ namespace P2PSocket.Client
                 if (AppCenter.Instance.CommandDict.ContainsKey(packet.CommandType))
                 {
                     Type type = AppCenter.Instance.CommandDict[packet.CommandType];
-                    command = Activator.CreateInstance(type, tcpClient, packet.Data.Select(t=>t).ToArray()) as P2PCommand;
+                    command = Activator.CreateInstance(type, tcpClient, packet.Data.Select(t => t).ToArray()) as P2PCommand;
                 }
                 else
                 {
