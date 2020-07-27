@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -32,7 +33,9 @@ namespace ProxyDemo
                 TcpClient socket = httpListener.AcceptTcpClient();
                 //Console.WriteLine($"tcp:{socket.Client.RemoteEndPoint.ToString()}");
 
-                task.StartNew(() => {
+
+                task.StartNew(() =>
+                {
                     try
                     {
                         HandleHttpProxy(socket);
@@ -80,20 +83,21 @@ namespace ProxyDemo
                 //Console.WriteLine($"地址：{domain}:{port}");
                 if (httpRequest.StartsWith("CONNECT"))
                 {
-                    //Console.WriteLine("不支持https协议");
-                    //socket.Close();
                     TcpClient desttcp = new TcpClient(domain, port);
 
                     //Console.WriteLine($"连接成功");
                     socket.GetStream().Write(Encoding.UTF8.GetBytes("HTTP/1.1 200 Connection Established\r\n\r\n"));
-                    task.StartNew(() => { bindTcp(socket, desttcp); });
-                    task.StartNew(() => { bindTcp(desttcp, socket); });
+                    //task.StartNew(() => { bindTcp(socket, desttcp); });
+                    //task.StartNew(() => { bindTcp(desttcp, socket); });
+                    bindTcpClient(socket, desttcp);
                 }
                 else
                 {
                     TcpClient desttcp = new TcpClient(domain, port);
-                    task.StartNew(() => { bindTcp(socket, desttcp); });
-                    task.StartNew(() => { bindTcp(desttcp, socket); });
+                    //task.StartNew(() => { bindTcp(socket, desttcp); });
+                    //task.StartNew(() => { bindTcp(desttcp, socket); });
+
+                    bindTcpClient(socket, desttcp);
                     desttcp.GetStream().Write(data.Take(length).ToArray());
                 }
                 //Console.WriteLine("数据：\r\n{0}", Encoding.UTF8.GetString(data.Take(length).ToArray()));
@@ -110,12 +114,13 @@ namespace ProxyDemo
             while (true)
             {
                 TcpClient socket = socksListener.AcceptTcpClient();
-                task.StartNew(() => {
+                task.StartNew(() =>
+                {
                     try
                     {
                         HandleSocks5Proxy(socket);
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         //Console.WriteLine(ex.ToString());
                         socket.Close();
@@ -172,18 +177,86 @@ namespace ProxyDemo
                     TcpClient desttcp = null;
                     if (address == "0.0.0.0")
                     {
-                        desttcp = new TcpClient(new IPEndPoint(IPAddress.Any,port));
+                        desttcp = new TcpClient(new IPEndPoint(IPAddress.Any, port));
                     }
                     else
-                        desttcp = new TcpClient(address,port);
-                    task.StartNew(() => { bindTcp(socket, desttcp); });
-                    task.StartNew(() => { bindTcp(desttcp, socket); });
+                        desttcp = new TcpClient(address, port);
+                    //task.StartNew(() => { bindTcp(socket, desttcp); });
+                    //task.StartNew(() => { bindTcp(desttcp, socket); });
+                    bindTcpClient(socket, desttcp);
                     fromSt.Write(new byte[] { 0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
                 }
 
             }
         }
 
+        private void bindTcpClient(TcpClient readClient, TcpClient writeClient)
+        {
+            try
+            {
+                NetworkStream readSs = readClient.GetStream();
+                NetworkStream writeSs = writeClient.GetStream();
+                RelationTcp romrRelation = new RelationTcp() { readTcp = readClient, readSs = readSs, writeTcp = writeClient, writeSs = writeSs, buffer = new byte[10240] };
+                RelationTcp toRelation = new RelationTcp() { readTcp = writeClient, readSs = writeSs, writeTcp = readClient, writeSs = readSs, buffer = new byte[10240] };
+                StartRead(romrRelation);
+                StartRead(toRelation);
+            }
+            catch
+            {
+                try
+                {
+                    readClient.Close();
+                }
+                catch { }
+                try
+                {
+                    writeClient.Close();
+                }
+                catch { }
+                return;
+            }
+
+        }
+
+        private void StartRead(RelationTcp tcp)
+        {
+            tcp.readTcp.GetStream().BeginRead(tcp.buffer, 0, tcp.buffer.Length, ReadTcp, tcp);
+        }
+
+        private void ReadTcp(IAsyncResult ar)
+        {
+            RelationTcp relation = (RelationTcp)ar.AsyncState;
+
+            if (relation.readSs.CanRead)
+            {
+                int length = 0;
+                try
+                {
+                    length = relation.readSs.EndRead(ar);
+                }
+                catch { }
+                if (length > 0)
+                {
+                    if (relation.writeSs.CanWrite)
+                    {
+                        try
+                        {
+                            relation.writeSs.Write(relation.buffer.Take(length).ToArray());
+                            StartRead(relation);
+                            return;
+                        }
+                        catch
+                        {
+                            Console.WriteLine("连接中断");
+                        }
+                    }
+                }
+            }
+            relation.readSs.Close(3000);
+            relation.writeSs.Close(3000);
+            relation.readTcp.Close();
+            relation.writeTcp.Close();
+        }
 
         private void bindTcp(TcpClient readClient, TcpClient writeClient)
         {
@@ -227,5 +300,14 @@ namespace ProxyDemo
                 readClient.Close();
             }
         }
+    }
+
+    public struct RelationTcp
+    {
+        public TcpClient readTcp;
+        public TcpClient writeTcp;
+        public NetworkStream readSs;
+        public NetworkStream writeSs;
+        public byte[] buffer;
     }
 }
