@@ -141,8 +141,7 @@ namespace P2PSocket.Client.Commands
                     portClient.IsAuth = p2pClient.IsAuth = true;
                     portClient.ToClient = p2pClient;
                     p2pClient.ToClient = portClient;
-                    AppCenter.Instance.StartNewTask(() => { Global_Func.BindTcp(p2pClient, portClient); });
-                    AppCenter.Instance.StartNewTask(() => { Global_Func.BindTcp(portClient, p2pClient); });
+                    Global_Func.BindTcp(p2pClient, portClient);
                 }
                 else
                 {
@@ -153,8 +152,7 @@ namespace P2PSocket.Client.Commands
                         portClient.IsAuth = p2pClient.IsAuth = true;
                         portClient.ToClient = p2pClient;
                         p2pClient.ToClient = portClient;
-                        AppCenter.Instance.StartNewTask(() => { Global_Func.BindTcp(p2pClient, portClient); });
-                        AppCenter.Instance.StartNewTask(() => { Global_Func.BindTcp(portClient, p2pClient); });
+                        Global_Func.BindTcp(p2pClient, portClient);
                     }
                     else
                     {
@@ -182,7 +180,7 @@ namespace P2PSocket.Client.Commands
                 serverClient.P2PLocalPort = port;
                 serverClient.UpdateEndPoint();
                 serverClient.Client.Send(sendPacket.PackData());
-                AppCenter.Instance.StartNewTask(() => { Global_Func.ListenTcp<ReceivePacket>(serverClient); });
+                Global_Func.ListenTcp<ReceivePacket>(serverClient, Core.P2PGlobal.P2PSocketBufferSize_S);
             }
             catch (Exception ex)
             {
@@ -201,7 +199,7 @@ namespace P2PSocket.Client.Commands
                 serverClient.IsAuth = true;
                 serverClient.UpdateEndPoint();
                 serverClient.Client.Send(sendPacket.PackData());
-                AppCenter.Instance.StartNewTask(() => { Global_Func.ListenTcp<ReceivePacket>(serverClient); });
+                Global_Func.ListenTcp<ReceivePacket>(serverClient, Core.P2PGlobal.P2PSocketBufferSize_S);
             }
             else
             {
@@ -238,7 +236,7 @@ namespace P2PSocket.Client.Commands
                 portClient.ToClient = serverClient;
                 serverClient.ToClient = portClient;
                 serverClient.Client.Send(sendPacket.PackData());
-                AppCenter.Instance.StartNewTask(() => { Global_Func.ListenTcp<ReceivePacket>(serverClient); });
+                Global_Func.ListenTcp<ReceivePacket>(serverClient, Core.P2PGlobal.P2PSocketBufferSize_S);
             }
             catch (Exception ex)
             {
@@ -263,7 +261,7 @@ namespace P2PSocket.Client.Commands
                 portClient.ToClient = serverClient;
                 serverClient.ToClient = portClient;
                 serverClient.Client.Send(sendPacket.PackData());
-                AppCenter.Instance.StartNewTask(() => { Global_Func.ListenTcp<ReceivePacket>(serverClient); });
+                Global_Func.ListenTcp<ReceivePacket>(serverClient, Core.P2PGlobal.P2PSocketBufferSize_S);
             }
             else
             {
@@ -277,7 +275,7 @@ namespace P2PSocket.Client.Commands
         public void ListenPort()
         {
             //  监听端口
-            AppCenter.Instance.StartNewTask(() => { Global_Func.ListenTcp<Packet_0x0202>(m_tcpClient.ToClient); });
+            Global_Func.ListenTcp<Packet_0x0202>(m_tcpClient.ToClient, Core.P2PGlobal.P2PSocketBufferSize);
         }
     }
 }

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 
 namespace P2PSocket.Client
 {
@@ -15,6 +16,10 @@ namespace P2PSocket.Client
         public P2PClient P2PClient = new P2PClient();
         public CoreModule()
         {
+            int minWorker, minIOC;
+            // Get the current settings.
+            ThreadPool.GetMinThreads(out minWorker, out minIOC);
+            ThreadPool.SetMinThreads(20, minIOC);
             //初始化全局变量
             InitGlobal();
         }

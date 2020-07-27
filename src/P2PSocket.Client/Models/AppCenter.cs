@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace P2PSocket.Client
@@ -55,7 +56,11 @@ namespace P2PSocket.Client
         /// <param name="action">任务</param>
         public void StartNewTask(Action action)
         {
-            Task.Factory.StartNew(action);   
+            ThreadPool.QueueUserWorkItem(obj =>
+            {
+                action();
+            });
+            //Task.Factory.StartNew(action);
         }
     }
 }
