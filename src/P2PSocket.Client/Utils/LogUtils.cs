@@ -18,7 +18,7 @@ namespace P2PSocket.Client.Utils
         private static void Instance_RecordLogEvent(System.IO.StreamWriter ss, LogInfo logInfo)
         {
             if (Instance.LogLevel >= logInfo.LogLevel)
-                ss.WriteLine($"{logInfo.Time.ToString("[HH:mm:ss]")}{logInfo.Msg}");
+                ss.WriteLine($"{logInfo.Time.ToString("[HH:mm:ss.ffff]")}{logInfo.Msg}");
         }
 
         public static Logger Instance { get; } = new Logger($"{AppCenter.Instance.RuntimePath}P2PSocket/Logs", "Client_");

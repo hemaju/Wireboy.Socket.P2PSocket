@@ -29,12 +29,12 @@ namespace P2PSocket.Client.Commands
             {
                 //Port->Client
                 Send_0x0202 sendPacket = new Send_0x0202(BinaryUtils.ReadBytes(m_data), false);
-                m_tcpClient.ToClient.Client.Send(sendPacket.PackData());
+                m_tcpClient.ToClient.BeginSend(sendPacket.PackData());
             }
             else
             {
                 //Server->Client
-                m_tcpClient.ToClient.Client.Send(BinaryUtils.ReadBytes(m_data));
+                m_tcpClient.ToClient.BeginSend(BinaryUtils.ReadBytes(m_data));
             }
             return true;
         }

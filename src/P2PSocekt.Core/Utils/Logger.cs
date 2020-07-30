@@ -74,7 +74,7 @@ namespace P2PSocket.Core.Utils
         public virtual void WriteLine(LogInfo log)
         {
             if (log.LogLevel == LogLevel.None) return;
-            if (m_logList.Count > 100)
+            if (m_logList.Count > 10000)
             {
                 //如果堆栈中有100条消息未处理，则不再继续处理日志
                 return;

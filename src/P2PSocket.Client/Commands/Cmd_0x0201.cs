@@ -61,7 +61,7 @@ namespace P2PSocket.Client.Commands
                 case -1:
                     {
                         string message = BinaryUtils.ReadString(data);
-                        LogUtils.Warning($"内网穿透失败，错误消息：{Environment.NewLine}{message}");
+                        LogUtils.Warning($"建立隧道失败，错误消息：{Environment.NewLine}{message}");
                     }
                     break;
             }
@@ -93,19 +93,19 @@ namespace P2PSocket.Client.Commands
                     }
                     catch (Exception ex)
                     {
-                        LogUtils.Debug($"P2P连接失败：{bindPort}\r\n{ex.ToString()}");
+                        LogUtils.Debug($"P2P隧道打洞失败：{bindPort}\r\n{ex.ToString()}");
                         Thread.Sleep(100);
                     }
 
                 }
                 if (isConnected)
                 {
-                    LogUtils.Info($"命令：0x0201  内网穿透（P2P模式）连接成功 port:{bindPort} token:{token}");
+                    LogUtils.Info($"命令：0x0201  建立P2P模式隧道成功 port:{bindPort} token:{token}");
                     P2PBind_DirectConnect(p2pClient, token);
                 }
                 else
                 {
-                    LogUtils.Info($"命令：0x0201  内网穿透（P2P模式）连接失败 port:{bindPort} token:{token}");
+                    LogUtils.Info($"命令：0x0201  建立P2P模式隧道失败 port:{bindPort} token:{token}");
                     p2pClient.SafeClose();
                     if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
                     {
@@ -156,7 +156,7 @@ namespace P2PSocket.Client.Commands
                     }
                     else
                     {
-                        LogUtils.Warning($"命令：0x0201 接收到内网穿透命令，但已超时. token:{token}");
+                        LogUtils.Warning($"命令：0x0201 接收到建立隧道命令，但已超时. token:{token}");
                     }
                 }
             }
@@ -172,25 +172,25 @@ namespace P2PSocket.Client.Commands
             {
                 int port = BinaryUtils.ReadInt(data);
                 Models.Send.Send_0x0201_Bind sendPacket = new Models.Send.Send_0x0201_Bind(token);
-                Utils.LogUtils.Info($"命令：0x0201  正尝试内网穿透(P2P模式) token:{token}");
+                Utils.LogUtils.Info($"命令：0x0201  正尝试建立P2P模式隧道 token:{token}");
                 P2PTcpClient serverClient = new P2PTcpClient();
                 serverClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 serverClient.Connect(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
                 serverClient.IsAuth = true;
                 serverClient.P2PLocalPort = port;
                 serverClient.UpdateEndPoint();
-                serverClient.Client.Send(sendPacket.PackData());
+                serverClient.BeginSend(sendPacket.PackData());
                 Global_Func.ListenTcp<ReceivePacket>(serverClient);
             }
             catch (Exception ex)
             {
-                LogUtils.Error($"命令：0x0201 尝试内网穿透(P2P模式) 发生错误：{Environment.NewLine}{ex.Message}");
+                LogUtils.Error($"命令：0x0201 尝试建立P2P模式隧道发生错误：{Environment.NewLine}{ex.Message}");
             }
         }
         public void CreateTcpFromSource_DirectConnect(string token)
         {
             Models.Send.Send_0x0201_Bind sendPacket = new Models.Send.Send_0x0201_Bind(token);
-            Utils.LogUtils.Info($"命令：0x0201  正尝试内网穿透（P2P模式）token:{token}");
+            Utils.LogUtils.Info($"命令：0x0201  正尝试建立P2P模式隧道 token:{token}");
             if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
             {
                 P2PTcpClient serverClient = new P2PTcpClient();
@@ -198,12 +198,12 @@ namespace P2PSocket.Client.Commands
                 serverClient.Connect(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
                 serverClient.IsAuth = true;
                 serverClient.UpdateEndPoint();
-                serverClient.Client.Send(sendPacket.PackData());
+                serverClient.BeginSend(sendPacket.PackData());
                 Global_Func.ListenTcp<ReceivePacket>(serverClient);
             }
             else
             {
-                LogUtils.Warning($"命令：0x0201 接收到内网穿透（P2P模式）命令，但已超时. token:{token}");
+                LogUtils.Warning($"命令：0x0201 接收到建立P2P模式隧道命令，但已超时. token:{token}");
             }
         }
 
@@ -216,7 +216,7 @@ namespace P2PSocket.Client.Commands
             try
             {
                 Models.Send.Send_0x0201_Bind sendPacket = new Models.Send.Send_0x0201_Bind(token);
-                Utils.LogUtils.Info($"命令：0x0201  正在绑定内网穿透（3端）通道 token:{token}");
+                Utils.LogUtils.Info($"命令：0x0201  正在连接中转模式隧道通道 token:{token}");
                 int port = BinaryUtils.ReadInt(data);
                 PortMapItem destMap = ConfigCenter.Instance.PortMapList.FirstOrDefault(t => t.LocalPort == port && string.IsNullOrEmpty(t.LocalAddress));
 
@@ -235,12 +235,13 @@ namespace P2PSocket.Client.Commands
                 portClient.IsAuth = serverClient.IsAuth = true;
                 portClient.ToClient = serverClient;
                 serverClient.ToClient = portClient;
-                serverClient.Client.Send(sendPacket.PackData());
+                serverClient.BeginSend(sendPacket.PackData());
                 Global_Func.ListenTcp<ReceivePacket>(serverClient);
+                Utils.LogUtils.Info($"命令：0x0201  完成连接中转模式隧道通道 token:{token}");
             }
             catch (Exception ex)
             {
-                LogUtils.Error($"命令：0x0201 绑定内网穿透（3端）通道错误：{Environment.NewLine}{ex.Message}");
+                LogUtils.Error($"命令：0x0201 连接中转模式隧道错误：{Environment.NewLine}{ex.Message}");
             }
         }
 
@@ -251,7 +252,7 @@ namespace P2PSocket.Client.Commands
         public void CreateTcpFromSource(string token)
         {
             Models.Send.Send_0x0201_Bind sendPacket = new Models.Send.Send_0x0201_Bind(token);
-            Utils.LogUtils.Info($"命令：0x0201  正尝试内网穿透（转发模式）token:{token}");
+            Utils.LogUtils.Info($"命令：0x0201  正尝试建立中转模式隧道token:{token}");
             if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
             {
                 P2PTcpClient portClient = TcpCenter.Instance.WaiteConnetctTcp[token];
@@ -260,12 +261,13 @@ namespace P2PSocket.Client.Commands
                 portClient.IsAuth = serverClient.IsAuth = true;
                 portClient.ToClient = serverClient;
                 serverClient.ToClient = portClient;
-                serverClient.Client.Send(sendPacket.PackData());
+                serverClient.BeginSend(sendPacket.PackData());
                 Global_Func.ListenTcp<ReceivePacket>(serverClient);
+                Utils.LogUtils.Info($"命令：0x0201  完成连接中转模式隧道通道 token:{token}");
             }
             else
             {
-                LogUtils.Warning($"命令：0x0201 接收到内网穿透（转发模式）命令，但已超时. token:{token}");
+                LogUtils.Warning($"命令：0x0201 接收到建立中转模式隧道命令，但已超时. token:{token}");
             }
         }
 

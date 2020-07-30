@@ -59,7 +59,7 @@ namespace P2PSocket.Client
                             byte[] refData = relation.buffer.Take(length).ToArray();
                             while (relation.msgReceive.ParseData(ref refData))
                             {
-                                LogUtils.Debug($"命令类型:{relation.msgReceive.CommandType}");
+                                LogUtils.Trace($"命令类型:{relation.msgReceive.CommandType}");
                                 // 执行command
                                 using (P2PCommand command = FindCommand(relation.readTcp, relation.msgReceive))
                                 {

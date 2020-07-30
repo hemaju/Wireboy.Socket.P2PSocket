@@ -16,7 +16,7 @@ namespace P2PSocket.Core.Utils
 
         private void WriteConsole(string log)
         {
-            if (m_consoleLogList.Count <= 200)
+            if (m_consoleLogList.Count <= 10000)
             {
                 m_consoleLogList.Enqueue(log);
                 if (m_curConsoleTask == null)

@@ -66,13 +66,13 @@ namespace P2PSocket.Server.Commands
                 else
                 {
                     ClientCenter.Instance.WaiteConnetctTcp.Add(token, m_tcpClient);
-                    LogUtils.Debug("【P2P】等待目标tcp.");
+                    LogUtils.Debug($"正在等待隧道连接绑定 token:{token}.");
                     AppCenter.Instance.StartNewTask(() =>
                     {
                         Thread.Sleep(ConfigCenter.Instance.P2PTimeout);
                         if (ClientCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
                         {
-                            LogUtils.Debug("【P2P】已超时，内网穿透失败.");
+                            LogUtils.Debug($"等待隧道连接绑定已超时  token:{token}.");
                             ClientCenter.Instance.WaiteConnetctTcp[token].SafeClose();
                             ClientCenter.Instance.WaiteConnetctTcp.Remove(token);
                             p2pTypeDict.Remove(token);
@@ -82,6 +82,7 @@ namespace P2PSocket.Server.Commands
             }
             return true;
         }
+
         public void P2PStart_ServerTransfer(string token, string clientName, int clientPort, int p2pType)
         {
             P2PTcpItem item = null;
@@ -94,22 +95,22 @@ namespace P2PSocket.Server.Commands
                 if (item.BlackClients.Contains(m_tcpClient.ClientName))
                 {
                     Send_0x0201_Failure sendPacket = new Send_0x0201_Failure($"客户端{clientName}已被加入黑名单");
-                    LogUtils.Warning($"【P2P】客户端{clientName}已被加入黑名单");
-                    m_tcpClient.Client.Send(sendPacket.PackData());
+                    LogUtils.Warning($"建立隧道失败，客户端{clientName}已被加入黑名单");
+                    m_tcpClient.BeginSend(sendPacket.PackData());
                 }
                 else if (item.AllowPorts.Any(t => t.Match(clientPort, m_tcpClient.ClientName)))
                 {
-                    LogUtils.Debug("【P2P】等待Tcp连接，进行绑定");
+                    LogUtils.Debug($"通知客户端开始建立中转模式隧道 token{token}");
                     Send_0x0201_Success sendDPacket = new Send_0x0201_Success(token, clientPort, p2pType);
                     Send_0x0201_Success sendSPacket = new Send_0x0201_Success(token, p2pType);
-                    ClientCenter.Instance.TcpMap[clientName].TcpClient.Client.Send(sendDPacket.PackData());
-                    m_tcpClient.Client.Send(sendSPacket.PackData());
+                    ClientCenter.Instance.TcpMap[clientName].TcpClient.BeginSend(sendDPacket.PackData());
+                    m_tcpClient.BeginSend(sendSPacket.PackData());
                 }
                 else
                 {
-                    Send_0x0201_Failure sendPacket = new Send_0x0201_Failure($"没有权限，端口{clientPort}");
-                    LogUtils.Debug($"【P2P】没有权限，端口{clientPort}");
-                    m_tcpClient.Client.Send(sendPacket.PackData());
+                    Send_0x0201_Failure sendPacket = new Send_0x0201_Failure($"未获得授权，无法建立隧道，端口{clientPort}");
+                    LogUtils.Debug($"未获得授权，无法建立隧道，端口{clientPort}");
+                    m_tcpClient.BeginSend(sendPacket.PackData());
                 }
             }
             else
@@ -117,20 +118,20 @@ namespace P2PSocket.Server.Commands
                 //发送客户端未在线
                 LogUtils.Debug($"【P2P】客户端{clientName}不在线.");
                 Send_0x0201_Failure sendPacket = new Send_0x0201_Failure($"客户端{clientName}不在线");
-                m_tcpClient.Client.Send(sendPacket.PackData());
+                m_tcpClient.BeginSend(sendPacket.PackData());
             }
         }
         public void P2PBind_ServerTransfer(string token)
         {
-            LogUtils.Debug($"【P2P】内网穿透成功");
+            LogUtils.Debug($"成功建立中转模式隧道 token:{token}");
             P2PTcpClient client = ClientCenter.Instance.WaiteConnetctTcp[token];
             ClientCenter.Instance.WaiteConnetctTcp.Remove(token);
             client.IsAuth = m_tcpClient.IsAuth = true;
             client.ToClient = m_tcpClient;
             m_tcpClient.ToClient = client;
             Send_0x0201_Success sendPacket = new Send_0x0201_Success(4);
-            client.Client.Send(sendPacket.PackData());
-            m_tcpClient.Client.Send(sendPacket.PackData());
+            client.BeginSend(sendPacket.PackData());
+            m_tcpClient.BeginSend(sendPacket.PackData());
         }
 
         public void P2PBind_DirectConnect(string token)
@@ -143,8 +144,8 @@ namespace P2PSocket.Server.Commands
             Send_0x0201_Success sendPacketB = new Send_0x0201_Success(14);
             sendPacketB.WriteDirectData(clientA.Client.RemoteEndPoint.ToString(), token);
 
-            clientA.Client.Send(sendPacketA.PackData());
-            clientB.Client.Send(sendPacketB.PackData());
+            clientA.BeginSend(sendPacketA.PackData());
+            clientB.BeginSend(sendPacketB.PackData());
 
             Task.Factory.StartNew(() =>
             {

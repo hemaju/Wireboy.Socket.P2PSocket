@@ -3,6 +3,7 @@ using P2PSocket.Core.Models;
 using P2PSocket.Server.Models.Send;
 using System;
 using System.Collections.Generic;
+using System.Net.Sockets;
 using System.Text;
 
 namespace P2PSocket.Server.Commands
@@ -20,7 +21,7 @@ namespace P2PSocket.Server.Commands
         public override bool Excute()
         {
             Send_0x0202 sendPacket = new Send_0x0202(m_data);
-            m_tcpClient.ToClient.Client.Send(sendPacket.PackData());
+            m_tcpClient.ToClient.BeginSend(sendPacket.PackData());
             return true;
         }
     }

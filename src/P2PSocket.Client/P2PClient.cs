@@ -156,42 +156,56 @@ namespace P2PSocket.Client
             {
                 socket = listener.EndAcceptSocket(ar);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 LogUtils.Error(ex.ToString());
                 return;
             }
-            listener.BeginAcceptSocket(AcceptSocket_Server, st);
-            if (TcpCenter.Instance.P2PServerTcp != null && TcpCenter.Instance.P2PServerTcp.Connected)
+            try
             {
-                P2PTcpClient tcpClient = new P2PTcpClient(socket);
-                //加入待连接集合
-                TcpCenter.Instance.WaiteConnetctTcp.Add(tcpClient.Token, tcpClient);
-                //发送p2p申请
-                Send_0x0201_Apply packet = new Send_0x0201_Apply(tcpClient.Token, item.RemoteAddress, item.RemotePort, item.P2PType);
-                LogUtils.Info(string.Format("正在建立{0}隧道 token:{1} client:{2} port:{3}", item.P2PType == 0 ? "中转模式" : "P2P模式", tcpClient.Token, item.RemoteAddress, item.RemotePort));
-                try
+                listener.BeginAcceptSocket(AcceptSocket_Server, st);
+            }
+            catch (Exception ex)
+            {
+                LogUtils.Error("监听端口发生错误：" + listener.LocalEndpoint.ToString() + Environment.NewLine + ex.ToString());
+            }
+            try
+            {
+                if (TcpCenter.Instance.P2PServerTcp != null && TcpCenter.Instance.P2PServerTcp.Connected)
                 {
-                    byte[] dataAr = packet.PackData();
-                    TcpCenter.Instance.P2PServerTcp.GetStream().WriteAsync(dataAr, 0, dataAr.Length);
-                }
-                finally
-                {
-                    //如果5秒后没有匹配成功，则关闭连接
-                    Thread.Sleep(ConfigCenter.P2PTimeout);
-                    if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(tcpClient.Token))
+                    P2PTcpClient tcpClient = new P2PTcpClient(socket);
+                    //加入待连接集合
+                    TcpCenter.Instance.WaiteConnetctTcp.Add(tcpClient.Token, tcpClient);
+                    //发送p2p申请
+                    Send_0x0201_Apply packet = new Send_0x0201_Apply(tcpClient.Token, item.RemoteAddress, item.RemotePort, item.P2PType);
+                    LogUtils.Info(string.Format("正在建立{0}隧道 token:{1} client:{2} port:{3}", item.P2PType == 0 ? "中转模式" : "P2P模式", tcpClient.Token, item.RemoteAddress, item.RemotePort));
+                    try
                     {
-                        LogUtils.Info($"建立隧道失败：token:{tcpClient.Token} {item.LocalPort}->{item.RemoteAddress}:{item.RemotePort} {ConfigCenter.P2PTimeout / 1000}秒无响应，已超时.");
-                        TcpCenter.Instance.WaiteConnetctTcp[tcpClient.Token].SafeClose();
-                        TcpCenter.Instance.WaiteConnetctTcp.Remove(tcpClient.Token);
+                        byte[] dataAr = packet.PackData();
+                        TcpCenter.Instance.P2PServerTcp.GetStream().WriteAsync(dataAr, 0, dataAr.Length);
                     }
+                    finally
+                    {
+                        //如果5秒后没有匹配成功，则关闭连接
+                        Thread.Sleep(ConfigCenter.P2PTimeout);
+                        if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(tcpClient.Token))
+                        {
+                            LogUtils.Info($"建立隧道失败：token:{tcpClient.Token} {item.LocalPort}->{item.RemoteAddress}:{item.RemotePort} {ConfigCenter.P2PTimeout / 1000}秒无响应，已超时.");
+                            TcpCenter.Instance.WaiteConnetctTcp[tcpClient.Token].SafeClose();
+                            TcpCenter.Instance.WaiteConnetctTcp.Remove(tcpClient.Token);
+                        }
 
+                    }
+                }
+                else
+                {
+                    LogUtils.Warning($"建立隧道失败：未连接到服务器!");
+                    socket.Close();
                 }
             }
-            else
+            catch (Exception ex)
             {
-                LogUtils.Warning($"建立隧道失败：未连接到服务器!");
-                socket.Close();
+                LogUtils.Debug("处理新tcp连接时发生错误：" + Environment.NewLine + ex.ToString());
             }
         }
 
@@ -236,12 +250,12 @@ namespace P2PSocket.Client
             {
                 socket = listener.EndAcceptSocket(ar);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 LogUtils.Error(ex.ToString());
                 return;
             }
-            listener.BeginAcceptSocket(AcceptSocket_Server, st);
+            listener.BeginAcceptSocket(AcceptSocket_Ip, st);
             P2PTcpClient tcpClient = new P2PTcpClient(socket);
             P2PTcpClient ipClient = null;
             try
