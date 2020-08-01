@@ -20,68 +20,105 @@ namespace P2PSocket.Server
         public struct RelationTcp_Server
         {
             public P2PTcpClient readTcp;
-            public NetworkStream readSs;
             public byte[] buffer;
             public ReceivePacket msgReceive;
             public Guid guid;
         }
         public static void ListenTcp<T>(P2PTcpClient tcpClient) where T : ReceivePacket
         {
-            try
+            if (tcpClient.Connected)
             {
                 RelationTcp_Server relationSt = new RelationTcp_Server();
                 relationSt.buffer = new byte[P2PGlobal.P2PSocketBufferSize];
                 relationSt.readTcp = tcpClient;
-                relationSt.readSs = tcpClient.GetStream();
                 relationSt.msgReceive = Activator.CreateInstance(typeof(T)) as ReceivePacket;
                 relationSt.guid = AppCenter.Instance.CurrentGuid;
-                relationSt.readSs.BeginRead(relationSt.buffer, 0, relationSt.buffer.Length, ReadTcp_Server, relationSt);
+                relationSt.readTcp.GetStream().BeginRead(relationSt.buffer, 0, relationSt.buffer.Length, ReadTcp_Server, relationSt);
             }
-            catch (Exception ex)
+            else if (tcpClient.ToClient != null && tcpClient.ToClient.Connected)
             {
-                LogUtils.Error($"【错误】Global_Func.ListenTcp：{Environment.NewLine}{ex}");
-            }
 
+                tcpClient?.SafeClose();
+            }
         }
 
-        public static void ReadTcp_Server(IAsyncResult ar)
+        private static void ReadTcp_Server(IAsyncResult ar)
         {
             RelationTcp_Server relation = (RelationTcp_Server)ar.AsyncState;
-            try
+            if (relation.guid == AppCenter.Instance.CurrentGuid)
             {
-                if (relation.guid == AppCenter.Instance.CurrentGuid)
+                if (relation.readTcp.Connected && relation.readTcp.GetStream().CanRead)
                 {
-                    if (relation.readSs.CanRead)
+                    int length = 0;
+                    EasyOp.Do(() =>
                     {
-                        int length = 0;
-                        length = relation.readSs.EndRead(ar);
+                        length = relation.readTcp.GetStream().EndRead(ar);
+                    }, () =>
+                    {
                         if (length > 0)
                         {
                             byte[] refData = relation.buffer.Take(length).ToArray();
                             while (relation.msgReceive.ParseData(ref refData))
                             {
-                                LogUtils.Debug($"命令类型:{relation.msgReceive.CommandType}");
+                                //LogUtils.Trace($"命令类型:{relation.msgReceive.CommandType}");
                                 // 执行command
                                 using (P2PCommand command = FindCommand(relation.readTcp, relation.msgReceive))
                                 {
-                                    command?.Excute();
+
+                                    if (command != null)
+                                    {
+                                        if (!command.Excute())
+                                        {
+                                            EasyOp.Do(() => { relation.readTcp?.SafeClose(); });
+                                            EasyOp.Do(() => { relation.readTcp.ToClient?.SafeClose(); });
+                                            return;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        EasyOp.Do(() => { relation.readTcp?.SafeClose(); });
+                                        EasyOp.Do(() => { relation.readTcp.ToClient?.SafeClose(); });
+                                        return;
+                                    }
                                 }
                                 //重置msgReceive
                                 relation.msgReceive.Reset();
                                 if (refData.Length <= 0) break;
                             }
-                            relation.readSs.BeginRead(relation.buffer, 0, relation.buffer.Length, ReadTcp_Server, relation);
-                            return;
+                            if (relation.readTcp.Connected)
+                            {
+                                EasyOp.Do(() =>
+                                {
+                                    relation.readTcp.GetStream().BeginRead(relation.buffer, 0, relation.buffer.Length, ReadTcp_Server, relation);
+                                }, ex =>
+                                {
+                                    LogUtils.Debug($"Tcp连接已被断开 {relation.readTcp.RemoteEndPoint}");
+                                    EasyOp.Do(() => { relation.readTcp.ToClient?.SafeClose(); });
+                                });
+                            }
                         }
-                    }
+                        else
+                        {
+                            EasyOp.Do(() => { relation.readTcp?.SafeClose(); });
+                            EasyOp.Do(() => { relation.readTcp.ToClient?.SafeClose(); });
+
+                        }
+                    }, ex =>
+                    {
+                        LogUtils.Debug($"Tcp连接已被断开 {relation.readTcp.RemoteEndPoint}");
+                        EasyOp.Do(() => { relation.readTcp.ToClient?.SafeClose(); });
+                    });
+
                 }
             }
-            catch { }
-            LogUtils.Debug($"tcp连接{relation.readTcp.RemoteEndPoint}已断开");
-            relation.readSs.Close(3000);
-            relation.readTcp.SafeClose();
-            if (relation.readTcp.ToClient != null)
-                relation.readTcp.ToClient.SafeClose();
+            else
+            {
+                LogUtils.Debug($"主动断开{relation.readTcp.RemoteEndPoint}连接");
+                EasyOp.Do(() => { relation.readTcp?.SafeClose(); });
+                EasyOp.Do(() => { relation.readTcp.ToClient?.SafeClose(); });
+            }
+            //if (TcpCenter.Instance.ConnectedTcpList.Contains(relation.readTcp))
+            //    TcpCenter.Instance.ConnectedTcpList.Remove(relation.readTcp);
         }
 
         /// <summary>
@@ -107,10 +144,10 @@ namespace P2PSocket.Server
             }
             else
             {
-                tcpClient.SafeClose();
-                if (tcpClient.ToClient != null && tcpClient.ToClient.Connected)
+                tcpClient?.SafeClose();
+                if (tcpClient.ToClient != null)
                 {
-                    tcpClient.ToClient.SafeClose();
+                    tcpClient.ToClient?.SafeClose();
                 }
                 LogUtils.Warning($"拦截{tcpClient.RemoteEndPoint}未授权命令");
             }

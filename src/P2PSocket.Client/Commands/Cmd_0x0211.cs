@@ -25,35 +25,56 @@ namespace P2PSocket.Client.Commands
         }
         public override bool Excute()
         {
-            try
+            LogUtils.Trace($"开始处理消息：0x0211");
+            string token = BinaryUtils.ReadString(data);
+            int mapPort = BinaryUtils.ReadInt(data);
+            string remoteEndPoint = BinaryUtils.ReadString(data); ;
+            if (ConfigCenter.Instance.AllowPortList.Any(t => t.Match(mapPort, m_tcpClient.ClientName)))
             {
-                string token = BinaryUtils.ReadString(data);
-                int mapPort = BinaryUtils.ReadInt(data);
-                string remoteEndPoint = BinaryUtils.ReadString(data); ;
-                if (ConfigCenter.Instance.AllowPortList.Any(t => t.Match(mapPort, m_tcpClient.ClientName)))
+                P2PTcpClient portClient = null;
+                EasyOp.Do(() => { portClient = new P2PTcpClient("127.0.0.1", mapPort); }, () =>
                 {
-                    P2PTcpClient portClient = new P2PTcpClient("127.0.0.1", mapPort);
-                    P2PTcpClient serverClient = new P2PTcpClient(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
-                    portClient.IsAuth = serverClient.IsAuth = true;
-                    portClient.ToClient = serverClient;
-                    serverClient.ToClient = portClient;
-
-
-                    Models.Send.Send_0x0211 sendPacket = new Models.Send.Send_0x0211(token);
-                    LogUtils.Info($"命令：0x0211 正在绑定内网穿透（2端）通道 {portClient.RemoteEndPoint}->服务器->{remoteEndPoint}{Environment.NewLine}token:{token} ");
-                    int length = serverClient.Client.Send(sendPacket.PackData());
-                    Global_Func.ListenTcp<Models.Receive.Packet_0x0212>(portClient); 
-                    Global_Func.ListenTcp<Models.Receive.Packet_ToPort>(serverClient);
-                }
-                else
+                    P2PTcpClient serverClient = null;
+                    EasyOp.Do(() =>
+                    {
+                        serverClient = new P2PTcpClient(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
+                    }, () =>
+                    {
+                        portClient.IsAuth = serverClient.IsAuth = true;
+                        portClient.ToClient = serverClient;
+                        serverClient.ToClient = portClient;
+                        Models.Send.Send_0x0211 sendPacket = new Models.Send.Send_0x0211(token);
+                        LogUtils.Debug($"命令：0x0211 正在绑定内网穿透（2端）通道 {portClient.RemoteEndPoint}->服务器->{remoteEndPoint}{Environment.NewLine}token:{token} ");
+                        EasyOp.Do(() => {
+                            serverClient.BeginSend(sendPacket.PackData());
+                        }, () => {
+                            EasyOp.Do(() => {
+                                Global_Func.ListenTcp<Models.Receive.Packet_0x0212>(portClient);
+                                Global_Func.ListenTcp<Models.Receive.Packet_ToPort>(serverClient);
+                            }, ex => {
+                                LogUtils.Debug($"命令：0x0211 接收数据发生错误:{Environment.NewLine}{ex}");
+                                EasyOp.Do(() => { portClient?.SafeClose(); });
+                                EasyOp.Do(() => { serverClient?.SafeClose(); });
+                            });
+                        }, ex => {
+                            LogUtils.Debug($"命令：0x0211 无法连接服务器:{Environment.NewLine}{ex}");
+                            EasyOp.Do(() => { portClient?.SafeClose(); });
+                            EasyOp.Do(() => { serverClient?.SafeClose(); });
+                        });
+                    }, ex =>
+                    {
+                        LogUtils.Debug($"命令：0x0211 无法连接服务器:{Environment.NewLine}{ex}");
+                        EasyOp.Do(() => { portClient?.SafeClose(); });
+                    });
+                }, ex =>
                 {
-                    LogUtils.Warning($"命令：0x0211 无权限，端口:{mapPort}");
-                    m_tcpClient.SafeClose();
-                }
+                    LogUtils.Debug($"命令：0x0211 建立tcp连接[127.0.0.1:{mapPort}]失败:{Environment.NewLine}{ex}");
+                });
             }
-            catch (Exception ex)
+            else
             {
-                LogUtils.Warning($"命令：0x0211 错误：{Environment.NewLine} {ex}");
+                LogUtils.Debug($"命令：0x0211 已拒绝服务端连接本地端口[{mapPort}]，不在AllowPort配置项的允许范围内");
+                m_tcpClient?.SafeClose();
             }
             return true;
         }

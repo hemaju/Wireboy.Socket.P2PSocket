@@ -73,7 +73,7 @@ namespace P2PSocket.Server.Commands
                         if (ClientCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
                         {
                             LogUtils.Debug($"等待隧道连接绑定已超时  token:{token}.");
-                            ClientCenter.Instance.WaiteConnetctTcp[token].SafeClose();
+                            ClientCenter.Instance.WaiteConnetctTcp[token]?.SafeClose();
                             ClientCenter.Instance.WaiteConnetctTcp.Remove(token);
                             p2pTypeDict.Remove(token);
                         }
@@ -150,8 +150,8 @@ namespace P2PSocket.Server.Commands
             Task.Factory.StartNew(() =>
             {
                 Thread.Sleep(5000);
-                clientA.SafeClose();
-                clientB.SafeClose();
+                clientA?.SafeClose();
+                clientB?.SafeClose();
             });
         }
     }

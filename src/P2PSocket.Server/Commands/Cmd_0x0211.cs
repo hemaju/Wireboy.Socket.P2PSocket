@@ -38,7 +38,7 @@ namespace P2PSocket.Server.Commands
             }
             else
             {
-                m_tcpClient.SafeClose();
+                m_tcpClient?.SafeClose();
                 throw new Exception("绑定内网穿透（2端）通道失败，目标Tcp连接已断开");
             }
             return true;

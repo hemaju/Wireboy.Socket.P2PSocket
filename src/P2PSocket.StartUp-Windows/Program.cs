@@ -24,7 +24,7 @@ namespace P2PSocket.StartUp_Windows
                         //service.InstallService(AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(t => t.FullName.Contains("P2PSocket.StartUp_Windows")).Location);
                         //Console.ReadKey();
                         //return;
-                        string filePath = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(t => t.FullName.Contains("P2PSocket.StartUp_Windows")).Location.Replace(".dll",".exe");
+                        string filePath = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(t => t.FullName.Contains("P2PSocket.StartUp_Windows")).Location.Replace(".dll", ".exe");
                         Console.WriteLine(filePath);
                         service.ServiceStop("P2PSocket");
                         Console.WriteLine("服务已停止");
@@ -47,10 +47,6 @@ namespace P2PSocket.StartUp_Windows
                 {
                     ServiceBase.Run(new P2PSocket());
                 }
-                new Task(() =>
-                {
-                    Monitor.Wait(new object());
-                }).Wait();
             }
             else
             {
@@ -67,11 +63,13 @@ namespace P2PSocket.StartUp_Windows
                 {
                     Console.WriteLine(ex);
                 }
-                new Task(() =>
-                {
-                    Monitor.Wait(new object());
-                }).Wait();
             }
+
+            object block = new object();
+            new Task(() =>
+            {
+                Monitor.Wait(block);
+            }).Wait();
         }
     }
     public class ServiceIO

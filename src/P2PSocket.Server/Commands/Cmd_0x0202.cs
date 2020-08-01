@@ -1,5 +1,6 @@
 ﻿using P2PSocket.Core.Commands;
 using P2PSocket.Core.Models;
+using P2PSocket.Core.Utils;
 using P2PSocket.Server.Models.Send;
 using System;
 using System.Collections.Generic;
@@ -21,8 +22,13 @@ namespace P2PSocket.Server.Commands
         public override bool Excute()
         {
             Send_0x0202 sendPacket = new Send_0x0202(m_data);
-            m_tcpClient.ToClient.BeginSend(sendPacket.PackData());
-            return true;
+            bool ret = true;
+            EasyOp.Do(() => {
+                m_tcpClient.ToClient.BeginSend(sendPacket.PackData());
+            }, ex => {
+                ret = false;
+            });
+            return ret;
         }
     }
 }

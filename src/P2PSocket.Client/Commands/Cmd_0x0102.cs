@@ -1,4 +1,5 @@
-﻿using P2PSocket.Core.Commands;
+﻿using P2PSocket.Client.Utils;
+using P2PSocket.Core.Commands;
 using P2PSocket.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,7 @@ namespace P2PSocket.Client.Commands
         byte[] m_data { get; }
         public Cmd_0x0102(P2PTcpClient tcpClient, byte[] data)
         {
+            LogUtils.Trace($"开始处理消息：0x0102");
             m_tcpClient = tcpClient;
             m_data = data;
         }

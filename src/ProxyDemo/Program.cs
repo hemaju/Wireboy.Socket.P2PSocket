@@ -11,9 +11,10 @@ namespace ProxyDemo
             Console.WriteLine("Hello World!");
             ClientListen client = new ClientListen();
 
+            object block = new object();
             new Task(() =>
             {
-                Monitor.Wait(new object());
+                Monitor.Wait(block);
             }).Wait();
         }
     }

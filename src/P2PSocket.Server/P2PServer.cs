@@ -158,7 +158,7 @@ namespace P2PSocket.Server
                     if (ClientCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
                     {
                         LogUtils.Warning($"【失败】内网穿透：{ConfigCenter.Instance.P2PTimeout / 1000}秒无响应，已超时.");
-                        ClientCenter.Instance.WaiteConnetctTcp[token].SafeClose();
+                        ClientCenter.Instance.WaiteConnetctTcp[token]?.SafeClose();
                         ClientCenter.Instance.WaiteConnetctTcp.Remove(token);
                     }
                 });
@@ -166,7 +166,7 @@ namespace P2PSocket.Server
             else
             {
                 LogUtils.Warning($"【失败】内网穿透：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort} 客户端不在线!");
-                tcpClient.SafeClose();
+                tcpClient?.SafeClose();
             }
 
 
@@ -222,7 +222,7 @@ namespace P2PSocket.Server
             }
             catch (Exception ex)
             {
-                tcpClient.SafeClose();
+                tcpClient?.SafeClose();
                 LogUtils.Error($"【失败】内网穿透：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}{Environment.NewLine}{ex.ToString()}");
             }
             if (ipClient.Connected)

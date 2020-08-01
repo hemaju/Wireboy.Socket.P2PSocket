@@ -11,6 +11,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace P2PSocket.Client
 {
@@ -29,10 +30,10 @@ namespace P2PSocket.Client
             }
             catch
             {
-                LogUtils.Error($"{DateTime.Now.ToString("HH:mm:ss")} 无法连接服务器:{ConfigCenter.Instance.ServerAddress}:{ConfigCenter.Instance.ServerPort}");
+                LogUtils.Error($"连接服务器失败:{ConfigCenter.Instance.ServerAddress}:{ConfigCenter.Instance.ServerPort}");
                 return;
             }
-            LogUtils.Info($"{DateTime.Now.ToString("HH:mm:ss")} 已连接服务器:{ConfigCenter.Instance.ServerAddress}:{ConfigCenter.Instance.ServerPort}", false);
+            LogUtils.Info($"已连接服务器:{ConfigCenter.Instance.ServerAddress}:{ConfigCenter.Instance.ServerPort}", false);
             TcpCenter.Instance.P2PServerTcp.IsAuth = true;
             //向服务器发送客户端信息
             InitServerInfo(TcpCenter.Instance.P2PServerTcp);
@@ -56,7 +57,7 @@ namespace P2PSocket.Client
                     }
                     catch (Exception ex)
                     {
-                        LogUtils.Warning($"{DateTime.Now.ToString("HH:mm:ss")} 服务器连接已被断开");
+                        LogUtils.Warning($"服务器连接已被断开");
                         TcpCenter.Instance.P2PServerTcp = null;
                     }
                 }
@@ -178,28 +179,30 @@ namespace P2PSocket.Client
                     TcpCenter.Instance.WaiteConnetctTcp.Add(tcpClient.Token, tcpClient);
                     //发送p2p申请
                     Send_0x0201_Apply packet = new Send_0x0201_Apply(tcpClient.Token, item.RemoteAddress, item.RemotePort, item.P2PType);
-                    LogUtils.Info(string.Format("正在建立{0}隧道 token:{1} client:{2} port:{3}", item.P2PType == 0 ? "中转模式" : "P2P模式", tcpClient.Token, item.RemoteAddress, item.RemotePort));
-                    try
+                    LogUtils.Debug(string.Format("正在建立{0}隧道 token:{1} client:{2} port:{3}", item.P2PType == 0 ? "中转模式" : "P2P模式", tcpClient.Token, item.RemoteAddress, item.RemotePort));
+
+                    byte[] dataAr = packet.PackData();
+                    EasyOp.Do(() =>
                     {
-                        byte[] dataAr = packet.PackData();
-                        TcpCenter.Instance.P2PServerTcp.GetStream().WriteAsync(dataAr, 0, dataAr.Length);
-                    }
-                    finally
+                        TcpCenter.Instance.P2PServerTcp.BeginSend(dataAr);
+                    }, () =>
                     {
-                        //如果5秒后没有匹配成功，则关闭连接
                         Thread.Sleep(ConfigCenter.P2PTimeout);
                         if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(tcpClient.Token))
                         {
-                            LogUtils.Info($"建立隧道失败：token:{tcpClient.Token} {item.LocalPort}->{item.RemoteAddress}:{item.RemotePort} {ConfigCenter.P2PTimeout / 1000}秒无响应，已超时.");
-                            TcpCenter.Instance.WaiteConnetctTcp[tcpClient.Token].SafeClose();
+                            LogUtils.Debug($"建立隧道失败：token:{tcpClient.Token} {item.LocalPort}->{item.RemoteAddress}:{item.RemotePort} {ConfigCenter.P2PTimeout / 1000}秒无响应，已超时.");
+                            TcpCenter.Instance.WaiteConnetctTcp[tcpClient.Token]?.SafeClose();
                             TcpCenter.Instance.WaiteConnetctTcp.Remove(tcpClient.Token);
                         }
-
-                    }
+                    }, ex =>
+                    {
+                        EasyOp.Do(tcpClient.SafeClose);
+                        LogUtils.Debug($"建立隧道失败,无法连接服务器：token:{tcpClient.Token} {item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}.");
+                    });
                 }
                 else
                 {
-                    LogUtils.Warning($"建立隧道失败：未连接到服务器!");
+                    LogUtils.Debug($"建立隧道失败：未连接到服务器!");
                     socket.Close();
                 }
             }
@@ -264,8 +267,8 @@ namespace P2PSocket.Client
             }
             catch (Exception ex)
             {
-                tcpClient.SafeClose();
-                LogUtils.Error($"建立隧道失败：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}{Environment.NewLine}{ex}");
+                tcpClient?.SafeClose();
+                LogUtils.Debug($"建立隧道失败：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}{Environment.NewLine}{ex}");
             }
             if (ipClient.Connected)
             {

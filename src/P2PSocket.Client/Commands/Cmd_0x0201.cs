@@ -28,6 +28,7 @@ namespace P2PSocket.Client.Commands
         }
         public override bool Excute()
         {
+            LogUtils.Trace($"开始处理消息：0x0201");
             int step = data.ReadInt32();
             switch (step)
             {
@@ -61,7 +62,7 @@ namespace P2PSocket.Client.Commands
                 case -1:
                     {
                         string message = BinaryUtils.ReadString(data);
-                        LogUtils.Warning($"建立隧道失败，错误消息：{Environment.NewLine}{message}");
+                        LogUtils.Debug($"命令：0x0201 建立隧道失败，错误消息：{Environment.NewLine}{message}");
                     }
                     break;
             }
@@ -73,62 +74,67 @@ namespace P2PSocket.Client.Commands
             string ip = BinaryUtils.ReadString(data);
             int port = BinaryUtils.ReadInt(data);
             string token = BinaryUtils.ReadString(data);
-            int maxTryCount = 1;
-            bool isConnected = false;
             int bindPort = Convert.ToInt32(m_tcpClient.Client.LocalEndPoint.ToString().Split(':')[1]);
-            Task.Factory.StartNew(() =>
-            {
-                P2PTcpClient p2pClient = new P2PTcpClient();
-                p2pClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                p2pClient.Client.Bind(new IPEndPoint(IPAddress.Any, bindPort));
-                while (maxTryCount > 0)
-                {
-                    maxTryCount--;
-                    try
-                    {
-                        p2pClient.Connect(ip, port);
-                        p2pClient.UpdateEndPoint();
-                        isConnected = true;
-                        break;
-                    }
-                    catch (Exception ex)
-                    {
-                        LogUtils.Debug($"P2P隧道打洞失败：{bindPort}\r\n{ex.ToString()}");
-                        Thread.Sleep(100);
-                    }
-
-                }
-                if (isConnected)
-                {
-                    LogUtils.Info($"命令：0x0201  建立P2P模式隧道成功 port:{bindPort} token:{token}");
-                    P2PBind_DirectConnect(p2pClient, token);
-                }
-                else
-                {
-                    LogUtils.Info($"命令：0x0201  建立P2P模式隧道失败 port:{bindPort} token:{token}");
-                    p2pClient.SafeClose();
-                    if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
-                    {
-                        P2PTcpClient portClient = TcpCenter.Instance.WaiteConnetctTcp[token];
-                        portClient.SafeClose();
-                        TcpCenter.Instance.WaiteConnetctTcp.Remove(token);
-                    }
-                }
-                m_tcpClient.SafeClose();
-            });
+            P2PTcpClient p2pClient = new P2PTcpClient();
+            p2pClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            EasyOp.Do(() =>
+             {
+                 p2pClient.Client.Bind(new IPEndPoint(IPAddress.Any, bindPort));
+             },
+             () =>
+             {
+                 EasyOp.Do(() =>
+                 {
+                     p2pClient.Connect(ip, port);
+                     p2pClient.UpdateEndPoint();
+                     LogUtils.Debug($"命令：0x0201 P2P模式隧道，端口复用成功 port:{bindPort} token:{token}");
+                 },
+                 () =>
+                 {
+                     P2PBind_DirectConnect(p2pClient, token);
+                 }, ex =>
+                 {
+                     LogUtils.Debug($"命令：0x0201 P2P模式隧道，打洞失败 token:{token}:{Environment.NewLine}{ex}");
+                     EasyOp.Do(p2pClient.SafeClose);
+                     //如果是发起端，清空集合
+                     if (m_tcpClient.P2PLocalPort <= 0)
+                     {
+                         if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
+                         {
+                             P2PTcpClient portClient = TcpCenter.Instance.WaiteConnetctTcp[token];
+                             EasyOp.Do(portClient.SafeClose);
+                             TcpCenter.Instance.WaiteConnetctTcp.Remove(token);
+                         }
+                     }
+                 });
+                 EasyOp.Do(m_tcpClient.SafeClose);
+             },
+             ex =>
+             {
+                 LogUtils.Debug($"命令：0x0201 P2P模式隧道，端口复用失败 token:{token}:{Environment.NewLine}{ex}");
+                 //如果是发起端，清空集合
+                 if (m_tcpClient.P2PLocalPort <= 0)
+                 {
+                     if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
+                     {
+                         TcpCenter.Instance.WaiteConnetctTcp.Remove(token);
+                     }
+                 }
+             });
         }
 
         public void P2PBind_DirectConnect(P2PTcpClient p2pClient, string token)
         {
-            try
+            if (m_tcpClient.P2PLocalPort > 0)
             {
-                if (m_tcpClient.P2PLocalPort > 0)
+                //B端
+                int port = m_tcpClient.P2PLocalPort;
+                PortMapItem destMap = ConfigCenter.Instance.PortMapList.FirstOrDefault(t => t.LocalPort == port && string.IsNullOrEmpty(t.LocalAddress));
+
+                P2PTcpClient portClient = null;
+
+                EasyOp.Do(() =>
                 {
-                    int port = m_tcpClient.P2PLocalPort;
-                    PortMapItem destMap = ConfigCenter.Instance.PortMapList.FirstOrDefault(t => t.LocalPort == port && string.IsNullOrEmpty(t.LocalAddress));
-
-                    P2PTcpClient portClient = null;
-
                     if (destMap != null)
                         if (destMap.MapType == PortMapType.ip)
                             portClient = new P2PTcpClient(destMap.RemoteAddress, destMap.RemotePort);
@@ -136,74 +142,159 @@ namespace P2PSocket.Client.Commands
                             portClient = new P2PTcpClient("127.0.0.1", port);
                     else
                         portClient = new P2PTcpClient("127.0.0.1", port);
-
-
+                },
+                () =>
+                {
                     portClient.IsAuth = p2pClient.IsAuth = true;
                     portClient.ToClient = p2pClient;
                     p2pClient.ToClient = portClient;
-                    Global_Func.BindTcp(p2pClient, portClient);
+                    EasyOp.Do(() =>
+                    {
+                        if (Global_Func.BindTcp(p2pClient, portClient))
+                        {
+                            LogUtils.Debug($"命令：0x0201 P2P模式隧道，连接成功 token:{token}");
+                        }
+                        else
+                        {
+                            LogUtils.Debug($"命令：0x0201 P2P模式隧道，连接失败 token:{token}");
+                        }
+                    },
+                    ex =>
+                    {
+                        LogUtils.Debug($"命令：0x0201 P2P模式隧道,连接失败 token:{token}：{Environment.NewLine}{ex}");
+                    });
+                },
+                ex =>
+                {
+                    LogUtils.Debug($"命令：0x0201 P2P模式隧道,连接目标端口失败 token:{token}：{Environment.NewLine}{ex}");
+                    EasyOp.Do(p2pClient.SafeClose);
+                });
+
+
+            }
+            else
+            {
+                //A端，发起端
+                if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
+                {
+                    P2PTcpClient portClient = TcpCenter.Instance.WaiteConnetctTcp[token];
+                    TcpCenter.Instance.WaiteConnetctTcp.Remove(token);
+                    portClient.IsAuth = p2pClient.IsAuth = true;
+                    portClient.ToClient = p2pClient;
+                    p2pClient.ToClient = portClient;
+                    EasyOp.Do(() =>
+                    {
+                        if (Global_Func.BindTcp(p2pClient, portClient))
+                        {
+                            LogUtils.Debug($"命令：0x0201 P2P模式隧道，连接成功 token:{token}");
+                        }
+                        else
+                        {
+                            LogUtils.Debug($"命令：0x0201 P2P模式隧道，连接失败 token:{token}");
+                        }
+                    },
+                    ex =>
+                    {
+                        LogUtils.Debug($"命令：0x0201 P2P模式隧道,连接失败 token:{token}：{Environment.NewLine}{ex}");
+                    });
                 }
                 else
                 {
-                    if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
-                    {
-                        P2PTcpClient portClient = TcpCenter.Instance.WaiteConnetctTcp[token];
-                        TcpCenter.Instance.WaiteConnetctTcp.Remove(token);
-                        portClient.IsAuth = p2pClient.IsAuth = true;
-                        portClient.ToClient = p2pClient;
-                        p2pClient.ToClient = portClient;
-                        Global_Func.BindTcp(p2pClient, portClient);
-                    }
-                    else
-                    {
-                        LogUtils.Warning($"命令：0x0201 接收到建立隧道命令，但已超时. token:{token}");
-                    }
+                    LogUtils.Debug($"命令：0x0201 接收到建立隧道命令，但已超时. token:{token}");
+                    EasyOp.Do(p2pClient.SafeClose);
                 }
-            }
-            catch (Exception ex)
-            {
-                LogUtils.Error(ex.Message);
             }
         }
 
         public void CreateTcpFromDest_DirectConnect(string token)
         {
-            try
+            int port = BinaryUtils.ReadInt(data);
+            Utils.LogUtils.Debug($"命令：0x0201  正尝试建立P2P模式隧道 token:{token}");
+            P2PTcpClient serverClient = new P2PTcpClient();
+            serverClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+
+            EasyOp.Do(() =>
             {
-                int port = BinaryUtils.ReadInt(data);
-                Models.Send.Send_0x0201_Bind sendPacket = new Models.Send.Send_0x0201_Bind(token);
-                Utils.LogUtils.Info($"命令：0x0201  正尝试建立P2P模式隧道 token:{token}");
-                P2PTcpClient serverClient = new P2PTcpClient();
-                serverClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 serverClient.Connect(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
+            },
+            () =>
+            {
                 serverClient.IsAuth = true;
                 serverClient.P2PLocalPort = port;
                 serverClient.UpdateEndPoint();
-                serverClient.BeginSend(sendPacket.PackData());
-                Global_Func.ListenTcp<ReceivePacket>(serverClient);
-            }
-            catch (Exception ex)
+                Models.Send.Send_0x0201_Bind sendPacket = new Models.Send.Send_0x0201_Bind(token);
+
+                EasyOp.Do(() =>
+                {
+                    serverClient.BeginSend(sendPacket.PackData());
+                },
+                () =>
+                {
+                    EasyOp.Do(() =>
+                    {
+                        Global_Func.ListenTcp<ReceivePacket>(serverClient);
+                        LogUtils.Debug($"命令：0x0201 P2P模式隧道，隧道打洞成功 token:{token}");
+                    }, ex =>
+                    {
+                        LogUtils.Debug($"命令：0x0201 P2P模式隧道，隧道打洞失败 token:{token}：{Environment.NewLine}{ex}");
+                        EasyOp.Do(serverClient.Close);
+                    });
+                }, ex =>
+                {
+                    LogUtils.Debug($"命令：0x0201 P2P模式隧道，隧道打洞失败 token:{token}：{Environment.NewLine} 隧道被服务器强制断开");
+                });
+            }, ex =>
             {
-                LogUtils.Error($"命令：0x0201 尝试建立P2P模式隧道发生错误：{Environment.NewLine}{ex.Message}");
-            }
+                LogUtils.Debug($"命令：0x0201 P2P模式隧道，无法连接服务器 token:{token}：{Environment.NewLine}{ex}");
+            });
+
+
         }
         public void CreateTcpFromSource_DirectConnect(string token)
         {
             Models.Send.Send_0x0201_Bind sendPacket = new Models.Send.Send_0x0201_Bind(token);
-            Utils.LogUtils.Info($"命令：0x0201  正尝试建立P2P模式隧道 token:{token}");
+            Utils.LogUtils.Debug($"命令：0x0201  正尝试建立P2P模式隧道 token:{token}");
             if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
             {
                 P2PTcpClient serverClient = new P2PTcpClient();
                 serverClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                serverClient.Connect(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
-                serverClient.IsAuth = true;
-                serverClient.UpdateEndPoint();
-                serverClient.BeginSend(sendPacket.PackData());
-                Global_Func.ListenTcp<ReceivePacket>(serverClient);
+                EasyOp.Do(() =>
+                {
+                    serverClient.Connect(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
+                }, () =>
+                {
+                    serverClient.IsAuth = true;
+                    serverClient.UpdateEndPoint();
+                    EasyOp.Do(() =>
+                    {
+                        serverClient.BeginSend(sendPacket.PackData());
+                    },
+                    () =>
+                    {
+                        EasyOp.Do(() =>
+                        {
+                            Global_Func.ListenTcp<ReceivePacket>(serverClient);
+                            LogUtils.Debug($"命令：0x0201 P2P模式隧道，已连接到服务器，等待下一步操作 token:{token}");
+                        }, ex =>
+                        {
+                            LogUtils.Debug($"命令：0x0201 P2P模式隧道，服务器连接被强制断开 token:{token}：{Environment.NewLine}{ex}");
+                            TcpCenter.Instance.WaiteConnetctTcp.Remove(token);
+                            EasyOp.Do(serverClient.SafeClose);
+                        });
+                    }, ex =>
+                    {
+                        LogUtils.Debug($"命令：0x0201 P2P模式隧道，隧道打洞失败 token:{token}：{Environment.NewLine} 隧道被服务器强制断开");
+                        TcpCenter.Instance.WaiteConnetctTcp.Remove(token);
+                    });
+                }, ex =>
+                {
+                    LogUtils.Debug($"命令：0x0201 P2P模式隧道，无法连接服务器 token:{token}：{Environment.NewLine}{ex}");
+                    TcpCenter.Instance.WaiteConnetctTcp.Remove(token);
+                });
             }
             else
             {
-                LogUtils.Warning($"命令：0x0201 接收到建立P2P模式隧道命令，但已超时. token:{token}");
+                LogUtils.Debug($"命令：0x0201 接收到建立P2P模式隧道命令，但已超时. token:{token}");
             }
         }
 
@@ -213,15 +304,14 @@ namespace P2PSocket.Client.Commands
         /// <param name="token"></param>
         public void CreateTcpFromDest(string token)
         {
-            try
+            Utils.LogUtils.Debug($"命令：0x0201  正在连接中转模式隧道通道 token:{token}");
+            int port = BinaryUtils.ReadInt(data);
+            PortMapItem destMap = ConfigCenter.Instance.PortMapList.FirstOrDefault(t => t.LocalPort == port && string.IsNullOrEmpty(t.LocalAddress));
+
+
+            P2PTcpClient portClient = null;
+            EasyOp.Do(() =>
             {
-                Models.Send.Send_0x0201_Bind sendPacket = new Models.Send.Send_0x0201_Bind(token);
-                Utils.LogUtils.Info($"命令：0x0201  正在连接中转模式隧道通道 token:{token}");
-                int port = BinaryUtils.ReadInt(data);
-                PortMapItem destMap = ConfigCenter.Instance.PortMapList.FirstOrDefault(t => t.LocalPort == port && string.IsNullOrEmpty(t.LocalAddress));
-
-                P2PTcpClient portClient = null;
-
                 if (destMap != null)
                     if (destMap.MapType == PortMapType.ip)
                         portClient = new P2PTcpClient(destMap.RemoteAddress, destMap.RemotePort);
@@ -229,20 +319,48 @@ namespace P2PSocket.Client.Commands
                         portClient = new P2PTcpClient("127.0.0.1", port);
                 else
                     portClient = new P2PTcpClient("127.0.0.1", port);
-
-
-                P2PTcpClient serverClient = new P2PTcpClient(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
-                portClient.IsAuth = serverClient.IsAuth = true;
-                portClient.ToClient = serverClient;
-                serverClient.ToClient = portClient;
-                serverClient.BeginSend(sendPacket.PackData());
-                Global_Func.ListenTcp<ReceivePacket>(serverClient);
-                Utils.LogUtils.Info($"命令：0x0201  完成连接中转模式隧道通道 token:{token}");
-            }
-            catch (Exception ex)
+            }, () =>
             {
-                LogUtils.Error($"命令：0x0201 连接中转模式隧道错误：{Environment.NewLine}{ex.Message}");
-            }
+                P2PTcpClient serverClient = null;
+                EasyOp.Do(() =>
+                {
+                    serverClient = new P2PTcpClient(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
+                }, () =>
+                {
+                    portClient.IsAuth = serverClient.IsAuth = true;
+                    portClient.ToClient = serverClient;
+                    serverClient.ToClient = portClient;
+                    Models.Send.Send_0x0201_Bind sendPacket = new Models.Send.Send_0x0201_Bind(token);
+
+                    EasyOp.Do(() =>
+                    {
+                        serverClient.BeginSend(sendPacket.PackData());
+                    }, () =>
+                    {
+                        EasyOp.Do(() =>
+                        {
+                            Global_Func.ListenTcp<ReceivePacket>(serverClient);
+                            Utils.LogUtils.Debug($"命令：0x0201  中转模式隧道，连接成功 token:{token}");
+                        }, ex =>
+                        {
+                            LogUtils.Debug($"命令：0x0201 P2P模式隧道,连接失败 token:{token}：{Environment.NewLine}{ex}");
+                            EasyOp.Do(portClient.SafeClose);
+                            EasyOp.Do(portClient.SafeClose);
+                        });
+                    }, ex =>
+                    {
+                        LogUtils.Debug($"命令：0x0201 P2P模式隧道,连接失败 token:{token}：{Environment.NewLine}{ex}");
+                        EasyOp.Do(portClient.SafeClose);
+                    });
+                }, ex =>
+                {
+                    LogUtils.Debug($"命令：0x0201 P2P模式隧道,连接失败 token:{token}：{Environment.NewLine}{ex}");
+                    EasyOp.Do(portClient.SafeClose);
+                });
+            }, ex =>
+            {
+                LogUtils.Debug($"命令：0x0201 P2P模式隧道,连接目标端口失败 token{token}：{Environment.NewLine}{ex}");
+            });
         }
 
         /// <summary>
@@ -251,23 +369,47 @@ namespace P2PSocket.Client.Commands
         /// <param name="token"></param>
         public void CreateTcpFromSource(string token)
         {
-            Models.Send.Send_0x0201_Bind sendPacket = new Models.Send.Send_0x0201_Bind(token);
-            Utils.LogUtils.Info($"命令：0x0201  正尝试建立中转模式隧道token:{token}");
+            Utils.LogUtils.Debug($"命令：0x0201  正尝试建立中转模式隧道token:{token}");
             if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
             {
                 P2PTcpClient portClient = TcpCenter.Instance.WaiteConnetctTcp[token];
                 TcpCenter.Instance.WaiteConnetctTcp.Remove(token);
-                P2PTcpClient serverClient = new P2PTcpClient(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
-                portClient.IsAuth = serverClient.IsAuth = true;
-                portClient.ToClient = serverClient;
-                serverClient.ToClient = portClient;
-                serverClient.BeginSend(sendPacket.PackData());
-                Global_Func.ListenTcp<ReceivePacket>(serverClient);
-                Utils.LogUtils.Info($"命令：0x0201  完成连接中转模式隧道通道 token:{token}");
+                P2PTcpClient serverClient = null;
+                EasyOp.Do(() =>
+                {
+                    serverClient = new P2PTcpClient(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
+                }, () =>
+                {
+                    portClient.IsAuth = serverClient.IsAuth = true;
+                    portClient.ToClient = serverClient;
+                    serverClient.ToClient = portClient;
+                    Models.Send.Send_0x0201_Bind sendPacket = new Models.Send.Send_0x0201_Bind(token);
+                    EasyOp.Do(() => {
+                        serverClient.BeginSend(sendPacket.PackData());
+                    }, () => {
+                        EasyOp.Do(() => {
+                            Global_Func.ListenTcp<ReceivePacket>(serverClient);
+                            Utils.LogUtils.Debug($"命令：0x0201  中转模式隧道,隧道建立并连接成功 token:{token}");
+                        }, ex => {
+                            Utils.LogUtils.Debug($"命令：0x0201  中转模式隧道,隧道建立失败 token:{token}：{Environment.NewLine} {ex}");
+                            EasyOp.Do(serverClient.SafeClose);
+                            EasyOp.Do(portClient.SafeClose);
+                        });
+                    }, ex => {
+                        Utils.LogUtils.Debug($"命令：0x0201  中转模式隧道,隧道建立失败 token:{token}：{Environment.NewLine} 隧道被服务器强制断开");
+                        EasyOp.Do(portClient.SafeClose);
+                    });
+
+                }, ex =>
+                {
+                    Utils.LogUtils.Debug($"命令：0x0201  中转模式隧道,无法连接服务器 token:{token}：{Environment.NewLine}{ex}");
+                    EasyOp.Do(portClient.SafeClose);
+                });
+
             }
             else
             {
-                LogUtils.Warning($"命令：0x0201 接收到建立中转模式隧道命令，但已超时. token:{token}");
+                LogUtils.Debug($"命令：0x0201 接收到建立中转模式隧道命令，但已超时. token:{token}");
             }
         }
 
@@ -276,8 +418,13 @@ namespace P2PSocket.Client.Commands
         /// </summary>
         public void ListenPort()
         {
-            //  监听端口
-            Global_Func.ListenTcp<Packet_0x0202>(m_tcpClient.ToClient);
+            EasyOp.Do(() => {
+                //  监听端口
+                Global_Func.ListenTcp<Packet_0x0202>(m_tcpClient.ToClient);
+            }, ex => {
+                Utils.LogUtils.Debug($"命令：0x0201  隧道连接失败,源Tcp连接已断开：{Environment.NewLine}{ex}");
+                EasyOp.Do(m_tcpClient.SafeClose);
+            });
         }
     }
 }

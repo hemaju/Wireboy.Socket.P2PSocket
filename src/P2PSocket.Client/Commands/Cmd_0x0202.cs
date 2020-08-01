@@ -22,21 +22,31 @@ namespace P2PSocket.Client.Commands
         }
         public override bool Excute()
         {
-            LogUtils.Debug($"命令：0x0202 P2P（3端）数据转发 From:{m_tcpClient.ToClient.RemoteEndPoint} Length:{((MemoryStream)m_data.BaseStream).Length}");
-
+            LogUtils.Trace($"开始处理消息：0x0201 From:{m_tcpClient.ToClient.RemoteEndPoint} Length:{((MemoryStream)m_data.BaseStream).Length}");
+            bool ret = true;
             //是否来自端口
             if (BinaryUtils.ReadBool(m_data))
             {
                 //Port->Client
                 Send_0x0202 sendPacket = new Send_0x0202(BinaryUtils.ReadBytes(m_data), false);
-                m_tcpClient.ToClient.BeginSend(sendPacket.PackData());
+                EasyOp.Do(() => {
+                    m_tcpClient.ToClient.BeginSend(sendPacket.PackData());
+                }, ex => {
+                    LogUtils.Debug($"命令：0x0202 转发来自端口的数据失败：{Environment.NewLine}{ex}");
+                    ret = false;
+                });
             }
             else
             {
                 //Server->Client
-                m_tcpClient.ToClient.BeginSend(BinaryUtils.ReadBytes(m_data));
+                EasyOp.Do(() => {
+                    m_tcpClient.ToClient.BeginSend(BinaryUtils.ReadBytes(m_data));
+                }, ex => {
+                    LogUtils.Debug($"命令：0x0202 转发来自服务器的数据失败：{Environment.NewLine}{ex}");
+                    ret = false;
+                });
             }
-            return true;
+            return ret;
         }
     }
 }

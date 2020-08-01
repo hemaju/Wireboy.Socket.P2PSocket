@@ -22,10 +22,11 @@ namespace P2PSocket.Client.Commands
         }
         public override bool Excute()
         {
+            LogUtils.Trace($"开始处理消息：0x0301");
             LogLevel logLevel = BinaryUtils.ReadLogLevel(m_data);
             string msg = BinaryUtils.ReadString(m_data);
             string sourceName = BinaryUtils.ReadString(m_data);
-            LogUtils.WriteLine(logLevel, $"来自{sourceName}的消息：{msg}");
+            LogUtils.WriteLine(logLevel, $"命令：0x0301 接收到{sourceName}的消息-> {msg}");
             return true;
         }
     }

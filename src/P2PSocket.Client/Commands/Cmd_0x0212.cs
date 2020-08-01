@@ -22,20 +22,35 @@ namespace P2PSocket.Client.Commands
         }
         public override bool Excute()
         {
-            LogUtils.Debug($"命令：0x0212 P2P（2端）数据转发 From:{m_tcpClient.ToClient.RemoteEndPoint} Length:{((MemoryStream)m_data.BaseStream).Length}");
+            LogUtils.Trace($"开始处理消息：0x0212 From:{m_tcpClient.ToClient.RemoteEndPoint} Length:{((MemoryStream)m_data.BaseStream).Length}");
+            bool ret = true;
             if (BinaryUtils.ReadBool(m_data))
             {
                 //Port->Client
                 Send_0x0212 sendPacket = new Send_0x0212(BinaryUtils.ReadBytes(m_data));
-                m_tcpClient.ToClient.Client.Send(sendPacket.PackData());
+                EasyOp.Do(() =>
+                {
+                    m_tcpClient.ToClient.BeginSend(sendPacket.PackData());
+                }, ex =>
+                {
+                    ret = false;
+                    LogUtils.Debug($"命令：0x0212 转发来自端口的数据失败：{Environment.NewLine}{ex}");
+                });
             }
             else
             {
                 //Server->Client
                 Send_Transfer sendPacket = new Send_Transfer(BinaryUtils.ReadBytes(m_data));
-                m_tcpClient.ToClient.Client.Send(sendPacket.PackData());
+                EasyOp.Do(() =>
+                {
+                    m_tcpClient.ToClient.BeginSend(sendPacket.PackData());
+                }, ex =>
+                {
+                    ret = false;
+                    LogUtils.Debug($"命令：0x0212 转发来自端口的数据失败：{Environment.NewLine}{ex}");
+                });
             }
-            return true;
+            return ret;
         }
     }
 }

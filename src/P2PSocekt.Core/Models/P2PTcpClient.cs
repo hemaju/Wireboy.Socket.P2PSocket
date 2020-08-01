@@ -247,16 +247,10 @@ namespace P2PSocket.Core.Models
 
         public void SafeClose()
         {
-            if(this.Connected)
+            if (this.Connected)
             {
-                try
-                {
-                    this.Close();
-                }
-                finally
-                {
-
-                }
+                this.GetStream().Close(3000);
+                this.Close();
             }
         }
 
@@ -267,9 +261,20 @@ namespace P2PSocket.Core.Models
         private void sendCallback(IAsyncResult ar)
         {
             Socket socket = (Socket)ar.AsyncState;
-            socket.EndSend(ar);
+            if (socket.Connected)
+            {
+                try
+                {
+                    socket.EndSend(ar);
+                }
+                catch (Exception ex)
+                {
+                    RecieveErrorMsgHandle?.Invoke(ex.ToString());
+                }
+            }
         }
-
+        public delegate void RecieveErrorMsg(string msg);
+        public static RecieveErrorMsg RecieveErrorMsgHandle = null;
         public string Token { set; get; } = Guid.NewGuid().ToString();
         public P2PTcpClient ToClient { set; get; }
         /// <summary>
