@@ -6,6 +6,7 @@ using System.IO;
 using System.Text;
 using P2PSocket.Core.Utils;
 using P2PSocket.Server.Models.Send;
+using P2PSocket.Core.Extends;
 
 namespace P2PSocket.Server.Commands
 {
@@ -21,6 +22,7 @@ namespace P2PSocket.Server.Commands
         }
         public override bool Excute()
         {
+            LogUtils.Trace($"开始处理消息：0x0301");
             LogLevel logLevel = BinaryUtils.ReadLogLevel(m_data);
             string msg = BinaryUtils.ReadString(m_data);
             string destName = BinaryUtils.ReadString(m_data);
@@ -36,7 +38,7 @@ namespace P2PSocket.Server.Commands
                 {
                     //  将消息转发至指定客户端
                     Msg_0x0301 sendPacket = new Msg_0x0301(logLevel, msg, m_tcpClient.ClientName);
-                    ClientCenter.Instance.TcpMap[destName].TcpClient.Client.Send(sendPacket.PackData());
+                    EasyOp.Do(() => ClientCenter.Instance.TcpMap[destName].TcpClient.BeginSend(sendPacket.PackData()));
                 }
                 else
                 {

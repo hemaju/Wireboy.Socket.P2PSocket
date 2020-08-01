@@ -21,6 +21,7 @@ namespace P2PSocket.Server.Commands
         }
         public override bool Excute()
         {
+            LogUtils.Trace($"开始处理消息：0x0103");
             if (ClientCenter.Instance.TcpMap.ContainsKey(m_tcpClient.ClientName))
             {
                 P2PTcpItem item = ClientCenter.Instance.TcpMap[m_tcpClient.ClientName];

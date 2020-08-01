@@ -254,27 +254,6 @@ namespace P2PSocket.Core.Models
             }
         }
 
-        public void BeginSend(byte[] data)
-        {
-            this.Client.BeginSend(data, 0, data.Length, SocketFlags.None, sendCallback, this.Client);
-        }
-        private void sendCallback(IAsyncResult ar)
-        {
-            Socket socket = (Socket)ar.AsyncState;
-            if (socket.Connected)
-            {
-                try
-                {
-                    socket.EndSend(ar);
-                }
-                catch (Exception ex)
-                {
-                    RecieveErrorMsgHandle?.Invoke(ex.ToString());
-                }
-            }
-        }
-        public delegate void RecieveErrorMsg(string msg);
-        public static RecieveErrorMsg RecieveErrorMsgHandle = null;
         public string Token { set; get; } = Guid.NewGuid().ToString();
         public P2PTcpClient ToClient { set; get; }
         /// <summary>
@@ -288,7 +267,7 @@ namespace P2PSocket.Core.Models
 
         public DateTime LastHeartTime { set; get; } = DateTime.Now;
 
-        public bool IsDisConnected { get => LastHeartTime.AddSeconds(15) <= DateTime.Now; }
+        public bool IsDisConnected { get => LastHeartTime.AddSeconds(10) <= DateTime.Now; }
 
         public bool IsSpeedLimit { set; get; } = false;
 

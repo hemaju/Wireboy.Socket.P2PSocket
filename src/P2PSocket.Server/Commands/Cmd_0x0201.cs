@@ -30,6 +30,7 @@ namespace P2PSocket.Server.Commands
         }
         public override bool Excute()
         {
+            LogUtils.Trace($"开始处理消息：0x0201");
             int step = BinaryUtils.ReadInt(m_data);
             //是否第一步创建
             if (step == 1)
@@ -69,11 +70,11 @@ namespace P2PSocket.Server.Commands
                     LogUtils.Debug($"正在等待隧道连接绑定 token:{token}.");
                     AppCenter.Instance.StartNewTask(() =>
                     {
-                        Thread.Sleep(ConfigCenter.Instance.P2PTimeout);
+                        Thread.Sleep(ConfigCenter.Instance.P2PWaitConnectTime);
                         if (ClientCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
                         {
                             LogUtils.Debug($"等待隧道连接绑定已超时  token:{token}.");
-                            ClientCenter.Instance.WaiteConnetctTcp[token]?.SafeClose();
+                            EasyOp.Do(() => m_tcpClient.SafeClose());
                             ClientCenter.Instance.WaiteConnetctTcp.Remove(token);
                             p2pTypeDict.Remove(token);
                         }
@@ -96,7 +97,7 @@ namespace P2PSocket.Server.Commands
                 {
                     Send_0x0201_Failure sendPacket = new Send_0x0201_Failure($"客户端{clientName}已被加入黑名单");
                     LogUtils.Warning($"建立隧道失败，客户端{clientName}已被加入黑名单");
-                    m_tcpClient.BeginSend(sendPacket.PackData());
+                    EasyOp.Do(() => m_tcpClient.BeginSend(sendPacket.PackData()));
                 }
                 else if (item.AllowPorts.Any(t => t.Match(clientPort, m_tcpClient.ClientName)))
                 {
@@ -104,13 +105,13 @@ namespace P2PSocket.Server.Commands
                     Send_0x0201_Success sendDPacket = new Send_0x0201_Success(token, clientPort, p2pType);
                     Send_0x0201_Success sendSPacket = new Send_0x0201_Success(token, p2pType);
                     ClientCenter.Instance.TcpMap[clientName].TcpClient.BeginSend(sendDPacket.PackData());
-                    m_tcpClient.BeginSend(sendSPacket.PackData());
+                    EasyOp.Do(() => m_tcpClient.BeginSend(sendSPacket.PackData()));
                 }
                 else
                 {
                     Send_0x0201_Failure sendPacket = new Send_0x0201_Failure($"未获得授权，无法建立隧道，端口{clientPort}");
                     LogUtils.Debug($"未获得授权，无法建立隧道，端口{clientPort}");
-                    m_tcpClient.BeginSend(sendPacket.PackData());
+                    EasyOp.Do(() => m_tcpClient.BeginSend(sendPacket.PackData()));
                 }
             }
             else
@@ -118,20 +119,20 @@ namespace P2PSocket.Server.Commands
                 //发送客户端未在线
                 LogUtils.Debug($"【P2P】客户端{clientName}不在线.");
                 Send_0x0201_Failure sendPacket = new Send_0x0201_Failure($"客户端{clientName}不在线");
-                m_tcpClient.BeginSend(sendPacket.PackData());
+                EasyOp.Do(() => m_tcpClient.BeginSend(sendPacket.PackData()));
             }
         }
         public void P2PBind_ServerTransfer(string token)
         {
-            LogUtils.Debug($"成功建立中转模式隧道 token:{token}");
             P2PTcpClient client = ClientCenter.Instance.WaiteConnetctTcp[token];
             ClientCenter.Instance.WaiteConnetctTcp.Remove(token);
             client.IsAuth = m_tcpClient.IsAuth = true;
             client.ToClient = m_tcpClient;
             m_tcpClient.ToClient = client;
             Send_0x0201_Success sendPacket = new Send_0x0201_Success(4);
-            client.BeginSend(sendPacket.PackData());
-            m_tcpClient.BeginSend(sendPacket.PackData());
+            EasyOp.Do(() => client.BeginSend(sendPacket.PackData()));
+            EasyOp.Do(() => m_tcpClient.BeginSend(sendPacket.PackData()));
+            LogUtils.Debug($"成功建立中转模式隧道 token:{token}");
         }
 
         public void P2PBind_DirectConnect(string token)
@@ -144,15 +145,11 @@ namespace P2PSocket.Server.Commands
             Send_0x0201_Success sendPacketB = new Send_0x0201_Success(14);
             sendPacketB.WriteDirectData(clientA.Client.RemoteEndPoint.ToString(), token);
 
-            clientA.BeginSend(sendPacketA.PackData());
-            clientB.BeginSend(sendPacketB.PackData());
+            EasyOp.Do(() => clientA.BeginSend(sendPacketA.PackData()));
+            EasyOp.Do(() => clientB.BeginSend(sendPacketB.PackData()));
 
-            Task.Factory.StartNew(() =>
-            {
-                Thread.Sleep(5000);
-                clientA?.SafeClose();
-                clientB?.SafeClose();
-            });
+            EasyOp.Do(() => clientA?.SafeClose());
+            EasyOp.Do(() => clientB?.SafeClose());
         }
     }
 }

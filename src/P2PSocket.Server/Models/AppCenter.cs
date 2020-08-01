@@ -29,7 +29,7 @@ namespace P2PSocket.Server
         /// <summary>
         ///     软件版本
         /// </summary>
-        public string SoftVerSion { get; } = "3.0.3";
+        public string SoftVerSion { get; } = "3.0.4 Beta";
         /// <summary>
         ///     通讯协议版本
         /// </summary>

@@ -117,7 +117,7 @@ namespace P2PSocket.Client
         {
             //TcpCenter.Instance.ConnectedTcpList.Add(readTcp);
             //TcpCenter.Instance.ConnectedTcpList.Add(toTcp);
-            bool ret = false;
+            bool ret = true;
             RelationTcp_Ip toRelation = new RelationTcp_Ip();
             EasyOp.Do(() =>
             {
@@ -173,6 +173,10 @@ namespace P2PSocket.Client
                     length = relation.readSs.EndRead(ar);
                 }, () =>
                 {
+                    EasyOp.Do(() =>
+                    {
+                        LogUtils.Trace($"接收到数据 From:{relation.readTcp.RemoteEndPoint} length:{length}");
+                    });
                     if (length > 0)
                     {
                         if (relation.writeTcp.Connected)

@@ -26,20 +26,12 @@ namespace P2PSocket.Server
         }
         public static void ListenTcp<T>(P2PTcpClient tcpClient) where T : ReceivePacket
         {
-            if (tcpClient.Connected)
-            {
-                RelationTcp_Server relationSt = new RelationTcp_Server();
-                relationSt.buffer = new byte[P2PGlobal.P2PSocketBufferSize];
-                relationSt.readTcp = tcpClient;
-                relationSt.msgReceive = Activator.CreateInstance(typeof(T)) as ReceivePacket;
-                relationSt.guid = AppCenter.Instance.CurrentGuid;
-                relationSt.readTcp.GetStream().BeginRead(relationSt.buffer, 0, relationSt.buffer.Length, ReadTcp_Server, relationSt);
-            }
-            else if (tcpClient.ToClient != null && tcpClient.ToClient.Connected)
-            {
-
-                tcpClient?.SafeClose();
-            }
+            RelationTcp_Server relationSt = new RelationTcp_Server();
+            relationSt.buffer = new byte[P2PGlobal.P2PSocketBufferSize];
+            relationSt.readTcp = tcpClient;
+            relationSt.msgReceive = Activator.CreateInstance(typeof(T)) as ReceivePacket;
+            relationSt.guid = AppCenter.Instance.CurrentGuid;
+            relationSt.readTcp.GetStream().BeginRead(relationSt.buffer, 0, relationSt.buffer.Length, ReadTcp_Server, relationSt);
         }
 
         private static void ReadTcp_Server(IAsyncResult ar)
@@ -60,11 +52,10 @@ namespace P2PSocket.Server
                             byte[] refData = relation.buffer.Take(length).ToArray();
                             while (relation.msgReceive.ParseData(ref refData))
                             {
-                                //LogUtils.Trace($"命令类型:{relation.msgReceive.CommandType}");
                                 // 执行command
                                 using (P2PCommand command = FindCommand(relation.readTcp, relation.msgReceive))
                                 {
-
+                                    //LogUtils.Trace($"命令类型:{relation.msgReceive.CommandType}");
                                     if (command != null)
                                     {
                                         if (!command.Excute())
@@ -145,10 +136,7 @@ namespace P2PSocket.Server
             else
             {
                 tcpClient?.SafeClose();
-                if (tcpClient.ToClient != null)
-                {
-                    tcpClient.ToClient?.SafeClose();
-                }
+                tcpClient.ToClient?.SafeClose();
                 LogUtils.Warning($"拦截{tcpClient.RemoteEndPoint}未授权命令");
             }
             return command;

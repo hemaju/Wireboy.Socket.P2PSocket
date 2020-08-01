@@ -18,6 +18,7 @@ namespace P2PSocket.Server.Commands
         }
         public override bool Excute()
         {
+            LogUtils.Trace($"开始处理消息：0x0102");
             return true;
         }
     }

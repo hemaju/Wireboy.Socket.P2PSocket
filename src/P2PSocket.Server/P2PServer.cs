@@ -58,21 +58,30 @@ namespace P2PSocket.Server
         /// </summary>
         private void ListenMessagePort()
         {
-            TcpListener listener = new TcpListener(IPAddress.Any, ConfigCenter.Instance.LocalPort);
-            try
+            TcpListener listener = null;
+            EasyOp.Do(() =>
             {
+                listener = new TcpListener(IPAddress.Any, ConfigCenter.Instance.LocalPort);
                 listener.Start();
-                LogUtils.Info($"【成功】启动服务，端口：{ConfigCenter.Instance.LocalPort}");
-            }
-            catch
+                LogUtils.Info($"监听服务端口：{ConfigCenter.Instance.LocalPort}");
+            }, () =>
             {
-                LogUtils.Error($"【失败】服务端口：{ConfigCenter.Instance.LocalPort} 监听失败.");
-                return;
-            }
-            ListenerList.Add(listener);
-            ListenSt listenSt = new ListenSt();
-            listenSt.listener = listener;
-            listener.BeginAcceptSocket(AcceptSocket_Client, listenSt);
+                ListenerList.Add(listener);
+                ListenSt listenSt = new ListenSt();
+                listenSt.listener = listener;
+                EasyOp.Do(() =>
+                {
+                    listener.BeginAcceptSocket(AcceptSocket_Client, listenSt);
+                }, ex =>
+                {
+                    LogUtils.Error($"监听服务端口发生错误:{Environment.NewLine}{ex}");
+                    EasyOp.Do(() => listener.Stop());
+                    ListenerList.Remove(listener);
+                });
+            }, ex =>
+            {
+                LogUtils.Error($"服务端口监听失败[{ConfigCenter.Instance.LocalPort}]:{Environment.NewLine}{ex}");
+            });
         }
         struct ListenSt
         {
@@ -85,41 +94,87 @@ namespace P2PSocket.Server
             ListenSt st = (ListenSt)ar.AsyncState;
             TcpListener listener = st.listener;
             Socket socket = null;
-            try
+
+            EasyOp.Do(() =>
             {
                 socket = listener.EndAcceptSocket(ar);
-            }
-            catch (Exception ex)
+            }, () =>
             {
-                LogUtils.Error(ex.ToString());
-            }
-            listener.BeginAcceptSocket(AcceptSocket_Client, st);
-            P2PTcpClient tcpClient = new P2PTcpClient(socket);
-            LogUtils.Info($"端口{ ConfigCenter.Instance.LocalPort}新连入Tcp：{tcpClient.Client.RemoteEndPoint.ToString()}");
-            //接收数据
-            Global_Func.ListenTcp<ReceivePacket>(tcpClient);
+                EasyOp.Do(() =>
+                {
+                    listener.BeginAcceptSocket(AcceptSocket_Client, st);
+                }, exx =>
+                {
+                    LogUtils.Error($"端口监听失败:{Environment.NewLine}{exx}");
+                    EasyOp.Do(() => listener.Stop());
+                    ListenerList.Remove(listener);
+                });
+                P2PTcpClient tcpClient = null;
+                EasyOp.Do(() =>
+                {
+                    tcpClient = new P2PTcpClient(socket);
+                }, () =>
+                {
+                    LogUtils.Trace($"端口{ ConfigCenter.Instance.LocalPort}新连入Tcp：{tcpClient.Client.RemoteEndPoint}");
+                    //接收数据
+                    EasyOp.Do(() =>
+                    {
+                        Global_Func.ListenTcp<ReceivePacket>(tcpClient);
+                    }, ex =>
+                    {
+                        LogUtils.Debug($"准备接收Tcp数据出错：{Environment.NewLine}{ex}");
+                        EasyOp.Do(() => tcpClient?.SafeClose());
+                    });
+                }, ex =>
+                {
+                    LogUtils.Debug($"处理新接入Tcp时出错：{Environment.NewLine}{ex}");
+                    EasyOp.Do(() => tcpClient?.SafeClose());
+                });
+            }, ex =>
+            {
+                LogUtils.Debug($"获取新接入的Tcp连接失败");
+                EasyOp.Do(() =>
+                {
+                    listener.BeginAcceptSocket(AcceptSocket_Client, st);
+                }, exx =>
+                {
+                    LogUtils.Error($"端口监听失败:{Environment.NewLine}{exx}");
+                    EasyOp.Do(() => listener.Stop());
+                    ListenerList.Remove(listener);
+                });
+            });
+
         }
 
         private void ListenPortMapPortWithServerName(PortMapItem item)
         {
             TcpListener listener = null;
-            try
+
+            EasyOp.Do(() =>
             {
                 listener = new TcpListener(IPAddress.Any, item.LocalPort);
                 listener.Start();
-            }
-            catch (Exception ex)
+            }, () =>
             {
-                LogUtils.Error($"【失败】端口映射：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}{Environment.NewLine}{ex.ToString()}");
-                return;
-            }
-            ListenerList.Add(listener);
-            LogUtils.Info($"【成功】端口映射：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}", false);
-
-            ListenSt listenSt = new ListenSt();
-            listenSt.listener = listener;
-            listenSt.item = item;
-            listener.BeginAcceptSocket(AcceptSocket_ClientName, listenSt);
+                ListenerList.Add(listener);
+                ListenSt listenSt = new ListenSt();
+                listenSt.listener = listener;
+                listenSt.item = item;
+                EasyOp.Do(() =>
+                {
+                    listener.BeginAcceptSocket(AcceptSocket_ClientName, listenSt);
+                    LogUtils.Info($"端口映射：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}", false);
+                }, ex =>
+                {
+                    LogUtils.Error($"建立端口映射失败 {item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}{Environment.NewLine}{ex}");
+                    EasyOp.Do(() => listener.Stop());
+                    ListenerList.Remove(listener);
+                });
+            }, ex =>
+            {
+                LogUtils.Error($"建立端口映射失败 {item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}{Environment.NewLine}{ex}");
+                EasyOp.Do(() => listener?.Stop());
+            });
         }
 
         public void AcceptSocket_ClientName(IAsyncResult ar)
@@ -128,46 +183,78 @@ namespace P2PSocket.Server
             TcpListener listener = st.listener;
             PortMapItem item = st.item;
             Socket socket = null;
-            try
+            EasyOp.Do(() =>
             {
                 socket = listener.EndAcceptSocket(ar);
-            }
-            catch (Exception ex)
+            }, () =>
             {
-                LogUtils.Error(ex.ToString());
-                return;
-            }
-            listener.BeginAcceptSocket(AcceptSocket_ClientName, ar);
-
-            string remoteAddress = ((IPEndPoint)socket.RemoteEndPoint).Address.ToString();
-            LogUtils.Info($"开始内网穿透：{remoteAddress}->{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}", false);
-            P2PTcpClient tcpClient = new P2PTcpClient(socket);
-            string token = tcpClient.Token;
-            //获取目标tcp
-            if (ClientCenter.Instance.TcpMap.ContainsKey(item.RemoteAddress) && ClientCenter.Instance.TcpMap[item.RemoteAddress].TcpClient.Connected)
-            {
-                //加入待连接集合
-                ClientCenter.Instance.WaiteConnetctTcp.Add(token, tcpClient);
-                //发送p2p申请
-                Models.Send.Send_0x0211 packet = new Models.Send.Send_0x0211(token, item.RemotePort, tcpClient.RemoteEndPoint);
-                ClientCenter.Instance.TcpMap[item.RemoteAddress].TcpClient.Client.Send(packet.PackData());
-                AppCenter.Instance.StartNewTask(() =>
+                EasyOp.Do(() =>
                 {
-                    Thread.Sleep(ConfigCenter.Instance.P2PTimeout);
-                    //如果5秒后没有匹配成功，则关闭连接
-                    if (ClientCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
-                    {
-                        LogUtils.Warning($"【失败】内网穿透：{ConfigCenter.Instance.P2PTimeout / 1000}秒无响应，已超时.");
-                        ClientCenter.Instance.WaiteConnetctTcp[token]?.SafeClose();
-                        ClientCenter.Instance.WaiteConnetctTcp.Remove(token);
-                    }
+                    listener.BeginAcceptSocket(AcceptSocket_ClientName, ar);
+                }, exx =>
+                {
+                    LogUtils.Error($"端口监听失败:{Environment.NewLine}{exx}");
                 });
-            }
-            else
+
+                LogUtils.Debug($"开始内网穿透：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}", false);
+                P2PTcpClient tcpClient = null;
+                EasyOp.Do(() =>
+                {
+                    tcpClient = new P2PTcpClient(socket);
+                }, () =>
+                {
+                    string token = tcpClient.Token;
+                    //获取目标tcp
+                    if (ClientCenter.Instance.TcpMap.ContainsKey(item.RemoteAddress) && ClientCenter.Instance.TcpMap[item.RemoteAddress].TcpClient.Connected)
+                    {
+                        //加入待连接集合
+                        ClientCenter.Instance.WaiteConnetctTcp.Add(token, tcpClient);
+                        //发送p2p申请
+                        Models.Send.Send_0x0211 packet = new Models.Send.Send_0x0211(token, item.RemotePort, tcpClient.RemoteEndPoint);
+                        EasyOp.Do(() =>
+                        {
+                            ClientCenter.Instance.TcpMap[item.RemoteAddress].TcpClient.BeginSend(packet.PackData());
+                        }, () =>
+                        {
+                            Thread.Sleep(ConfigCenter.Instance.P2PTimeout);
+                            //如果指定时间内没有匹配成功，则关闭连接
+                            if (ClientCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
+                            {
+                                LogUtils.Debug($"建立隧道失败{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}，{ConfigCenter.Instance.P2PTimeout / 1000}秒无响应，已超时.");
+                                EasyOp.Do(() => tcpClient?.SafeClose());
+                                ClientCenter.Instance.WaiteConnetctTcp[token]?.SafeClose();
+                                ClientCenter.Instance.WaiteConnetctTcp.Remove(token);
+                            }
+                        }, ex =>
+                        {
+                            LogUtils.Debug($"建立隧道失败{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}，目标客户端已断开连接!");
+                            EasyOp.Do(() => tcpClient?.SafeClose());
+                            EasyOp.Do(() => ClientCenter.Instance.TcpMap[item.RemoteAddress].TcpClient?.SafeClose());
+                        });
+                    }
+                    else
+                    {
+                        LogUtils.Debug($"建立隧道失败{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}，客户端不在线!");
+                        EasyOp.Do(() => tcpClient?.SafeClose());
+                    }
+                }, ex =>
+                {
+                    LogUtils.Debug($"处理新接入Tcp时发生错误：{Environment.NewLine}{ex}");
+                    EasyOp.Do(() => socket?.SafeClose());
+                });
+            }, ex =>
             {
-                LogUtils.Warning($"【失败】内网穿透：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort} 客户端不在线!");
-                tcpClient?.SafeClose();
-            }
+                LogUtils.Debug($"获取新接入的Tcp连接失败：{Environment.NewLine}{ex}");
+                EasyOp.Do(() =>
+                {
+                    listener.BeginAcceptSocket(AcceptSocket_ClientName, ar);
+                }, exx =>
+                {
+                    LogUtils.Error($"端口监听失败:{Environment.NewLine}{exx}");
+                });
+            });
+
+
 
 
         }
@@ -177,24 +264,35 @@ namespace P2PSocket.Server
         /// <param name="item"></param>
         private void ListenPortMapPortWithIp(PortMapItem item)
         {
-            TcpListener listener = new TcpListener(IPAddress.Any, item.LocalPort);
-            try
+            TcpListener listener = null;
+            EasyOp.Do(() =>
             {
+                listener = new TcpListener(IPAddress.Any, item.LocalPort);
                 listener.Start();
-            }
-            catch (Exception ex)
+            }, () =>
             {
-                LogUtils.Error($"【失败】端口映射：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}{Environment.NewLine}{ex.ToString()}");
-                return;
-            }
-            ListenerList.Add(listener);
-            LogUtils.Info($"【成功】端口映射：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}", false);
+                ListenerList.Add(listener);
+                ListenSt listenSt = new ListenSt();
+                listenSt.listener = listener;
+                listenSt.item = item;
+                EasyOp.Do(() =>
+                {
+                    listener.BeginAcceptSocket(AcceptSocket_Ip, listenSt);
+                    LogUtils.Info($"端口映射：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}", false);
+                }, ex =>
+                {
+                    LogUtils.Error($"建立端口映射失败 {item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}{Environment.NewLine}{ex}");
+                    EasyOp.Do(() => listener.Stop());
+                    ListenerList.Remove(listener);
+                });
+            }, ex =>
+            {
+                LogUtils.Error($"建立端口映射失败 {item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}{Environment.NewLine}{ex}");
+            });
 
 
-            ListenSt listenSt = new ListenSt();
-            listenSt.listener = listener;
-            listenSt.item = item;
-            listener.BeginAcceptSocket(AcceptSocket_Ip, listenSt);
+
+
         }
 
         public void AcceptSocket_Ip(IAsyncResult ar)
@@ -203,47 +301,84 @@ namespace P2PSocket.Server
             TcpListener listener = st.listener;
             PortMapItem item = st.item;
             Socket socket = null;
-            try
+
+            EasyOp.Do(() =>
             {
                 socket = listener.EndAcceptSocket(ar);
-            }
-            catch (Exception ex)
+            }, () =>
             {
-                LogUtils.Error(ex.ToString());
-                return;
-            }
-            listener.BeginAcceptSocket(AcceptSocket_Ip, st);
+                EasyOp.Do(() =>
+                {
+                    listener.BeginAcceptSocket(AcceptSocket_Ip, ar);
+                }, ex =>
+                {
+                    LogUtils.Error($"端口监听失败:{Environment.NewLine}{ex}");
+                });
+                P2PTcpClient tcpClient = null;
+                EasyOp.Do(() =>
+                {
+                    tcpClient = new P2PTcpClient(socket);
+                }, () =>
+                {
+                    P2PTcpClient ipClient = null;
+                    try
+                    {
+                        ipClient = new P2PTcpClient(item.RemoteAddress, item.RemotePort);
+                    }
+                    catch (Exception ex)
+                    {
+                    }
 
-            P2PTcpClient tcpClient = new P2PTcpClient(socket);
-            P2PTcpClient ipClient = null;
-            try
+                    EasyOp.Do(() =>
+                    {
+                        ipClient = new P2PTcpClient(item.RemoteAddress, item.RemotePort);
+                    }, () =>
+                    {
+                        tcpClient.ToClient = ipClient;
+                        ipClient.ToClient = tcpClient;
+                        RelationTcp toRelation = new RelationTcp();
+                        toRelation.readTcp = tcpClient;
+                        toRelation.writeTcp = tcpClient.ToClient;
+                        toRelation.buffer = new byte[P2PGlobal.P2PSocketBufferSize];
+                        RelationTcp fromRelation = new RelationTcp();
+                        fromRelation.readTcp = toRelation.writeTcp;
+                        fromRelation.writeTcp = toRelation.readTcp;
+                        fromRelation.buffer = new byte[P2PGlobal.P2PSocketBufferSize];
+                        EasyOp.Do(() =>
+                        {
+                            StartTransferTcp_Ip(toRelation);
+                            StartTransferTcp_Ip(fromRelation);
+                        }, ex =>
+                        {
+                            LogUtils.Debug($"建立隧道失败：{Environment.NewLine}{ex}");
+                            EasyOp.Do(() => ipClient.SafeClose());
+                            EasyOp.Do(() => tcpClient.SafeClose());
+                        });
+                    }, ex =>
+                    {
+                        LogUtils.Debug($"建立隧道失败：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}{Environment.NewLine}{ex}");
+                        EasyOp.Do(() => tcpClient.SafeClose());
+                    });
+
+                }, ex =>
+                {
+                    LogUtils.Debug($"处理新接入Tcp时发生错误：{Environment.NewLine}{ex}");
+                    EasyOp.Do(() => socket?.SafeClose());
+                });
+
+            }, ex =>
             {
-                ipClient = new P2PTcpClient(item.RemoteAddress, item.RemotePort);
-            }
-            catch (Exception ex)
-            {
-                tcpClient?.SafeClose();
-                LogUtils.Error($"【失败】内网穿透：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}{Environment.NewLine}{ex.ToString()}");
-            }
-            if (ipClient.Connected)
-            {
-                tcpClient.ToClient = ipClient;
-                ipClient.ToClient = tcpClient;
-                RelationTcp toRelation = new RelationTcp();
-                toRelation.readTcp = tcpClient;
-                toRelation.readSs = tcpClient.GetStream();
-                toRelation.writeTcp = tcpClient.ToClient;
-                toRelation.writeSs = tcpClient.ToClient.GetStream();
-                toRelation.buffer = new byte[P2PGlobal.P2PSocketBufferSize];
-                RelationTcp fromRelation = new RelationTcp();
-                fromRelation.readTcp = toRelation.writeTcp;
-                fromRelation.readSs = toRelation.writeSs;
-                fromRelation.writeTcp = toRelation.readTcp;
-                fromRelation.writeSs = toRelation.readSs;
-                fromRelation.buffer = new byte[P2PGlobal.P2PSocketBufferSize];
-                StartTransferTcp_Ip(toRelation);
-                StartTransferTcp_Ip(fromRelation);
-            }
+                LogUtils.Debug($"获取新接入的Tcp连接失败：{Environment.NewLine}{ex}");
+                EasyOp.Do(() =>
+                {
+                    listener.BeginAcceptSocket(AcceptSocket_Ip, ar);
+                }, exx =>
+                {
+                    LogUtils.Error($"端口监听失败:{Environment.NewLine}{exx}");
+                });
+            });
+
+
         }
 
         private void StartTransferTcp_Ip(RelationTcp tcp)
@@ -253,40 +388,38 @@ namespace P2PSocket.Server
         private void TransferTcp_Ip(IAsyncResult ar)
         {
             RelationTcp relation = (RelationTcp)ar.AsyncState;
-
-            if (relation.readSs.CanRead)
+            int length = 0;
+            EasyOp.Do(() =>
             {
-                int length = 0;
-                try
+                length = relation.readTcp.GetStream().EndRead(ar);
+            }, () =>
+            {
+                if (length <= 0 || EasyOp.Do(() =>
                 {
-                    length = relation.readSs.EndRead(ar);
-                }
-                catch { }
-                if (length > 0)
+                    relation.writeTcp.BeginSend(relation.buffer.Take(length).ToArray());
+                    StartTransferTcp_Ip(relation);
+                }))
                 {
-                    if (relation.writeSs.CanWrite)
-                    {
-                        try
-                        {
-                            relation.writeSs.Write(relation.buffer.Take(length).ToArray(), 0, length);
-                            StartTransferTcp_Ip(relation);
-                            return;
-                        }
-                        catch { }
-                    }
+                    SafeClose(relation.readTcp);
+                    SafeClose(relation.writeTcp);
                 }
-            }
-            relation.readSs.Close(3000);
-            relation.writeSs.Close(3000);
-            relation.readTcp.Close();
-            relation.writeTcp.Close();
+            }, ex =>
+            {
+                SafeClose(relation.readTcp);
+                SafeClose(relation.writeTcp);
+            });
         }
+
+        private void SafeClose(TcpClient tcp)
+        {
+            EasyOp.Do(() => tcp.GetStream().Close(3000));
+            EasyOp.Do(() => tcp.Close());
+        }
+
         public struct RelationTcp
         {
             public TcpClient readTcp;
             public TcpClient writeTcp;
-            public NetworkStream readSs;
-            public NetworkStream writeSs;
             public byte[] buffer;
         }
     }

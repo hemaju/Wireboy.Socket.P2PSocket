@@ -16,13 +16,15 @@ namespace P2PSocket.Server.Commands
     {
         readonly P2PTcpClient m_tcpClient;
         BinaryReader m_data { get; }
-        public Cmd_0x0211(P2PTcpClient tcpClient, byte[] data) 
+        public Cmd_0x0211(P2PTcpClient tcpClient, byte[] data)
         {
             m_tcpClient = tcpClient;
             m_data = new BinaryReader(new MemoryStream(data));
         }
         public override bool Excute()
         {
+            bool ret = true;
+            LogUtils.Trace($"开始处理消息：0x0211");
             int tokenLength = m_data.ReadInt32();
             string token = m_data.ReadBytes(tokenLength).ToStringUnicode();
             if (ClientCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
@@ -34,14 +36,18 @@ namespace P2PSocket.Server.Commands
                 m_tcpClient.ToClient = client;
                 LogUtils.Debug($"命令：0x0211 已绑定内网穿透（2端）通道 {client.RemoteEndPoint}->{m_tcpClient.RemoteEndPoint}");
                 //监听client
-                 Global_Func.ListenTcp<Packet_0x0212>(client);
+                EasyOp.Do(() => Global_Func.ListenTcp<Packet_0x0212>(client), ex =>
+                {
+                    LogUtils.Debug($"命令：0x0211 绑定内网穿透（2端）通道失败，目标Tcp连接已断开");
+                    ret = false;
+                });
             }
             else
             {
-                m_tcpClient?.SafeClose();
-                throw new Exception("绑定内网穿透（2端）通道失败，目标Tcp连接已断开");
+                LogUtils.Debug($"命令：0x0211 绑定内网穿透（2端）通道失败，目标Tcp连接已断开");
+                ret = false;
             }
-            return true;
+            return ret;
         }
     }
 }

@@ -24,6 +24,8 @@ namespace P2PSocket.Server.Commands
         }
         public override bool Excute()
         {
+            LogUtils.Trace($"开始处理消息：0x0101");
+            bool ret = true;
             string clientName = BinaryUtils.ReadString(m_data);
             string authCode = BinaryUtils.ReadString(m_data);
             if (ConfigCenter.Instance.ClientAuthList.Count == 0 || ConfigCenter.Instance.ClientAuthList.Any(t => t.Match(clientName, authCode)))
@@ -42,17 +44,8 @@ namespace P2PSocket.Server.Commands
                     {
                         isSuccess = false;
                         Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, false, $"ClientName:{clientName} 已被使用", clientName);
-                        m_tcpClient.Client.Send(sendPacket.PackData());
-                        m_tcpClient?.SafeClose();
-
-                        try
-                        {
-                            ClientCenter.Instance.TcpMap[clientName].TcpClient.Client.Send(new Send_0x0052().PackData());
-                        }
-                        catch (Exception)
-                        {
-                            ClientCenter.Instance.TcpMap.Remove(clientName);
-                        }
+                        EasyOp.Do(() => m_tcpClient.BeginSend(sendPacket.PackData()));
+                        ret = false;
                     }
                 }
                 else
@@ -61,17 +54,17 @@ namespace P2PSocket.Server.Commands
                 {
                     m_tcpClient.ClientName = clientName;
                     Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, true, $"客户端{clientName}认证通过", clientName);
-                    m_tcpClient.Client.Send(sendPacket.PackData());
+                    m_tcpClient.BeginSend(sendPacket.PackData());
                 }
             }
             else
             {
                 Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, false, $"客户端{clientName}认证失败", clientName);
-                m_tcpClient.Client.Send(sendPacket.PackData());
-                m_tcpClient?.SafeClose();
+                m_tcpClient.BeginSend(sendPacket.PackData());
+                ret = false;
             }
 
-            return true;
+            return ret;
         }
     }
 }

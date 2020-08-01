@@ -53,6 +53,7 @@ namespace P2PSocket.Server
         ///     P2P内网穿透超时时间
         /// </summary>
         public int P2PTimeout { get; } = 10000;
+        public int P2PWaitConnectTime { get; } = 10000;
 
         /// <summary>
         ///     本地端口映射（需要启动时初始化）

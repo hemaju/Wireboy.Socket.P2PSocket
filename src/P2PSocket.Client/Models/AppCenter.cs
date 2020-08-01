@@ -29,7 +29,7 @@ namespace P2PSocket.Client
         /// <summary>
         ///     软件版本
         /// </summary>
-        public const string SoftVerSion = "3.0.3";
+        public const string SoftVerSion = "3.0.4 Beta";
         /// <summary>
         ///     运行目录
         /// </summary>

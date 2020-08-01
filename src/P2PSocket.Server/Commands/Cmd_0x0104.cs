@@ -1,4 +1,5 @@
 ﻿using P2PSocket.Core.Commands;
+using P2PSocket.Core.Extends;
 using P2PSocket.Core.Models;
 using P2PSocket.Core.Utils;
 using P2PSocket.Server.Models;
@@ -7,6 +8,7 @@ using P2PSocket.Server.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace P2PSocket.Server.Commands
@@ -23,44 +25,46 @@ namespace P2PSocket.Server.Commands
         }
         public override bool Excute()
         {
+            LogUtils.Trace($"开始处理消息：0x0104");
+            bool ret = true;
             string macAddress = BinaryUtils.ReadString(m_data);
             string clientName = ClientCenter.Instance.GetClientName(macAddress);
             bool isSuccess = true;
             P2PTcpItem item = new P2PTcpItem();
             item.TcpClient = m_tcpClient;
-            if (ClientCenter.Instance.TcpMap.ContainsKey(clientName))
+            if (ConfigCenter.Instance.ClientAuthList.Count == 0 || ConfigCenter.Instance.ClientAuthList.Any(t => t.Match(clientName, "auto")))
             {
-                if (ClientCenter.Instance.TcpMap[clientName].TcpClient.IsDisConnected)
+                if (ClientCenter.Instance.TcpMap.ContainsKey(clientName))
                 {
-                    ClientCenter.Instance.TcpMap[clientName].TcpClient?.SafeClose();
-                    ClientCenter.Instance.TcpMap[clientName] = item;
+                    if (ClientCenter.Instance.TcpMap[clientName].TcpClient.IsDisConnected)
+                    {
+                        ClientCenter.Instance.TcpMap[clientName].TcpClient?.SafeClose();
+                        ClientCenter.Instance.TcpMap[clientName] = item;
+                    }
+                    else
+                    {
+                        isSuccess = false;
+                        Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, false, $"ClientName:{clientName} 已被使用", clientName);
+                        m_tcpClient.BeginSend(sendPacket.PackData());
+                        ret = false;
+                    }
                 }
                 else
+                    ClientCenter.Instance.TcpMap.Add(clientName, item);
+                if (isSuccess)
                 {
-                    isSuccess = false;
-                    Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, false, $"ClientName:{clientName} 已被使用", clientName);
-                    m_tcpClient.Client.Send(sendPacket.PackData());
-                    m_tcpClient?.SafeClose();
-
-                    try
-                    {
-                        ClientCenter.Instance.TcpMap[clientName].TcpClient.Client.Send(new Send_0x0052().PackData());
-                    }
-                    catch (Exception)
-                    {
-                        ClientCenter.Instance.TcpMap.Remove(clientName);
-                    }
+                    m_tcpClient.ClientName = clientName;
+                    Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, true, $"客户端{clientName}认证通过", clientName);
+                    m_tcpClient.BeginSend(sendPacket.PackData());
                 }
             }
             else
-                ClientCenter.Instance.TcpMap.Add(clientName, item);
-            if (isSuccess)
             {
-                m_tcpClient.ClientName = clientName;
-                Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, true, $"客户端{clientName}认证通过",clientName);
-                m_tcpClient.Client.Send(sendPacket.PackData());
+                Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, false, $"客户端{clientName}认证失败", clientName);
+                m_tcpClient.BeginSend(sendPacket.PackData());
+                ret = false;
             }
-            return true;
+            return ret;
         }
     }
 }
