@@ -17,8 +17,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "P2PSocket.StartUp-Wpf", "P2
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "P2PSocket.StartUp_Windows", "P2PSocket.StartUp-Windows\P2PSocket.StartUp_Windows.csproj", "{5068D2B2-1368-4D65-8635-409B4BD084EC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProxyDemo", "ProxyDemo\ProxyDemo.csproj", "{5730ADB0-F5A5-4218-8A8E-3BE77627A157}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,10 +51,6 @@ Global
 		{5068D2B2-1368-4D65-8635-409B4BD084EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5068D2B2-1368-4D65-8635-409B4BD084EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5068D2B2-1368-4D65-8635-409B4BD084EC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5730ADB0-F5A5-4218-8A8E-3BE77627A157}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5730ADB0-F5A5-4218-8A8E-3BE77627A157}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5730ADB0-F5A5-4218-8A8E-3BE77627A157}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5730ADB0-F5A5-4218-8A8E-3BE77627A157}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
