@@ -20,6 +20,8 @@ namespace P2PSocket.Client.Commands
     public class Cmd_0x0201 : P2PCommand
     {
         readonly P2PTcpClient m_tcpClient;
+        TcpCenter tcpCenter = EasyInject.Get<TcpCenter>();
+        AppConfig appCenter = EasyInject.Get<AppCenter>().Config;
         BinaryReader data { get; }
         public Cmd_0x0201(P2PTcpClient tcpClient, byte[] data)
         {
@@ -107,11 +109,11 @@ namespace P2PSocket.Client.Commands
                      //如果是发起端，清空集合
                      if (m_tcpClient.P2PLocalPort <= 0)
                      {
-                         if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
+                         if (tcpCenter.WaiteConnetctTcp.ContainsKey(token))
                          {
-                             P2PTcpClient portClient = TcpCenter.Instance.WaiteConnetctTcp[token];
+                             P2PTcpClient portClient = tcpCenter.WaiteConnetctTcp[token];
                              EasyOp.Do(portClient.SafeClose);
-                             TcpCenter.Instance.WaiteConnetctTcp.Remove(token);
+                             tcpCenter.WaiteConnetctTcp.Remove(token);
                          }
                      }
                  }
@@ -123,9 +125,9 @@ namespace P2PSocket.Client.Commands
                  //如果是发起端，清空集合
                  if (m_tcpClient.P2PLocalPort <= 0)
                  {
-                     if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
+                     if (tcpCenter.WaiteConnetctTcp.ContainsKey(token))
                      {
-                         TcpCenter.Instance.WaiteConnetctTcp.Remove(token);
+                         tcpCenter.WaiteConnetctTcp.Remove(token);
                      }
                  }
              });
@@ -137,7 +139,7 @@ namespace P2PSocket.Client.Commands
             {
                 //B端
                 int port = m_tcpClient.P2PLocalPort;
-                PortMapItem destMap = ConfigCenter.Instance.PortMapList.FirstOrDefault(t => t.LocalPort == port && string.IsNullOrEmpty(t.LocalAddress));
+                PortMapItem destMap = appCenter.PortMapList.FirstOrDefault(t => t.LocalPort == port && string.IsNullOrEmpty(t.LocalAddress));
 
                 P2PTcpClient portClient = null;
 
@@ -183,10 +185,10 @@ namespace P2PSocket.Client.Commands
             else
             {
                 //A端，发起端
-                if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
+                if (tcpCenter.WaiteConnetctTcp.ContainsKey(token))
                 {
-                    P2PTcpClient portClient = TcpCenter.Instance.WaiteConnetctTcp[token];
-                    TcpCenter.Instance.WaiteConnetctTcp.Remove(token);
+                    P2PTcpClient portClient = tcpCenter.WaiteConnetctTcp[token];
+                    tcpCenter.WaiteConnetctTcp.Remove(token);
                     portClient.IsAuth = p2pClient.IsAuth = true;
                     portClient.ToClient = p2pClient;
                     p2pClient.ToClient = portClient;
@@ -223,7 +225,7 @@ namespace P2PSocket.Client.Commands
 
             EasyOp.Do(() =>
             {
-                serverClient.Connect(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
+                serverClient.Connect(appCenter.ServerAddress, appCenter.ServerPort);
             },
             () =>
             {
@@ -262,13 +264,13 @@ namespace P2PSocket.Client.Commands
         {
             Models.Send.Send_0x0201_Bind sendPacket = new Models.Send.Send_0x0201_Bind(token);
             Utils.LogUtils.Debug($"命令：0x0201  正尝试建立P2P模式隧道 token:{token}");
-            if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
+            if (tcpCenter.WaiteConnetctTcp.ContainsKey(token))
             {
                 P2PTcpClient serverClient = new P2PTcpClient();
                 serverClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 EasyOp.Do(() =>
                 {
-                    serverClient.Connect(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
+                    serverClient.Connect(appCenter.ServerAddress, appCenter.ServerPort);
                 }, () =>
                 {
                     serverClient.IsAuth = true;
@@ -286,18 +288,18 @@ namespace P2PSocket.Client.Commands
                         }, ex =>
                         {
                             LogUtils.Debug($"命令：0x0201 P2P模式隧道，服务器连接被强制断开 token:{token}：{Environment.NewLine}{ex}");
-                            TcpCenter.Instance.WaiteConnetctTcp.Remove(token);
+                            tcpCenter.WaiteConnetctTcp.Remove(token);
                             EasyOp.Do(serverClient.SafeClose);
                         });
                     }, ex =>
                     {
                         LogUtils.Debug($"命令：0x0201 P2P模式隧道，隧道打洞失败 token:{token}：{Environment.NewLine} 隧道被服务器强制断开");
-                        TcpCenter.Instance.WaiteConnetctTcp.Remove(token);
+                        tcpCenter.WaiteConnetctTcp.Remove(token);
                     });
                 }, ex =>
                 {
                     LogUtils.Debug($"命令：0x0201 P2P模式隧道，无法连接服务器 token:{token}：{Environment.NewLine}{ex}");
-                    TcpCenter.Instance.WaiteConnetctTcp.Remove(token);
+                    tcpCenter.WaiteConnetctTcp.Remove(token);
                 });
             }
             else
@@ -314,7 +316,7 @@ namespace P2PSocket.Client.Commands
         {
             Utils.LogUtils.Debug($"命令：0x0201  正在连接中转模式隧道通道 token:{token}");
             int port = BinaryUtils.ReadInt(data);
-            PortMapItem destMap = ConfigCenter.Instance.PortMapList.FirstOrDefault(t => t.LocalPort == port && string.IsNullOrEmpty(t.LocalAddress));
+            PortMapItem destMap = appCenter.PortMapList.FirstOrDefault(t => t.LocalPort == port && string.IsNullOrEmpty(t.LocalAddress));
 
 
             P2PTcpClient portClient = null;
@@ -332,7 +334,7 @@ namespace P2PSocket.Client.Commands
                 P2PTcpClient serverClient = null;
                 EasyOp.Do(() =>
                 {
-                    serverClient = new P2PTcpClient(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
+                    serverClient = new P2PTcpClient(appCenter.ServerAddress, appCenter.ServerPort);
                 }, () =>
                 {
                     portClient.IsAuth = serverClient.IsAuth = true;
@@ -378,14 +380,14 @@ namespace P2PSocket.Client.Commands
         public void CreateTcpFromSource(string token)
         {
             Utils.LogUtils.Debug($"命令：0x0201  正尝试建立中转模式隧道token:{token}");
-            if (TcpCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
+            if (tcpCenter.WaiteConnetctTcp.ContainsKey(token))
             {
-                P2PTcpClient portClient = TcpCenter.Instance.WaiteConnetctTcp[token];
-                TcpCenter.Instance.WaiteConnetctTcp.Remove(token);
+                P2PTcpClient portClient = tcpCenter.WaiteConnetctTcp[token];
+                tcpCenter.WaiteConnetctTcp.Remove(token);
                 P2PTcpClient serverClient = null;
                 EasyOp.Do(() =>
                 {
-                    serverClient = new P2PTcpClient(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
+                    serverClient = new P2PTcpClient(appCenter.ServerAddress, appCenter.ServerPort);
                 }, () =>
                 {
                     portClient.IsAuth = serverClient.IsAuth = true;

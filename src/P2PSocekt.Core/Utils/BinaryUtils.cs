@@ -1,4 +1,5 @@
-﻿using P2PSocket.Core.Extends;
+﻿using P2PSocket.Core.Enums;
+using P2PSocket.Core.Extends;
 using P2PSocket.Core.Models;
 using System;
 using System.Collections.Generic;

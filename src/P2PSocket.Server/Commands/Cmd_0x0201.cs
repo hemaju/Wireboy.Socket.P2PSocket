@@ -21,8 +21,10 @@ namespace P2PSocket.Server.Commands
     public class Cmd_0x0201 : P2PCommand
     {
         static Dictionary<string, int> p2pTypeDict = new Dictionary<string, int>();
+        ClientCenter clientCenter = EasyInject.Get<ClientCenter>();
         readonly P2PTcpClient m_tcpClient;
         BinaryReader m_data { get; }
+        AppCenter appCenter = EasyInject.Get<AppCenter>();
         public Cmd_0x0201(P2PTcpClient tcpClient, byte[] data)
         {
             m_tcpClient = tcpClient;
@@ -52,7 +54,7 @@ namespace P2PSocket.Server.Commands
                 string clientName = BinaryUtils.ReadString(m_data);
                 m_tcpClient.ClientName = clientName;
                 string token = BinaryUtils.ReadString(m_data);
-                if (ClientCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
+                if (clientCenter.WaiteConnetctTcp.ContainsKey(token))
                 {
                     if (p2pTypeDict.ContainsKey(token) && p2pTypeDict[token] == 1)
                     {
@@ -66,16 +68,16 @@ namespace P2PSocket.Server.Commands
                 }
                 else
                 {
-                    ClientCenter.Instance.WaiteConnetctTcp.Add(token, m_tcpClient);
+                    clientCenter.WaiteConnetctTcp.Add(token, m_tcpClient);
                     LogUtils.Debug($"正在等待隧道连接绑定 token:{token}.");
-                    AppCenter.Instance.StartNewTask(() =>
+                    EasyInject.Get<AppCenter>().StartNewTask(() =>
                     {
-                        Thread.Sleep(ConfigCenter.Instance.P2PWaitConnectTime);
-                        if (ClientCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
+                        Thread.Sleep(appCenter.Config.P2PWaitConnectTime);
+                        if (clientCenter.WaiteConnetctTcp.ContainsKey(token))
                         {
                             LogUtils.Debug($"等待隧道连接绑定已超时  token:{token}.");
                             EasyOp.Do(() => m_tcpClient.SafeClose());
-                            ClientCenter.Instance.WaiteConnetctTcp.Remove(token);
+                            clientCenter.WaiteConnetctTcp.Remove(token);
                             p2pTypeDict.Remove(token);
                         }
                     });
@@ -87,9 +89,9 @@ namespace P2PSocket.Server.Commands
         public void P2PStart_ServerTransfer(string token, string clientName, int clientPort, int p2pType)
         {
             P2PTcpItem item = null;
-            if (ClientCenter.Instance.TcpMap.ContainsKey(clientName))
+            if (clientCenter.TcpMap.ContainsKey(clientName))
             {
-                item = ClientCenter.Instance.TcpMap[clientName];
+                item = clientCenter.TcpMap[clientName];
             }
             if (item != null && item.TcpClient.Connected)
             {
@@ -104,7 +106,7 @@ namespace P2PSocket.Server.Commands
                     LogUtils.Debug($"通知客户端开始建立中转模式隧道 token{token}");
                     Send_0x0201_Success sendDPacket = new Send_0x0201_Success(token, clientPort, p2pType);
                     Send_0x0201_Success sendSPacket = new Send_0x0201_Success(token, p2pType);
-                    ClientCenter.Instance.TcpMap[clientName].TcpClient.BeginSend(sendDPacket.PackData());
+                    clientCenter.TcpMap[clientName].TcpClient.BeginSend(sendDPacket.PackData());
                     EasyOp.Do(() => m_tcpClient.BeginSend(sendSPacket.PackData()));
                 }
                 else
@@ -124,8 +126,8 @@ namespace P2PSocket.Server.Commands
         }
         public void P2PBind_ServerTransfer(string token)
         {
-            P2PTcpClient client = ClientCenter.Instance.WaiteConnetctTcp[token];
-            ClientCenter.Instance.WaiteConnetctTcp.Remove(token);
+            P2PTcpClient client = clientCenter.WaiteConnetctTcp[token];
+            clientCenter.WaiteConnetctTcp.Remove(token);
             client.IsAuth = m_tcpClient.IsAuth = true;
             client.ToClient = m_tcpClient;
             m_tcpClient.ToClient = client;
@@ -137,7 +139,7 @@ namespace P2PSocket.Server.Commands
 
         public void P2PBind_DirectConnect(string token)
         {
-            P2PTcpClient clientA = ClientCenter.Instance.WaiteConnetctTcp[token];
+            P2PTcpClient clientA = clientCenter.WaiteConnetctTcp[token];
             P2PTcpClient clientB = m_tcpClient;
 
             Send_0x0201_Success sendPacketA = new Send_0x0201_Success(14);

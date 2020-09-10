@@ -13,8 +13,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "P2PSocket.Client", "P2PSock
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "P2PSocket.StartUp", "P2PSocket.StartUp\P2PSocket.StartUp.csproj", "{7AA04E3A-24BB-46CF-99E9-0A7208331D6B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "P2PSocket.StartUp-Wpf", "P2PSocket.StartUp-Wpf\P2PSocket.StartUp-Wpf.csproj", "{4DD639B5-78C7-4BD4-A3D8-A764B214FA17}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "P2PSocket.StartUp_Windows", "P2PSocket.StartUp-Windows\P2PSocket.StartUp_Windows.csproj", "{5068D2B2-1368-4D65-8635-409B4BD084EC}"
 EndProject
 Global
@@ -43,10 +41,6 @@ Global
 		{7AA04E3A-24BB-46CF-99E9-0A7208331D6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7AA04E3A-24BB-46CF-99E9-0A7208331D6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7AA04E3A-24BB-46CF-99E9-0A7208331D6B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4DD639B5-78C7-4BD4-A3D8-A764B214FA17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4DD639B5-78C7-4BD4-A3D8-A764B214FA17}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4DD639B5-78C7-4BD4-A3D8-A764B214FA17}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4DD639B5-78C7-4BD4-A3D8-A764B214FA17}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5068D2B2-1368-4D65-8635-409B4BD084EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5068D2B2-1368-4D65-8635-409B4BD084EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5068D2B2-1368-4D65-8635-409B4BD084EC}.Release|Any CPU.ActiveCfg = Release|Any CPU

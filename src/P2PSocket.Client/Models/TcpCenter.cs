@@ -8,31 +8,25 @@ namespace P2PSocket.Client
 {
     public class TcpCenter
     {
-        static TcpCenter m_instance = null;
-        public static TcpCenter Instance
+        public TcpCenter()
         {
-            get
-            {
-                if(m_instance == null)
-                {
-                    m_instance = new TcpCenter();
-                }
-                return m_instance;
-            }
+            Init();
         }
-        private TcpCenter()
+        protected void Init()
         {
-
+            ListenerList = new Dictionary<string, TcpListener>();
+            ConnectedTcpList = new List<P2PTcpClient>();
+            WaiteConnetctTcp = new Dictionary<string, P2PTcpClient>();
         }
         /// <summary>
         ///     服务器Tcp连接
         /// </summary>
         internal P2PTcpClient P2PServerTcp { set; get; }
-        public Dictionary<string, TcpListener> ListenerList { set; get; } = new Dictionary<string, TcpListener>();
-        public List<P2PTcpClient> ConnectedTcpList { set; get; } = new List<P2PTcpClient>();
+        public Dictionary<string, TcpListener> ListenerList { set; get; }
+        public List<P2PTcpClient> ConnectedTcpList { set; get; }
         /// <summary>
         ///     等待中的tcp连接
         /// </summary>
-        public Dictionary<string, P2PTcpClient> WaiteConnetctTcp { get; } = new Dictionary<string, P2PTcpClient>();
+        public Dictionary<string, P2PTcpClient> WaiteConnetctTcp { get; private set; }
     }
 }

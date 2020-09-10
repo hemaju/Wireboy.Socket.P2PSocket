@@ -16,6 +16,7 @@ namespace P2PSocket.Server.Commands
     {
         readonly P2PTcpClient m_tcpClient;
         BinaryReader m_data { get; }
+        ClientCenter clientCenter = EasyInject.Get<ClientCenter>();
         public Cmd_0x0211(P2PTcpClient tcpClient, byte[] data)
         {
             m_tcpClient = tcpClient;
@@ -27,10 +28,10 @@ namespace P2PSocket.Server.Commands
             LogUtils.Trace($"开始处理消息：0x0211");
             int tokenLength = m_data.ReadInt32();
             string token = m_data.ReadBytes(tokenLength).ToStringUnicode();
-            if (ClientCenter.Instance.WaiteConnetctTcp.ContainsKey(token))
+            if (clientCenter.WaiteConnetctTcp.ContainsKey(token))
             {
-                P2PTcpClient client = ClientCenter.Instance.WaiteConnetctTcp[token];
-                ClientCenter.Instance.WaiteConnetctTcp.Remove(token);
+                P2PTcpClient client = clientCenter.WaiteConnetctTcp[token];
+                clientCenter.WaiteConnetctTcp.Remove(token);
                 client.IsAuth = m_tcpClient.IsAuth = true;
                 client.ToClient = m_tcpClient;
                 m_tcpClient.ToClient = client;

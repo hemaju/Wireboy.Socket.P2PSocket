@@ -17,6 +17,8 @@ namespace P2PSocket.Client.Commands
     public class Cmd_0x0211 : P2PCommand
     {
         readonly P2PTcpClient m_tcpClient;
+        TcpCenter tcpCenter = EasyInject.Get<TcpCenter>();
+        AppConfig appCenter = EasyInject.Get<AppCenter>().Config;
         BinaryReader data { get; }
         public Cmd_0x0211(P2PTcpClient tcpClient, byte[] data)
         {
@@ -29,7 +31,7 @@ namespace P2PSocket.Client.Commands
             string token = BinaryUtils.ReadString(data);
             int mapPort = BinaryUtils.ReadInt(data);
             string remoteEndPoint = BinaryUtils.ReadString(data); ;
-            if (ConfigCenter.Instance.AllowPortList.Any(t => t.Match(mapPort, m_tcpClient.ClientName)))
+            if (appCenter.AllowPortList.Any(t => t.Match(mapPort, m_tcpClient.ClientName)))
             {
                 P2PTcpClient portClient = null;
                 EasyOp.Do(() => { portClient = new P2PTcpClient("127.0.0.1", mapPort); }, () =>
@@ -37,7 +39,7 @@ namespace P2PSocket.Client.Commands
                     P2PTcpClient serverClient = null;
                     EasyOp.Do(() =>
                     {
-                        serverClient = new P2PTcpClient(ConfigCenter.Instance.ServerAddress, ConfigCenter.Instance.ServerPort);
+                        serverClient = new P2PTcpClient(appCenter.ServerAddress, appCenter.ServerPort);
                     }, () =>
                     {
                         portClient.IsAuth = serverClient.IsAuth = true;

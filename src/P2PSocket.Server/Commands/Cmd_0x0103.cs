@@ -14,6 +14,7 @@ namespace P2PSocket.Server.Commands
     {
         readonly P2PTcpClient m_tcpClient;
         BinaryReader m_data { get; }
+        ClientCenter clientCenter = EasyInject.Get<ClientCenter>();
         public Cmd_0x0103(P2PTcpClient tcpClient, byte[] data)
         {
             m_tcpClient = tcpClient;
@@ -22,9 +23,9 @@ namespace P2PSocket.Server.Commands
         public override bool Excute()
         {
             LogUtils.Trace($"开始处理消息：0x0103");
-            if (ClientCenter.Instance.TcpMap.ContainsKey(m_tcpClient.ClientName))
+            if (clientCenter.TcpMap.ContainsKey(m_tcpClient.ClientName))
             {
-                P2PTcpItem item = ClientCenter.Instance.TcpMap[m_tcpClient.ClientName];
+                P2PTcpItem item = clientCenter.TcpMap[m_tcpClient.ClientName];
                 item.AllowPorts = BinaryUtils.ReadObjectList<AllowPortItem>(m_data);
                 item.BlackClients = BinaryUtils.ReadStringList(m_data);
             }

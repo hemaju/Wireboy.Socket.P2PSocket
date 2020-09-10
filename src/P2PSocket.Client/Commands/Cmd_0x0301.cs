@@ -7,6 +7,7 @@ using System.IO;
 using System.Text;
 using P2PSocket.Core.Utils;
 using P2PSocket.Client.Utils;
+using P2PSocket.Core.Enums;
 
 namespace P2PSocket.Client.Commands
 {

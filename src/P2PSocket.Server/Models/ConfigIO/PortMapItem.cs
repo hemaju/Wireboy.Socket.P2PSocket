@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Linq;
 using P2PSocket.Core.Utils;
+using P2PSocket.Core.Enums;
 
 namespace P2PSocket.Server.Models.ConfigIO
 {
@@ -12,8 +13,8 @@ namespace P2PSocket.Server.Models.ConfigIO
     public class PortMapItem : IConfigIO
     {
         public List<LogInfo> MessageList = new List<LogInfo>();
-        ConfigCenter config = null;
-        public PortMapItem(ConfigCenter config)
+        AppConfig config = null;
+        public PortMapItem(AppConfig config)
         {
             this.config = config;
         }

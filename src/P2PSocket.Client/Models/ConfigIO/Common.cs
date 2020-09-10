@@ -6,6 +6,7 @@ using System.Text;
 using System.Linq;
 using P2PSocket.Core.Utils;
 using P2PSocket.Client.Utils;
+using P2PSocket.Core.Enums;
 
 namespace P2PSocket.Client.Models.ConfigIO
 {
@@ -14,8 +15,8 @@ namespace P2PSocket.Client.Models.ConfigIO
     {
         public List<LogInfo> MessageList = new List<LogInfo>();
         private Dictionary<string, MethodInfo> MethodDic = new Dictionary<string, MethodInfo>();
-        ConfigCenter config = null;
-        public Common(ConfigCenter config)
+        AppConfig config = null;
+        public Common(AppConfig config)
         {
             this.config = config;
             var methods = GetType().GetMethods().Where(t => t.GetCustomAttribute<ConfigMethodAttr>() != null);
@@ -121,13 +122,13 @@ namespace P2PSocket.Client.Models.ConfigIO
             string levelName = data.ToLower();
             switch (levelName)
             {
-                case "debug": LogUtils.Instance.LogLevel = LogLevel.Debug; break;
-                case "error": LogUtils.Instance.LogLevel = LogLevel.Error; break;
-                case "info": LogUtils.Instance.LogLevel = LogLevel.Info; break;
-                case "none": LogUtils.Instance.LogLevel = LogLevel.None; break;
-                case "warning": LogUtils.Instance.LogLevel = LogLevel.Warning; break;
-                case "fatal": LogUtils.Instance.LogLevel = LogLevel.Fatal; break;
-                case "trace": LogUtils.Instance.LogLevel = LogLevel.Trace; break;
+                case "debug": config.LogLevel = LogLevel.Debug; break;
+                case "error": config.LogLevel = LogLevel.Error; break;
+                case "info": config.LogLevel = LogLevel.Info; break;
+                case "none": config.LogLevel = LogLevel.None; break;
+                case "warning": config.LogLevel = LogLevel.Warning; break;
+                case "fatal": config.LogLevel = LogLevel.Fatal; break;
+                case "trace": config.LogLevel = LogLevel.Trace; break;
                 default: throw new ArgumentException("LogLevel格式错误，请参考https://github.com/bobowire/Wireboy.Socket.P2PSocket/wiki"); 
             }
         }

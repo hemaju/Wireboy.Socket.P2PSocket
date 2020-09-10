@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using P2PSocket.Core.Enums;
 using P2PSocket.Core.Utils;
 using System;
 using System.Collections.Generic;

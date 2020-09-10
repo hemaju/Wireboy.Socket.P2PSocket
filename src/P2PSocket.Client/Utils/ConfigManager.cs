@@ -5,28 +5,65 @@ using System.Text;
 using System.Linq;
 using P2PSocket.Core.Models;
 using System.Reflection;
+using P2PSocket.Core.Utils;
 
 namespace P2PSocket.Client.Utils
 {
-    public static class ConfigUtils
+    public class ConfigManager: IConfig
     {
-        public static bool IsExistConfig()
+        AppCenter appCenter { set; get; }
+        public ConfigManager()
         {
-            return File.Exists(AppCenter.Instance.ConfigFile);
+            appCenter = EasyInject.Get<AppCenter>();
         }
-        public static ConfigCenter LoadFromFile()
+        public bool IsExistConfig()
         {
-            ConfigCenter config = new ConfigCenter();
-            using (StreamReader fs = new StreamReader(AppCenter.Instance.ConfigFile))
+            return File.Exists(appCenter.ConfigFile);
+        }
+        public BaseConfig LoadFromFile()
+        {
+            AppConfig config = new AppConfig();
+            IFileManager fileManager = EasyInject.Get<IFileManager>();
+            Dictionary<string, IConfigIO> handleDictionary = GetConfigIOInstanceList(config);
+            IConfigIO instance = null;
+            fileManager.ReadLine(IFileManager.Config, lineData => {
+                string lineStr = lineData.Trim();
+                if (lineStr.Length > 0 && !lineStr.StartsWith("#"))
+                {
+                    if (handleDictionary.ContainsKey(lineStr))
+                        instance = handleDictionary[lineStr];
+                    else
+                        instance?.ReadConfig(lineStr);
+                }
+            });
+            foreach (string key in handleDictionary.Keys)
             {
-                config = DoLoadConfig(fs);
+                handleDictionary[key].WriteLog();
             }
             return config;
         }
 
-        internal static ConfigCenter DoLoadConfig(StreamReader fs)
+
+        public BaseConfig LoadFromString(string data)
         {
-            ConfigCenter config = new ConfigCenter();
+            AppConfig config = new AppConfig();
+            if (string.IsNullOrEmpty(data)) throw new Exception("LoadFromString参数为为空");
+            using (MemoryStream ms = new MemoryStream())
+            {
+                StreamWriter sw = new StreamWriter(ms);
+                sw.Write(data);
+                sw.Flush();
+                StreamReader sr = new StreamReader(ms);
+                sr.BaseStream.Position = 0;
+                config = DoLoadFromStream(sr);
+                sw.Close();
+                ms.Close();
+            }
+            return config;
+        }
+        private AppConfig DoLoadFromStream(StreamReader fs)
+        {
+            AppConfig config = new AppConfig();
             Dictionary<string, IConfigIO> handleDictionary = GetConfigIOInstanceList(config);
             IConfigIO instance = null;
             while (!fs.EndOfStream)
@@ -47,28 +84,11 @@ namespace P2PSocket.Client.Utils
             return config;
         }
 
-        public static ConfigCenter LoadFromString(string data)
-        {
-            ConfigCenter config = new ConfigCenter();
-            if (string.IsNullOrEmpty(data)) throw new Exception("LoadFromString参数为为空");
-            using (MemoryStream ms = new MemoryStream())
-            {
-                StreamWriter sw = new StreamWriter(ms);
-                sw.Write(data);
-                sw.Flush();
-                StreamReader sr = new StreamReader(ms);
-                sr.BaseStream.Position = 0;
-                config = DoLoadConfig(sr);
-                ms.Close();
-            }
-            return config;
-        }
-
-        public static void SaveToFile()
+        public void SaveToFile()
         {
 
         }
-        public static Dictionary<string, IConfigIO> GetConfigIOInstanceList(ConfigCenter config)
+        private Dictionary<string, IConfigIO> GetConfigIOInstanceList(AppConfig config)
         {
             Dictionary<string, IConfigIO> retDic = new Dictionary<string, IConfigIO>();
             Type[] configIOList = Assembly.GetExecutingAssembly().GetTypes().Where(t => t.GetCustomAttribute<ConfigIOAttr>() != null).ToArray();

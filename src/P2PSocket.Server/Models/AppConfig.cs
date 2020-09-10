@@ -1,4 +1,6 @@
-﻿using P2PSocket.Core.Models;
+﻿using P2PSocket.Core.Enums;
+using P2PSocket.Core.Models;
+using P2PSocket.Core.Utils;
 using P2PSocket.Server.Models;
 using P2PSocket.Server.Utils;
 using System;
@@ -7,29 +9,20 @@ using System.Text;
 
 namespace P2PSocket.Server
 {
-    public class ConfigCenter
+    public class AppConfig : BaseConfig
     {
-        static ConfigCenter m_instance = null;
-        public static ConfigCenter Instance
+        public AppConfig()
         {
-            get
-            {
-                if (m_instance == null)
-                {
-                    m_instance = new ConfigCenter();
-                }
-                return m_instance;
-            }
+            Init();
         }
-
-        internal static void LoadConfig(ConfigCenter config)
+        private void Init()
         {
-            m_instance = config;
-        }
-
-        public ConfigCenter()
-        {
-
+            LocalPort = 3488;
+            P2PTimeout = 10000;
+            P2PWaitConnectTime = 10000;
+            PortMapList = new List<PortMapItem>();
+            ClientAuthList = new List<ClientItem>();
+            MacAddressMap = new Dictionary<string, string>();
         }
 
         public string RegisterMacAddress(string mac)
@@ -41,32 +34,33 @@ namespace P2PSocket.Server
                 name = random.Next(303030, 909090).ToString();
             }
             MacAddressMap.Add(mac, name);
-            ConfigUtils.SaveMacAddress(this);
+            EasyInject.Get<IServerConfig>().SaveMacAddress(this);
             return name;
         }
 
+        public LogLevel LogLevel { set; get; }
         /// <summary>
         ///     服务端口
         /// </summary>
-        public int LocalPort { set; get; } = 3488;
+        public int LocalPort { set; get; }
         /// <summary>
         ///     P2P内网穿透超时时间
         /// </summary>
-        public int P2PTimeout { get; } = 10000;
-        public int P2PWaitConnectTime { get; } = 10000;
+        public int P2PTimeout { get; private set; }
+        public int P2PWaitConnectTime { get; private set; }
 
         /// <summary>
         ///     本地端口映射（需要启动时初始化）
         /// </summary>
-        public List<PortMapItem> PortMapList = new List<PortMapItem>();
+        public List<PortMapItem> PortMapList { set; get; }
         /// <summary>
         ///     客户端认证集合（为空时不验证AuthCode）
         /// </summary>
-        public List<ClientItem> ClientAuthList { set; get; } = new List<ClientItem>();
+        public List<ClientItem> ClientAuthList { set; get; }
 
         /// <summary>
         ///     mac与客户端地址映射
         /// </summary>
-        public Dictionary<string, string> MacAddressMap = new Dictionary<string, string>();
+        public Dictionary<string, string> MacAddressMap { set; get; }
     }
 }

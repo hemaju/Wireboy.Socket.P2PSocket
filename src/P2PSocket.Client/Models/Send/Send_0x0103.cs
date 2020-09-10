@@ -11,10 +11,11 @@ namespace P2PSocket.Client.Models.Send
     {
         public Send_0x0103() : base(P2PCommandType.Login0x0103)
         {
+            AppConfig appConfig = EasyInject.Get<AppCenter>().Config;
             //  allowport
-            BinaryUtils.Write(Data, ConfigCenter.Instance.AllowPortList);
+            BinaryUtils.Write(Data, appConfig.AllowPortList);
             //  客户端黑名单
-            BinaryUtils.Write(Data, ConfigCenter.Instance.BlackClients);
+            BinaryUtils.Write(Data, appConfig.BlackClients);
         }
     }
 }

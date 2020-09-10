@@ -18,6 +18,8 @@ namespace P2PSocket.Server.Commands
     {
         readonly P2PTcpClient m_tcpClient;
         BinaryReader m_data { get; }
+        AppCenter appCenter = EasyInject.Get<AppCenter>();
+        ClientCenter clientCenter = EasyInject.Get<ClientCenter>();
         public Cmd_0x0104(P2PTcpClient tcpClient, byte[] data)
         {
             m_tcpClient = tcpClient;
@@ -28,18 +30,18 @@ namespace P2PSocket.Server.Commands
             LogUtils.Trace($"开始处理消息：0x0104");
             bool ret = true;
             string macAddress = BinaryUtils.ReadString(m_data);
-            string clientName = ClientCenter.Instance.GetClientName(macAddress);
+            string clientName = clientCenter.GetClientName(macAddress);
             bool isSuccess = true;
             P2PTcpItem item = new P2PTcpItem();
             item.TcpClient = m_tcpClient;
-            if (ConfigCenter.Instance.ClientAuthList.Count == 0 || ConfigCenter.Instance.ClientAuthList.Any(t => t.Match(clientName, "auto")))
+            if (appCenter.Config.ClientAuthList.Count == 0 || appCenter.Config.ClientAuthList.Any(t => t.Match(clientName, "auto")))
             {
-                if (ClientCenter.Instance.TcpMap.ContainsKey(clientName))
+                if (clientCenter.TcpMap.ContainsKey(clientName))
                 {
-                    if (ClientCenter.Instance.TcpMap[clientName].TcpClient.IsDisConnected)
+                    if (clientCenter.TcpMap[clientName].TcpClient.IsDisConnected)
                     {
-                        ClientCenter.Instance.TcpMap[clientName].TcpClient?.SafeClose();
-                        ClientCenter.Instance.TcpMap[clientName] = item;
+                        clientCenter.TcpMap[clientName].TcpClient?.SafeClose();
+                        clientCenter.TcpMap[clientName] = item;
                     }
                     else
                     {
@@ -50,7 +52,7 @@ namespace P2PSocket.Server.Commands
                     }
                 }
                 else
-                    ClientCenter.Instance.TcpMap.Add(clientName, item);
+                    clientCenter.TcpMap.Add(clientName, item);
                 if (isSuccess)
                 {
                     m_tcpClient.ClientName = clientName;

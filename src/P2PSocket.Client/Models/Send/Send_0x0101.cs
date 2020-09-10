@@ -12,10 +12,11 @@ namespace P2PSocket.Client.Models.Send
     {
         public Send_0x0101() : base(P2PCommandType.Login0x0101)
         {
+            AppCenter appCenter = EasyInject.Get<AppCenter>();
             //  客户端名称
-            BinaryUtils.Write(Data, ConfigCenter.Instance.ClientName);
+            BinaryUtils.Write(Data, appCenter.Config.ClientName);
             //  授权码
-            BinaryUtils.Write(Data, ConfigCenter.Instance.AuthCode);
+            BinaryUtils.Write(Data, appCenter.Config.AuthCode);
         }
     }
 }

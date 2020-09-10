@@ -30,14 +30,14 @@ namespace P2PSocket.Client
             relationSt.buffer = new byte[P2PGlobal.P2PSocketBufferSize];
             relationSt.readTcp = tcpClient;
             relationSt.msgReceive = Activator.CreateInstance(typeof(T)) as ReceivePacket;
-            relationSt.guid = AppCenter.Instance.CurrentGuid;
+            relationSt.guid = EasyInject.Get<AppCenter>().CurrentGuid;
             relationSt.readTcp.GetStream().BeginRead(relationSt.buffer, 0, relationSt.buffer.Length, ReadTcp_Server, relationSt);
         }
 
         private static void ReadTcp_Server(IAsyncResult ar)
         {
             RelationTcp_Server relation = (RelationTcp_Server)ar.AsyncState;
-            if (relation.guid == AppCenter.Instance.CurrentGuid)
+            if (relation.guid == EasyInject.Get<AppCenter>().CurrentGuid)
             {
                 if (relation.readTcp.Connected && relation.readTcp.GetStream().CanRead)
                 {
@@ -238,11 +238,11 @@ namespace P2PSocket.Client
         public static P2PCommand FindCommand(P2PTcpClient tcpClient, ReceivePacket packet)
         {
             P2PCommand command = null;
-            if (AppCenter.Instance.AllowAnonymous.Contains(packet.CommandType) || tcpClient.IsAuth)
+            if (EasyInject.Get<AppCenter>().AllowAnonymous.Contains(packet.CommandType) || tcpClient.IsAuth)
             {
-                if (AppCenter.Instance.CommandDict.ContainsKey(packet.CommandType))
+                if (EasyInject.Get<AppCenter>().CommandDict.ContainsKey(packet.CommandType))
                 {
-                    Type type = AppCenter.Instance.CommandDict[packet.CommandType];
+                    Type type = EasyInject.Get<AppCenter>().CommandDict[packet.CommandType];
                     command = Activator.CreateInstance(type, tcpClient, packet.Data.Select(t => t).ToArray()) as P2PCommand;
                 }
                 else

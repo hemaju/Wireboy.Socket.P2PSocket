@@ -1,4 +1,5 @@
 ﻿using P2PSocket.Core.Models;
+using P2PSocket.Core.Utils;
 using P2PSocket.Server.Models;
 using System;
 using System.Collections.Generic;
@@ -8,21 +9,9 @@ namespace P2PSocket.Server
 {
     public class ClientCenter
     {
-        static ClientCenter m_instance = null;
-        public static ClientCenter Instance
+        AppCenter appCenter = EasyInject.Get<AppCenter>();
+        public ClientCenter()
         {
-            get
-            {
-                if (m_instance == null)
-                {
-                    m_instance = new ClientCenter();
-                }
-                return m_instance;
-            }
-        }
-        private ClientCenter()
-        {
-
         }
         /// <summary>
         ///     等待中的tcp连接
@@ -37,13 +26,13 @@ namespace P2PSocket.Server
         public string GetClientName(string macAddress)
         {
             string clientName = "";
-            if(ConfigCenter.Instance.MacAddressMap.ContainsKey(macAddress))
+            if(appCenter.Config.MacAddressMap.ContainsKey(macAddress))
             {
-                clientName = ConfigCenter.Instance.MacAddressMap[macAddress];
+                clientName = appCenter.Config.MacAddressMap[macAddress];
             }
             else
             {
-                clientName = ConfigCenter.Instance.RegisterMacAddress(macAddress);
+                clientName = appCenter.Config.RegisterMacAddress(macAddress);
             }
             return clientName;
         }

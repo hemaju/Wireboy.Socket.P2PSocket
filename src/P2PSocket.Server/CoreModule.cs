@@ -8,33 +8,34 @@ using P2PSocket.Server.Utils;
 using P2PSocket.Core.Models;
 using P2PSocket.Core.Utils;
 using System.IO;
+using P2PSocket.Core.CoreImpl;
+using P2PSocket.Server.Models;
 
 namespace P2PSocket.Server
 {
     public class CoreModule
     {
         private P2PServer P2PServer = new P2PServer();
+        ClientCenter clientCenter = EasyInject.Get<ClientCenter>();
+        AppCenter appCenter { set; get; }
+        IServerConfig configManager { set; get; }
         public CoreModule()
         {
-
+            InitGlobal();
         }
 
         public void Start()
         {
             try
             {
-                LogUtils.InitConfig();
-                LogUtils.Info($"客户端版本:{AppCenter.Instance.SoftVerSion} 作者：wireboy", false);
+                LogUtils.Info($"客户端版本:{appCenter.SoftVerSion} 作者：wireboy", false);
                 LogUtils.Info($"github地址：https://github.com/bobowire/Wireboy.Socket.P2PSocket", false);
                 //读取配置文件
-                if (ConfigUtils.IsExistConfig())
+                if (configManager.IsExistConfig())
                 {
-                    //初始化全局变量
-                    InitGlobal();
                     //加载配置文件
-                    ConfigCenter config = ConfigUtils.LoadFromFile();
-                    ConfigCenter.LoadConfig(config);
-                    FileSystemWatcher fw = new FileSystemWatcher(Path.Combine(AppCenter.Instance.RuntimePath, "P2PSocket"), "Server.ini")
+                    appCenter.Config = configManager.LoadFromFile() as AppConfig; ;
+                    FileSystemWatcher fw = new FileSystemWatcher(Path.Combine(appCenter.RuntimePath, "P2PSocket"), "Server.ini")
                     {
                         NotifyFilter = NotifyFilters.LastWrite
                     };
@@ -45,7 +46,7 @@ namespace P2PSocket.Server
                 }
                 else
                 {
-                    LogUtils.Error($"找不到配置文件.{AppCenter.Instance.ConfigFile}");
+                    LogUtils.Error($"找不到配置文件.{appCenter.ConfigFile}");
                 }
             }
             catch(Exception ex)
@@ -57,24 +58,40 @@ namespace P2PSocket.Server
 
         public void Stop()
         {
-            AppCenter.Instance.CurrentGuid = Guid.NewGuid();
+            appCenter.CurrentGuid = Guid.NewGuid();
             foreach (var listener in P2PServer.ListenerList)
             {
                 listener.Stop();
             }
             P2PServer.ListenerList.Clear();
-            foreach (var tcpItem in ClientCenter.Instance.TcpMap)
+            foreach (var tcpItem in clientCenter.TcpMap)
             {
                 tcpItem.Value.TcpClient.Close();
             }
-            ClientCenter.Instance.TcpMap.Clear();
+            clientCenter.TcpMap.Clear();
         }
         /// <summary>
         ///     初始化全局变量
         /// </summary>
         public void InitGlobal()
         {
+            InitRegister();
+            InitSelf();
             InitCommandList();
+        }
+        protected void InitRegister()
+        {
+            EasyInject.Put<AppCenter, AppCenter>().Singleton();
+            EasyInject.Put<IFileManager, FileManeger>().Common();
+            EasyInject.Put<ILogger, Logger>().Singleton();
+            EasyInject.Put<IServerConfig, ConfigManager>().Singleton();
+            EasyInject.Put<ClientCenter, ClientCenter>().Singleton();
+        }
+        protected void InitSelf()
+        {
+            appCenter = EasyInject.Get<AppCenter>();
+            configManager = EasyInject.Get<IServerConfig>();
+            P2PServer = new P2PServer();
         }
 
         /// <summary>
@@ -93,26 +110,26 @@ namespace P2PSocket.Server
                     continue;
                 }
                 CommandFlag flag = attributes.First(t => t is CommandFlag) as CommandFlag;
-                if (!AppCenter.Instance.CommandDict.ContainsKey(flag.CommandType))
+                if (!appCenter.CommandDict.ContainsKey(flag.CommandType))
                 {
-                    AppCenter.Instance.CommandDict.Add(flag.CommandType, type);
+                    appCenter.CommandDict.Add(flag.CommandType, type);
                 }
             }
         }
 
-        public void Restart(ConfigCenter config)
+        public void Restart(AppConfig config)
         {
             Stop();
             System.Threading.Thread.Sleep(2000);
             if (config == null)
             {
                 //读取配置文件
-                if (ConfigUtils.IsExistConfig())
+                if (configManager.IsExistConfig())
                 {
                     //加载配置文件
                     try
                     {
-                        config = ConfigUtils.LoadFromFile();
+                        appCenter.Config = configManager.LoadFromFile() as AppConfig;
                     }
                     catch (Exception ex)
                     {
@@ -122,13 +139,12 @@ namespace P2PSocket.Server
                 }
                 else
                 {
-                    LogUtils.Error($"找不到配置文件.{AppCenter.Instance.ConfigFile}");
+                    LogUtils.Error($"找不到配置文件.{appCenter.ConfigFile}");
                     return;
                 }
             }
             //启动服务
-            AppCenter.Instance.CurrentGuid = Guid.NewGuid();
-            ConfigCenter.LoadConfig(config);
+            appCenter.CurrentGuid = Guid.NewGuid();
             //启动服务
             P2PServer.StartServer();
         }
