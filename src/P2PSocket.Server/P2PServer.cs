@@ -192,7 +192,7 @@ namespace P2PSocket.Server
             {
                 EasyOp.Do(() =>
                 {
-                    listener.BeginAcceptSocket(AcceptSocket_ClientName, ar);
+                    listener.BeginAcceptSocket(AcceptSocket_ClientName, st);
                 }, exx =>
                 {
                     LogUtils.Error($"端口监听失败:{Environment.NewLine}{exx}");
@@ -249,7 +249,7 @@ namespace P2PSocket.Server
                 LogUtils.Debug($"获取新接入的Tcp连接失败：{Environment.NewLine}{ex}");
                 EasyOp.Do(() =>
                 {
-                    listener.BeginAcceptSocket(AcceptSocket_ClientName, ar);
+                    listener.BeginAcceptSocket(AcceptSocket_ClientName, st);
                 }, exx =>
                 {
                     LogUtils.Error($"端口监听失败:{Environment.NewLine}{exx}");
