@@ -27,7 +27,7 @@ namespace P2PSocket.Server.Models
                     }
                 case Log:
                     {
-                        path = Path.Combine(appCenter.RuntimePath, "P2PSocket", "Logs", $"Server-{DateTime.Now:yyyy-MM-dd}.log");
+                        path = Path.Combine(appCenter.RuntimePath, "P2PSocket", "Logs", $"Server_{DateTime.Now:yyyy-MM-dd}.log");
                         break;
                     }
                 case MacAdress:
