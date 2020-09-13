@@ -23,7 +23,13 @@ namespace P2PSocket.Client.Utils
                     lock (wlock)
                     {
                         if (_instance == null)
+                        {
                             _instance = EasyInject.Get<ILogger>();
+                            AppConfig config= EasyInject.Get<AppCenter>().Config;
+                            _instance.SetFilter(logInfo => {
+                                return logInfo.LogLevel >= config.LogLevel;
+                            });
+                        }
                     }
                 }
                 return _instance;

@@ -19,6 +19,7 @@ namespace P2PSocket.Client
         AppCenter appCenter { set; get; }
         TcpCenter tcpCenter { set; get; }
         IConfig configManager { set; get; }
+        IPipeServer pipeServer { set; get; }
         public CoreModule()
         {
             int minWorker, minIOC;
@@ -67,6 +68,7 @@ namespace P2PSocket.Client
             EasyInject.Put<IFileManager, FileManeger>().Common();
             EasyInject.Put<ILogger, Logger>().Singleton();
             EasyInject.Put<IConfig, ConfigManager>().Singleton();
+            EasyInject.Put<IPipeServer, PipeServer>().Singleton();
         }
         protected void InitSelf()
         {
@@ -74,10 +76,12 @@ namespace P2PSocket.Client
             tcpCenter = EasyInject.Get<TcpCenter>();
             configManager = EasyInject.Get<IConfig>();
             P2PClient = new P2PClient();
+            pipeServer = EasyInject.Get<IPipeServer>();
         }
 
         public void Start()
         {
+            pipeServer.Start();
             LogUtils.Info($"客户端版本:{appCenter.SoftVerSion} 作者：wireboy", false);
             LogUtils.Info($"github地址：https://github.com/bobowire/Wireboy.Socket.P2PSocket", false);
             //读取配置文件

@@ -12,20 +12,94 @@ using System.Threading.Tasks;
 namespace P2PSocket.Core.CoreImpl
 {
 
+    public class QueueThread
+    {
+        private ConcurrentQueue<Action> queue = new ConcurrentQueue<Action>();
+        private Task m_curTask = null;
+        private object m_obj = new object();
+        public void Excute(Action func)
+        {
+            queue.Enqueue(func);
+            if (m_curTask == null)
+            {
+                lock (m_obj)
+                {
+                    if (m_curTask == null)
+                    {
+                        m_curTask = Task.Factory.StartNew(() => DoExcute());
+                    }
+                }
+            }
+        }
+        protected virtual void DoExcute()
+        {
+            Thread.Sleep(500);
+            do
+            {
+                if (!queue.IsEmpty && queue.TryDequeue(out Action func))
+                {
+                    func();
+                }
+            } while (queue.Count > 0);
+            m_curTask = null;
+        }
+    }
+
+    public class QueueBatchHandler<T>
+    {
+        private ConcurrentQueue<T> queue = new ConcurrentQueue<T>();
+        private Task m_curTask = null;
+        private object m_obj = new object();
+        public void Excute(T func)
+        {
+            queue.Enqueue(func);
+            if (m_curTask == null)
+            {
+                lock (m_obj)
+                {
+                    if (m_curTask == null)
+                    {
+                        m_curTask = Task.Factory.StartNew(() => DoExcute());
+                    }
+                }
+            }
+        }
+        protected virtual void DoExcute()
+        {
+            Thread.Sleep(500);
+            do
+            {
+                if (!queue.IsEmpty && queue.TryDequeue(out T func))
+                {
+                }
+            } while (queue.Count > 0);
+            m_curTask = null;
+        }
+    }
+
+
     public class Logger : ILogger
     {
+        Func<LogInfo, bool> filterAction = null;
         private TaskFactory m_taskFactory = new TaskFactory();
         private Task m_curTask = null;
         private object m_obj = new object();
         private ConcurrentQueue<LogInfo> m_logList = new ConcurrentQueue<LogInfo>();
+
+        public event EventHandler<LogInfo> OnWriteLog;
+        QueueThread pipeTask = new QueueThread();
+
         public Logger()
         {
         }
 
         public virtual void WriteLine(LogInfo log)
         {
-            if (log.LogLevel == LogLevel.None) return;
-            m_logList.Enqueue(log);
+            pipeTask.Excute(()=> {
+                OnWriteLog?.Invoke(this, log);
+            });
+            if (filterAction != null && filterAction(log))
+                m_logList.Enqueue(log);
             if (m_curTask == null)
             {
                 lock (m_obj)
@@ -70,6 +144,10 @@ namespace P2PSocket.Core.CoreImpl
                     writeOneFunc($"{logInfo.Time:HH:mm:ss:ffff} >> {logInfo.Msg}");
                 }
             } while (m_logList.Count > 0);
+        }
+        public void SetFilter(Func<LogInfo, bool> filter)
+        {
+            filterAction = filter;
         }
     }
 }

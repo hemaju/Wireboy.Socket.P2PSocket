@@ -88,7 +88,7 @@ namespace P2PSocket.Server.Utils
                     {
                         func($"{mac} {macMap[mac]}");
                     }
-                });
+                }, false);
 
             }
         }

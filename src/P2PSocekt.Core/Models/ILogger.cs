@@ -8,5 +8,7 @@ namespace P2PSocket.Core.Models
     public interface ILogger
     {
         void WriteLine(LogInfo log);
+        void SetFilter(Func<LogInfo, bool> filter);
+        event EventHandler<LogInfo> OnWriteLog;
     }
 }
