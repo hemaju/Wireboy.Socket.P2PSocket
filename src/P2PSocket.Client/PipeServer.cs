@@ -84,7 +84,10 @@ namespace P2PSocket.Client
 
                 if (strSplit[0] == "ls")
                 {
-                    WriteLine(st.pipe, "当前监听的端口：3389,12255");
+                    AppConfig config = EasyInject.Get<AppCenter>().Config;
+                    string msg = "当前监听端口：";
+                    config.PortMapList.ForEach(t => { msg += t.LocalPort + " "; });
+                    WriteLine(st.pipe, msg);
                 }
                 else if (strSplit[0] == "v")
                 {
@@ -138,7 +141,9 @@ namespace P2PSocket.Client
 
         private void WriteLine(NamedPipeServerStream pipe, string text)
         {
-            byte[] data = Encoding.Unicode.GetBytes(text);
+            PipeSendPacket pipeSend = new PipeSendPacket();
+            BinaryUtils.Write(pipeSend.Data, text);
+            byte[] data = pipeSend.PackData();
             pipe.BeginWrite(data, 0, data.Length, null, null);
         }
     }
