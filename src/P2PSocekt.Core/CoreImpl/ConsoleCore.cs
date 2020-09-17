@@ -13,10 +13,11 @@ namespace P2PSocket.Core.Utils
         private object m_consoleObj = new object();
         private ConcurrentQueue<string> m_consoleLogList = new ConcurrentQueue<string>();
         private static TaskFactory m_taskFactory = new TaskFactory();
+        private bool isConsoleAvailable = true;
 
         private void WriteConsole(string log)
         {
-            if (m_consoleLogList.Count <= 10000)
+            if (isConsoleAvailable && m_consoleLogList.Count <= 10000)
             {
                 m_consoleLogList.Enqueue(log);
                 if (m_curConsoleTask == null)
@@ -39,10 +40,18 @@ namespace P2PSocket.Core.Utils
                 {
                     if (!m_consoleLogList.IsEmpty)
                     {
-                        string str = "";
+                        string str;
                         if (m_consoleLogList.TryDequeue(out str))
                         {
-                            System.Console.WriteLine(str);
+                            try
+                            {
+                                System.Console.WriteLine(str);
+                            }
+                            catch
+                            {
+                                isConsoleAvailable = false;
+                                m_consoleLogList = new ConcurrentQueue<string>();
+                            }
                         }
                     }
                 } while (m_consoleLogList.Count > 0);
