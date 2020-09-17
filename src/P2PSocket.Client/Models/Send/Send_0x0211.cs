@@ -14,9 +14,15 @@ namespace P2PSocket.Client.Models.Send
     /// </summary>
     public class Send_0x0211 : SendPacket
     {
-        public Send_0x0211(string token) : base(P2PCommandType.P2P0x0211) 
+        /// <summary>
+        /// 成功
+        /// </summary>
+        /// <param name="token"></param>
+        public Send_0x0211(string token, bool isSuccess, string msg) : base(P2PCommandType.P2P0x0211)
         {
             BinaryUtils.Write(Data, token);
+            BinaryUtils.Write(Data, isSuccess);
+            BinaryUtils.Write(Data, msg);
         }
     }
 }
