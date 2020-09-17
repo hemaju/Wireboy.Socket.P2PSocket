@@ -7,11 +7,11 @@ using System.Text;
 
 namespace P2PSocket.Server.Models
 {
-    public class FileManeger : IFileManager
+    public class FileManager : IFileManager
     {
         public const string MacAdress  = "MacAdress";
         AppCenter appCenter;
-        public FileManeger()
+        public FileManager()
         {
             appCenter = EasyInject.Get<AppCenter>();
         }

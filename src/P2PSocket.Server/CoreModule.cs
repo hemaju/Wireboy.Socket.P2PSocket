@@ -82,7 +82,7 @@ namespace P2PSocket.Server
         protected void InitRegister()
         {
             EasyInject.Put<AppCenter, AppCenter>().Singleton();
-            EasyInject.Put<IFileManager, FileManeger>().Common();
+            EasyInject.Put<IFileManager, FileManager>().Common();
             EasyInject.Put<ILogger, Logger>().Singleton();
             EasyInject.Put<IServerConfig, ConfigManager>().Singleton();
             EasyInject.Put<ClientCenter, ClientCenter>().Singleton();

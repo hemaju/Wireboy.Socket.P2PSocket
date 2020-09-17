@@ -34,27 +34,29 @@ namespace P2PSocket.Client.Models.ConfigIO
             }
         }
 
-        public void ReadConfig(string text)
+        public object ReadConfig(string text)
         {
             int start = text.IndexOf('=');
             if (start > 0 && start < text.Length - 1)
             {
-                string name = text.Substring(0, start).Trim().ToUpper();
-                if (MethodDic.ContainsKey(name))
+                string key = text.Substring(0, start).Trim().ToUpper();
+                if (MethodDic.ContainsKey(key))
                 {
                     try
                     {
-                        MethodDic[name.ToUpper()].Invoke(this, new object[] { text.Substring(start + 1).Trim() });
-                        LogDebug($"【Common配置项】读取成功：{name}");
+                        string value = text.Substring(start + 1).Trim();
+                        MethodDic[key.ToUpper()].Invoke(this, new object[] { value });
+                        LogDebug($"【Common配置项】读取成功：{key}");
+                        return (key, value);
                     }
                     catch (Exception ex)
                     {
                         LogWarning($"【Common配置项】读取失败：{ex.Message}");
                     }
-                    return;
                 }
             }
             LogWarning($"【Common配置项】未识别的配置项:\"{text}\"{Environment.NewLine}请参考https://github.com/bobowire/Wireboy.Socket.P2PSocket/wiki");
+            return ("", "");
         }
 
         protected void LogDebug(string msg)
@@ -129,7 +131,7 @@ namespace P2PSocket.Client.Models.ConfigIO
                 case "warning": config.LogLevel = LogLevel.Warning; break;
                 case "fatal": config.LogLevel = LogLevel.Fatal; break;
                 case "trace": config.LogLevel = LogLevel.Trace; break;
-                default: throw new ArgumentException("LogLevel格式错误，请参考https://github.com/bobowire/Wireboy.Socket.P2PSocket/wiki"); 
+                default: throw new ArgumentException("LogLevel格式错误，请参考https://github.com/bobowire/Wireboy.Socket.P2PSocket/wiki");
             }
         }
         [ConfigMethodAttr("Proxy_Ip")]
@@ -156,6 +158,16 @@ namespace P2PSocket.Client.Models.ConfigIO
         public void Read09(string data)
         {
             P2PTcpClient.Proxy.Password = data;
+        }
+
+        public string GetItemString<T>(T item)
+        {
+            (string, string)? cItem;
+            if ((cItem = item as (string, string)?) != null)
+            {
+                return $"{cItem.Value.Item1}={cItem.Value.Item2}";
+            }
+            throw new NotSupportedException($"不支持的类型{item.GetType().FullName}");
         }
     }
 }

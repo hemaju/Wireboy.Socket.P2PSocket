@@ -6,7 +6,9 @@ namespace P2PSocket.Core.Models
 {
     public interface IConfigIO
     {
-        void ReadConfig(string text);
+        object ReadConfig(string text);
+
+        string GetItemString<T>(T item);
         void WriteLog();
     }
 }

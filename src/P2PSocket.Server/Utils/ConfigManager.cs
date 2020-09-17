@@ -1,4 +1,5 @@
-﻿using P2PSocket.Core.Models;
+﻿using P2PSocket.Core.Extends;
+using P2PSocket.Core.Models;
 using P2PSocket.Core.Utils;
 using P2PSocket.Server.Models;
 using System;
@@ -39,17 +40,21 @@ namespace P2PSocket.Server.Utils
             IFileManager fileManager = EasyInject.Get<IFileManager>();
             Dictionary<string, IConfigIO> handleDictionary = GetConfigIOInstanceList(config);
             IConfigIO instance = null;
-            fileManager.ReadLine(IFileManager.Config, lineData =>
+            using (MemoryStream ms = new MemoryStream(fileManager.ReadAll(IFileManager.Config).ToBytes()))
             {
-                string lineStr = lineData.Trim();
-                if (lineStr.Length > 0 && !lineStr.StartsWith("#"))
+                StreamReader reader = new StreamReader(ms);
+                while (!reader.EndOfStream)
                 {
-                    if (handleDictionary.ContainsKey(lineStr))
-                        instance = handleDictionary[lineStr];
-                    else
-                        instance?.ReadConfig(lineStr);
+                    string lineStr = reader.ReadLine().Trim();
+                    if (lineStr.Length > 0 && !lineStr.StartsWith("#"))
+                    {
+                        if (handleDictionary.ContainsKey(lineStr))
+                            instance = handleDictionary[lineStr];
+                        else
+                            instance?.ReadConfig(lineStr);
+                    }
                 }
-            });
+            }
             foreach (string key in handleDictionary.Keys)
             {
                 handleDictionary[key].WriteLog();
@@ -60,9 +65,9 @@ namespace P2PSocket.Server.Utils
         private AppConfig DoLoadMacAddress(AppConfig config)
         {
             IFileManager fileManager = EasyInject.Get<IFileManager>();
-            if (fileManager.IsExist(FileManeger.MacAdress))
+            if (fileManager.IsExist(FileManager.MacAdress))
             {
-                fileManager.ReadLine(FileManeger.MacAdress, lineData =>
+                fileManager.ReadLine(FileManager.MacAdress, lineData =>
                 {
                     string lineStr = lineData.Trim();
                     string[] oneData = lineStr.Split(' ').Where(t => !string.IsNullOrWhiteSpace(t)).ToArray();
@@ -82,7 +87,7 @@ namespace P2PSocket.Server.Utils
             {
                 IFileManager fileManager = EasyInject.Get<IFileManager>();
                 Dictionary<string, string> macMap = config.MacAddressMap;
-                fileManager.ForeachWrite(FileManeger.MacAdress, func =>
+                fileManager.ForeachWrite(FileManager.MacAdress, func =>
                 {
                     foreach (string mac in macMap.Keys)
                     {
@@ -133,10 +138,6 @@ namespace P2PSocket.Server.Utils
             return config;
         }
 
-        public void SaveToFile()
-        {
-
-        }
         private Dictionary<string, IConfigIO> GetConfigIOInstanceList(AppConfig config)
         {
             Dictionary<string, IConfigIO> retDic = new Dictionary<string, IConfigIO>();
@@ -146,6 +147,25 @@ namespace P2PSocket.Server.Utils
                 retDic.Add(type.GetCustomAttribute<ConfigIOAttr>().Name, Activator.CreateInstance(type, new object[] { config }) as IConfigIO);
             }
             return retDic;
+        }
+
+        public bool SaveItem<T>(T item)
+        {
+            throw new NotImplementedException();
+        }
+
+        public object ParseToObject(string handlerName, string str)
+        {
+            Dictionary<string, IConfigIO> handleDictionary = GetConfigIOInstanceList(new AppConfig());
+            if (handleDictionary.ContainsKey(handlerName))
+            {
+                IConfigIO handler = handleDictionary[handlerName];
+                return handler.ReadConfig(str);
+            }
+            else
+            {
+                throw new NotSupportedException($"未找到对应的处理器 {handlerName}");
+            }
         }
     }
 }

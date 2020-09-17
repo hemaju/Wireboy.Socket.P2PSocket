@@ -7,10 +7,10 @@ using System.Text;
 
 namespace P2PSocket.Client.Models
 {
-    public class FileManeger : IFileManager
+    public class FileManager : IFileManager
     {
         AppCenter appCenter;
-        public FileManeger()
+        public FileManager()
         {
             appCenter = EasyInject.Get<AppCenter>();
         }

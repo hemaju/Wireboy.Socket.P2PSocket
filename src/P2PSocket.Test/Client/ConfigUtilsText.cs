@@ -7,6 +7,7 @@ using P2PSocket.Client;
 using P2PSocket.Core.Models;
 using P2PSocket.Client.Models.Send;
 using P2PSocket.Core.Utils;
+using P2PSocket.Client.Models.ConfigIO;
 
 namespace P2PSocket.Test.Client
 {
@@ -32,5 +33,16 @@ namespace P2PSocket.Test.Client
             Send_0x0104 send_0X0104 = new Send_0x0104();
             send_0X0104.GetActiveMacAddress();
         }
+
+
+        [TestMethod]
+        public void TestGetItemString()
+        {
+            Common cm = new Common(null);
+            (string, string) item = ("LocalPort", "80");
+            string itemStr = cm.GetItemString<(string, string)>(item);
+            Assert.AreEqual<string>(itemStr, "LocalPort=80");
+        }
+
     }
 }

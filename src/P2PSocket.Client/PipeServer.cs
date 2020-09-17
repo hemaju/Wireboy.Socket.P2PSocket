@@ -91,7 +91,26 @@ namespace P2PSocket.Client
                 }
                 else if (strSplit[0] == "v")
                 {
-                    WriteLine(st.pipe, $"客户端版本:{ EasyInject.Get<AppCenter>().SoftVerSion}");
+                    WriteLine(st.pipe, $"当前版本 { EasyInject.Get<AppCenter>().SoftVerSion}");
+                }
+                else if (strSplit[0] == "add")
+                {
+                    IConfig configManager = EasyInject.Get<IConfig>();
+                    EasyOp.Do(() =>
+                    {
+                        PortMapItem obj = configManager.ParseToObject("[PortMapItem]", strSplit[1]) as PortMapItem;
+                        if(obj != null)
+                        {
+                            configManager.SaveItem(obj);
+                            WriteLine(st.pipe, "操作成功!");
+                        }
+                        else
+                        {
+                            WriteLine(st.pipe, "操作失败!");
+                        }
+                    }, e => {
+                        WriteLine(st.pipe, $"操作异常:{e}");
+                    });
                 }
                 else if (strSplit[0] == "log")
                 {
@@ -132,9 +151,15 @@ namespace P2PSocket.Client
                         }
                     }
                 }
+                else if (strSplit[0] == "h")
+                {
+                    string msg = $"开始日志打印: log [Debug/Info/Warning/Trace]{Environment.NewLine}" +
+                        "结束日志打印: log -s" +
+                        "查看版本: v";
+                }
                 else
                 {
-                    WriteLine(st.pipe, "暂不支持此命令");
+                    WriteLine(st.pipe, "暂不支持此命令,输入\"h\"查看帮助");
                 }
             }
         }
