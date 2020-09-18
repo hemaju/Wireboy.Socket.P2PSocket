@@ -69,13 +69,14 @@ namespace P2PSocket.Client
             EasyInject.Put<ILogger, Logger>().Singleton();
             EasyInject.Put<IConfig, ConfigManager>().Singleton();
             EasyInject.Put<IPipeServer, PipeServer>().Singleton();
+            EasyInject.Put<P2PClient, P2PClient>().Singleton();
         }
         protected void InitSelf()
         {
             appCenter = EasyInject.Get<AppCenter>();
             tcpCenter = EasyInject.Get<TcpCenter>();
             configManager = EasyInject.Get<IConfig>();
-            P2PClient = new P2PClient();
+            P2PClient = EasyInject.Get<P2PClient>();
             pipeServer = EasyInject.Get<IPipeServer>();
             pipeServer.Start();
         }
@@ -154,15 +155,14 @@ namespace P2PSocket.Client
             P2PClient.StartPortMap();
         }
 
-        DateTime lastUpdateConfig = DateTime.Now;
         object fwObj = new object();
         private void Fw_Changed(object sender, FileSystemEventArgs e)
         {
             DateTime curTime = DateTime.Now;
             lock (fwObj)
             {
-                if (DateTime.Compare(lastUpdateConfig.AddSeconds(5), curTime) > 0) return;
-                lastUpdateConfig = DateTime.Now;
+                if (DateTime.Compare(appCenter.LastUpdateConfig.AddSeconds(5), curTime) > 0) return;
+                appCenter.LastUpdateConfig = DateTime.Now;
                 Restart(null);
             }
         }

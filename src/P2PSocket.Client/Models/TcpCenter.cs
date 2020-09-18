@@ -14,7 +14,7 @@ namespace P2PSocket.Client
         }
         protected void Init()
         {
-            ListenerList = new Dictionary<string, TcpListener>();
+            ListenerList = new Dictionary<(string, int), TcpListener>();
             ConnectedTcpList = new List<P2PTcpClient>();
             WaiteConnetctTcp = new Dictionary<string, P2PTcpClient>();
         }
@@ -22,7 +22,7 @@ namespace P2PSocket.Client
         ///     服务器Tcp连接
         /// </summary>
         internal P2PTcpClient P2PServerTcp { set; get; }
-        public Dictionary<string, TcpListener> ListenerList { set; get; }
+        public Dictionary<(string,int), TcpListener> ListenerList { set; get; }
         public List<P2PTcpClient> ConnectedTcpList { set; get; }
         /// <summary>
         ///     等待中的tcp连接

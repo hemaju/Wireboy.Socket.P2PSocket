@@ -259,6 +259,55 @@ namespace P2PSocket.Server.Utils
             }
             return true;
         }
+        public bool RemoveItem<T>(T item)
+        {//处理器字典<处理器名称,处理器实例>
+            Dictionary<string, IConfigIO> handleDictionary = GetConfigIOInstanceList(new AppConfig());
+            //当前处理器实例
+            IConfigIO instance = null;
+            //配置文件内容缓存
+            List<string> configTemp = new List<string>();
+            //传入的配置是否已存在于配置文件
+            bool isMatched = false;
+            //分析当前配置文件内容
+            ReadToEnd(reader =>
+            {
+                string lineStr = reader.ReadLine().Trim();
+                /*
+                 * 条件一：注释内容
+                 * 条件二：处理器切换标识
+                 * 条件三：没有处理器则不处理内容
+                 */
+                if (lineStr.StartsWith("#") || handleDictionary.ContainsKey(lineStr) || instance == null)
+                {
+                    //只有切换处理器时需要处理数据
+                    if (handleDictionary.ContainsKey(lineStr))
+                        instance = handleDictionary[lineStr];
+                }
+                else
+                {
+                    object tItem = instance.ReadConfig(lineStr);
+                    //匹配端口映射项
+                    isMatched = MatchPortMapItem(tItem as PortMapItem, item as PortMapItem);
+                }
+                if (isMatched && !reader.EndOfStream)
+                    //如果已经找到了指定配置，则不再解析后面的数据
+                    configTemp.Add(reader.ReadToEnd());
+                else
+                    //未匹配上的数据，将内容原样存入缓存
+                    configTemp.Add(lineStr);
+            });
+            if (!isMatched)
+            {
+                if (item as PortMapItem != null)
+                    SavePortMapItem(item as PortMapItem, configTemp, handleDictionary);
+            }
+            else
+            {
+                //匹配上了，将数据保存到文件
+                ForeachWrite(configTemp);
+            }
+            return true;
+        }
 
 
         /// <summary>
@@ -268,11 +317,11 @@ namespace P2PSocket.Server.Utils
         /// <param name="item">用户提供的项</param>
         /// <param name="matchedFunc">匹配成功时执行的方法</param>
         /// <returns></returns>
-        private bool MatchPortMapItem(PortMapItem tItem, PortMapItem item, Action matchedFunc)
+        private bool MatchPortMapItem(PortMapItem tItem, PortMapItem item, Action matchedFunc = null)
         {
             if (tItem != null && tItem.LocalPort == item.LocalPort)
             {
-                matchedFunc();
+                matchedFunc?.Invoke();
                 return true;
             }
             return false;

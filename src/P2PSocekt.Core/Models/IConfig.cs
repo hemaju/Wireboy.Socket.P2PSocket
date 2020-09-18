@@ -10,6 +10,7 @@ namespace P2PSocket.Core.Models
         BaseConfig LoadFromFile();
         BaseConfig LoadFromString(string data);
         bool SaveItem<T>(T item);
+        bool RemoveItem<T>(T item);
         object ParseToObject(string handlerName, string str);
     }
 }

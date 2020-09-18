@@ -28,6 +28,7 @@ namespace P2PSocket.Client
             AllowAnonymous.Add(P2PCommandType.Login0x0101);
             AllowAnonymous.Add(P2PCommandType.P2P0x0211);
             AllowAnonymous.Add(P2PCommandType.P2P0x0201);
+            LastUpdateConfig = DateTime.Now;
         }
         /// <summary>
         ///     软件版本
@@ -53,6 +54,11 @@ namespace P2PSocket.Client
         ///     允许处理不经过身份验证的消息类型
         /// </summary>
         internal List<P2PCommandType> AllowAnonymous { get; private set; }
+
+        /// <summary>
+        /// 上次更新配置的时间
+        /// </summary>
+        internal DateTime LastUpdateConfig { get; set; }
 
         internal AppConfig Config { set; get; }
         /// <summary>

@@ -1,4 +1,5 @@
-﻿using P2PSocket.Core.Enums;
+﻿using P2PSocket.Client.Utils;
+using P2PSocket.Core.Enums;
 using P2PSocket.Core.Models;
 using P2PSocket.Core.Utils;
 using System;
@@ -6,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Text;
 
 namespace P2PSocket.Client
@@ -87,19 +89,19 @@ namespace P2PSocket.Client
                 st.pipe.BeginRead(st.buffer, 0, st.buffer.Length, ReadCallBack, st);
                 string strData = Encoding.Unicode.GetString(st.buffer.Take(length).ToArray());
                 string[] strSplit = strData.Split(' ').Where(t => !string.IsNullOrWhiteSpace(t)).ToArray();
+                AppCenter appCenter = EasyInject.Get<AppCenter>();
 
                 if (strSplit[0] == "ls")
                 {
-                    AppConfig config = EasyInject.Get<AppCenter>().Config;
                     string msg = "当前监听端口：";
-                    config.PortMapList.ForEach(t => { msg += t.LocalPort + " "; });
+                    appCenter.Config.PortMapList.ForEach(t => { msg += t.LocalPort + " "; });
                     WriteLine(st.pipe, msg);
                 }
                 else if (strSplit[0] == "v")
                 {
                     WriteLine(st.pipe, $"当前版本 { EasyInject.Get<AppCenter>().SoftVerSion}");
                 }
-                else if (strSplit[0] == "add")
+                else if (strSplit[0] == "use")
                 {
                     IConfig configManager = EasyInject.Get<IConfig>();
                     EasyOp.Do(() =>
@@ -107,17 +109,48 @@ namespace P2PSocket.Client
                         PortMapItem obj = configManager.ParseToObject("[PortMapItem]", strSplit[1]) as PortMapItem;
                         if (obj != null)
                         {
+                            appCenter.LastUpdateConfig = DateTime.Now;
                             configManager.SaveItem(obj);
-                            WriteLine(st.pipe, "操作成功!");
+                            P2PClient client = EasyInject.Get<P2PClient>();
+                            if (client.UsePortMapItem(obj))
+                            {
+                                appCenter.Config.PortMapList.Add(obj);
+                                WriteLine(st.pipe, "添加/修改端口映射成功!");
+                                LogUtils.Info($"管道命令:添加/修改端口映射 {obj.LocalPort}->{obj.RemoteAddress}:{obj.RemotePort}");
+                            }
+                            else
+                                WriteLine(st.pipe, "添加/修改端口映射失败,请参考wiki中的端口映射配置项!");
                         }
                         else
-                        {
-                            WriteLine(st.pipe, "操作失败!");
-                        }
+                            WriteLine(st.pipe, "添加/修改端口映射失败,请参考wiki中的端口映射配置项!");
                     }, e =>
                     {
-                        WriteLine(st.pipe, $"操作异常:{e}");
+                        WriteLine(st.pipe, $"添加/修改端口映射异常:{e}");
                     });
+                }
+                else if (strSplit[0] == "del")
+                {
+                    int localPort;
+                    if (int.TryParse(strSplit[1], out localPort))
+                    {
+                        EasyOp.Do(() =>
+                        {
+                            appCenter.LastUpdateConfig = DateTime.Now;
+                            P2PClient client = EasyInject.Get<P2PClient>();
+                            client.UnUsePortMapItem(localPort);
+                            IConfig configManager = EasyInject.Get<IConfig>();
+                            configManager.RemoveItem(new PortMapItem() { LocalPort = localPort });
+                            WriteLine(st.pipe, "移除端口映射成功!");
+                            LogUtils.Info($"管道命令:移除端口映射 {localPort}");
+                        }, e =>
+                        {
+                            WriteLine(st.pipe, $"移除端口映射异常:{e}");
+                        });
+                    }
+                    else
+                    {
+                        WriteLine(st.pipe, "移除端口映射失败!");
+                    }
                 }
                 else if (strSplit[0] == "log")
                 {
@@ -129,7 +162,7 @@ namespace P2PSocket.Client
                     }
                     else
                     {
-                        LogLevel level = EasyInject.Get<AppCenter>().Config.LogLevel;
+                        LogLevel level = appCenter.Config.LogLevel;
                         if (strSplit.Length == 2)
                         {
                             switch (strSplit[1].ToLower())
@@ -160,9 +193,22 @@ namespace P2PSocket.Client
                 }
                 else if (strSplit[0] == "h")
                 {
-                    string msg = $"开始日志打印: log [Debug/Info/Warning/Trace]{Environment.NewLine}" +
-                        "结束日志打印: log -s" +
-                        "查看版本: v";
+                    string msg = "";
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        StreamWriter writer = new StreamWriter(ms);
+                        writer.WriteLine("1.开始日志打印: log [Debug/Info/Warning/Trace]");
+                        writer.WriteLine("2.结束日志打印: log -s");
+                        writer.WriteLine("3.获取监听端口: ls");
+                        writer.WriteLine("4.获取当前版本: v");
+                        writer.WriteLine("5.添加/修改端口映射: use 映射配置  (例：\"use 12345->[ClientA]:3389\")");
+                        writer.WriteLine("6.删除指定端口映射: del 端口号 (例：\"del 3388\")");
+                        writer.Close();
+                        msg = Encoding.UTF8.GetString(ms.ToArray());
+
+                    }
+                    WriteLine(st.pipe, msg);
+
                 }
                 else
                 {

@@ -99,35 +99,46 @@ namespace P2PSocket.Client
         internal void StartPortMap()
         {
             if (appCenter.Config.PortMapList.Count == 0) return;
-            Dictionary<string, TcpListener> curListenerList = tcpCenter.ListenerList;
-            tcpCenter.ListenerList = new Dictionary<string, TcpListener>();
             foreach (PortMapItem item in appCenter.Config.PortMapList)
             {
-                string key = $"{item.LocalAddress}:{item.LocalPort}";
-                if (curListenerList.ContainsKey(key))
-                {
-                    LogUtils.Trace($"正在监听端口：{key}");
-                    tcpCenter.ListenerList.Add(key, curListenerList[key]);
-                    curListenerList.Remove(key);
-                    continue;
-                }
-                if (item.MapType == PortMapType.ip)
-                {
-                    ListenPortMapPort_Ip(item);
-                }
-                else
-                {
-                    ListenPortMapPort_Server(item);
-                }
-            }
-            foreach (TcpListener listener in curListenerList.Values)
-            {
-                LogUtils.Trace($"停止端口监听：{listener.LocalEndpoint.ToString()}");
-                listener.Stop();
+                ListenPortMap(item);
             }
         }
 
-        private void ListenPortMapPort_Server(PortMapItem item)
+        internal bool ListenPortMap(PortMapItem item)
+        {
+
+            if (item.MapType == PortMapType.ip)
+                return ListenPortMapPort_Ip(item);
+            else
+                return ListenPortMapPort_Server(item);
+        }
+
+        public bool UsePortMapItem(PortMapItem item)
+        {
+            if (tcpCenter.ListenerList.Any(t => t.Key.Item2 == item.LocalPort))
+            {
+                List<(string, int)> keys = new List<(string, int)>();
+                tcpCenter.ListenerList.Where(t => t.Key.Item2 == item.LocalPort).ToList().ForEach(t => { t.Value.Stop(); keys.Add(t.Key); });
+                keys.ForEach(key => tcpCenter.ListenerList.Remove(key));
+                appCenter.Config.PortMapList = appCenter.Config.PortMapList.Where(t => t.LocalPort != item.LocalPort).ToList();
+            }
+            return ListenPortMap(item);
+        }
+
+        public bool UnUsePortMapItem(int localPort)
+        {
+            if (tcpCenter.ListenerList.Any(t => t.Key.Item2 == localPort))
+            {
+                List<(string, int)> keys = new List<(string, int)>();
+                tcpCenter.ListenerList.Where(t => t.Key.Item2 == localPort).ToList().ForEach(t => { t.Value.Stop(); keys.Add(t.Key); });
+                keys.ForEach(key => tcpCenter.ListenerList.Remove(key));
+            }
+            appCenter.Config.PortMapList = appCenter.Config.PortMapList.Where(t => t.LocalPort != localPort).ToList();
+            return true;
+        }
+
+        private bool ListenPortMapPort_Server(PortMapItem item)
         {
             TcpListener listener = null;
             try
@@ -138,15 +149,16 @@ namespace P2PSocket.Client
             catch (SocketException ex)
             {
                 LogUtils.Error($"端口映射失败：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}{Environment.NewLine}{ex.Message}");
-                return;
+                return false;
             }
-            tcpCenter.ListenerList.Add($"{item.LocalAddress}:{item.LocalPort}", listener);
+            tcpCenter.ListenerList.Add((item.LocalAddress, item.LocalPort), listener);
             LogUtils.Info($"端口映射：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}", false);
 
             ListenSt listenSt = new ListenSt();
             listenSt.listener = listener;
             listenSt.item = item;
             listener.BeginAcceptSocket(AcceptSocket_Server, listenSt);
+            return true;
 
         }
 
@@ -225,7 +237,7 @@ namespace P2PSocket.Client
         ///     直接转发类型的端口监听
         /// </summary>
         /// <param name="item"></param>
-        private void ListenPortMapPort_Ip(PortMapItem item)
+        private bool ListenPortMapPort_Ip(PortMapItem item)
         {
             TcpListener listener = null;
             try
@@ -236,15 +248,16 @@ namespace P2PSocket.Client
             catch (Exception ex)
             {
                 LogUtils.Error($"添加端口映射失败：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}{Environment.NewLine}{ex.ToString()}");
-                return;
+                return false;
             }
-            tcpCenter.ListenerList.Add($"{item.LocalAddress}:{item.LocalPort}", listener);
+            tcpCenter.ListenerList.Add((item.LocalAddress, item.LocalPort), listener);
             LogUtils.Info($"添加端口映射成功：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}", false);
 
             ListenSt listenSt = new ListenSt();
             listenSt.listener = listener;
             listenSt.item = item;
             listener.BeginAcceptSocket(AcceptSocket_Ip, listenSt);
+            return true;
         }
         public void AcceptSocket_Ip(IAsyncResult ar)
         {
