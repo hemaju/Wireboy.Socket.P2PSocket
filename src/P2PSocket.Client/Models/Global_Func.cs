@@ -58,7 +58,16 @@ namespace P2PSocket.Client
                                     //LogUtils.Trace($"命令类型:{relation.msgReceive.CommandType}");
                                     if (command != null)
                                     {
-                                        if (!command.Excute())
+                                        bool isSuccess = false;
+                                        EasyOp.Do(() =>
+                                        {
+                                            isSuccess = command.Excute();
+                                        },
+                                        e =>
+                                        {
+                                            LogUtils.Error($"执行命令{relation.msgReceive.CommandType}时发生异常:{e}");
+                                        });
+                                        if (!isSuccess)
                                         {
                                             EasyOp.Do(() => { relation.readTcp?.SafeClose(); });
                                             EasyOp.Do(() => { relation.readTcp.ToClient?.SafeClose(); });
