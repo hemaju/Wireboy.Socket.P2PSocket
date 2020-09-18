@@ -26,9 +26,9 @@
 
 2.dev分支版本为开发者活跃版本，dev版本稳定后，将与master分支合并。
 
-## 赞助名单（[>>点这里赞助](Images/alipay.jpg)）
+## 赞助名单（[>>点这里赞助](Images/alipay.md)）
 
-[白纸坊（200RMB）](Images/Donate/2020091601.jpg)
+[白纸坊（200RMB）](Images/Donate/2020091601.md)
 
 ## 视频教程
 
