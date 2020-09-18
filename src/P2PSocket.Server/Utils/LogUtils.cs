@@ -27,10 +27,10 @@ namespace P2PSocket.Server
                         if (_instance == null)
                         {
                             _instance = EasyInject.Get<ILogger>();
-                            AppConfig config = EasyInject.Get<AppCenter>().Config;
+                            AppCenter appCenter = EasyInject.Get<AppCenter>();
                             _instance.SetFilter(logInfo =>
                             {
-                                return logInfo.LogLevel >= config.LogLevel;
+                                return appCenter.Config.LogLevel >= logInfo.LogLevel;
                             });
                         }
                     }
