@@ -39,7 +39,13 @@ namespace P2PSocket.Client
                 {
                     if (item.level >= e.LogLevel)
                     {
-                        WriteLine(item.item, $"{e.Time}:{e.Msg}");
+                        EasyOp.Do(() =>
+                        {
+                            WriteLine(item.item, $"{e.Time}:{e.Msg}");
+                        }, ex =>
+                        {
+                            logItems.RemoveAt(i);
+                        });
                     }
                 }
                 else
@@ -99,7 +105,7 @@ namespace P2PSocket.Client
                     EasyOp.Do(() =>
                     {
                         PortMapItem obj = configManager.ParseToObject("[PortMapItem]", strSplit[1]) as PortMapItem;
-                        if(obj != null)
+                        if (obj != null)
                         {
                             configManager.SaveItem(obj);
                             WriteLine(st.pipe, "操作成功!");
@@ -108,7 +114,8 @@ namespace P2PSocket.Client
                         {
                             WriteLine(st.pipe, "操作失败!");
                         }
-                    }, e => {
+                    }, e =>
+                    {
                         WriteLine(st.pipe, $"操作异常:{e}");
                     });
                 }
