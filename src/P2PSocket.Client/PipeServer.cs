@@ -30,8 +30,17 @@ namespace P2PSocket.Client
             EasyInject.Get<ILogger>().OnWriteLog += PipeServer_OnWriteLog;
 
         }
+
+        /// <summary>
+        /// 需要输出日志的管道实例集合
+        /// </summary>
         List<LogItem> logItems = new List<LogItem>();
 
+        /// <summary>
+        /// 日志写入响应方法
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void PipeServer_OnWriteLog(object sender, LogInfo e)
         {
             for (int i = logItems.Count - 1; i >= 0; i--)
@@ -46,6 +55,7 @@ namespace P2PSocket.Client
                             WriteLine(item.item, $"{e.Time}:{e.Msg}");
                         }, ex =>
                         {
+                            //管道写入发生异常，则不再向此管道实例写入日志
                             logItems.RemoveAt(i);
                         });
                     }
@@ -64,6 +74,7 @@ namespace P2PSocket.Client
 
         protected void InStart()
         {
+            //创建一个管道监听
             NamedPipeServerStream server = new NamedPipeServerStream("P2PSocket.Client", PipeDirection.InOut, 20, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
             PipeSt st = new PipeSt()
             {
@@ -72,6 +83,11 @@ namespace P2PSocket.Client
             };
             server.BeginWaitForConnection(PipeCallBack, st);
         }
+
+        /// <summary>
+        /// 接收到管道连接的回调方法
+        /// </summary>
+        /// <param name="ar"></param>
         protected void PipeCallBack(IAsyncResult ar)
         {
             PipeSt st = ar.AsyncState as PipeSt;
@@ -79,6 +95,11 @@ namespace P2PSocket.Client
             st.pipe.BeginRead(st.buffer, 0, st.buffer.Length, ReadCallBack, st);
             InStart();
         }
+
+        /// <summary>
+        /// 管道数据读取回调方法
+        /// </summary>
+        /// <param name="ar"></param>
         protected void ReadCallBack(IAsyncResult ar)
         {
 
@@ -109,9 +130,12 @@ namespace P2PSocket.Client
                         PortMapItem obj = configManager.ParseToObject("[PortMapItem]", strSplit[1]) as PortMapItem;
                         if (obj != null)
                         {
+                            //设置配置文件更新时间，避免出发重加载配置文件逻辑
                             appCenter.LastUpdateConfig = DateTime.Now;
+                            //添加/修改指定项到配置文件
                             configManager.SaveItem(obj);
                             P2PClient client = EasyInject.Get<P2PClient>();
+                            //监听/修改端口映射
                             if (client.UsePortMapItem(obj))
                             {
                                 appCenter.Config.PortMapList.Add(obj);
@@ -135,10 +159,13 @@ namespace P2PSocket.Client
                     {
                         EasyOp.Do(() =>
                         {
+                            //设置配置文件更新时间，避免出发重加载配置文件逻辑
                             appCenter.LastUpdateConfig = DateTime.Now;
                             P2PClient client = EasyInject.Get<P2PClient>();
+                            //停止监听端口
                             client.UnUsePortMapItem(localPort);
                             IConfig configManager = EasyInject.Get<IConfig>();
+                            //移除配置文件中指定项
                             configManager.RemoveItem(new PortMapItem() { LocalPort = localPort });
                             WriteLine(st.pipe, "移除端口映射成功!");
                             LogUtils.Info($"管道命令:移除端口映射 {localPort}");

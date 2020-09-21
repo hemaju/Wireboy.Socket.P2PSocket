@@ -44,6 +44,9 @@ namespace P2PSocket.Client
             Global_Func.ListenTcp<ReceivePacket>(tcpCenter.P2PServerTcp);
         }
 
+        /// <summary>
+        /// 定时发送心跳包，检测服务器连接状态
+        /// </summary>
         internal void TestAndReconnectServer()
         {
             Guid curGuid = appCenter.CurrentGuid;
@@ -105,6 +108,11 @@ namespace P2PSocket.Client
             }
         }
 
+        /// <summary>
+        /// 监听指定类型端口映射
+        /// </summary>
+        /// <param name="item"></param>
+        /// <returns></returns>
         internal bool ListenPortMap(PortMapItem item)
         {
 
@@ -114,6 +122,11 @@ namespace P2PSocket.Client
                 return ListenPortMapPort_Server(item);
         }
 
+        /// <summary>
+        /// 添加/修改指定端口映射
+        /// </summary>
+        /// <param name="item"></param>
+        /// <returns></returns>
         public bool UsePortMapItem(PortMapItem item)
         {
             if (tcpCenter.ListenerList.Any(t => t.Key.Item2 == item.LocalPort))
@@ -126,18 +139,30 @@ namespace P2PSocket.Client
             return ListenPortMap(item);
         }
 
+        /// <summary>
+        /// 移除指定端口映射
+        /// </summary>
+        /// <param name="localPort"></param>
+        /// <returns></returns>
         public bool UnUsePortMapItem(int localPort)
         {
+            //如果存在，则移除端口监听集合并停止监听
             if (tcpCenter.ListenerList.Any(t => t.Key.Item2 == localPort))
             {
                 List<(string, int)> keys = new List<(string, int)>();
                 tcpCenter.ListenerList.Where(t => t.Key.Item2 == localPort).ToList().ForEach(t => { t.Value.Stop(); keys.Add(t.Key); });
                 keys.ForEach(key => tcpCenter.ListenerList.Remove(key));
             }
+            //更新端口监听集合
             appCenter.Config.PortMapList = appCenter.Config.PortMapList.Where(t => t.LocalPort != localPort).ToList();
             return true;
         }
 
+        /// <summary>
+        /// 监听需要服务端的端口映射
+        /// </summary>
+        /// <param name="item"></param>
+        /// <returns></returns>
         private bool ListenPortMapPort_Server(PortMapItem item)
         {
             TcpListener listener = null;
@@ -162,6 +187,10 @@ namespace P2PSocket.Client
 
         }
 
+        /// <summary>
+        /// 端口映射监听端口的新tcp回调方法
+        /// </summary>
+        /// <param name="ar"></param>
         public void AcceptSocket_Server(IAsyncResult ar)
         {
             ListenSt st = (ListenSt)ar.AsyncState;
@@ -170,6 +199,7 @@ namespace P2PSocket.Client
             Socket socket = null;
             try
             {
+                //获取当前接入的tcp
                 socket = listener.EndAcceptSocket(ar);
             }
             catch (Exception ex)
@@ -192,7 +222,7 @@ namespace P2PSocket.Client
                     P2PTcpClient tcpClient = new P2PTcpClient(socket);
                     //加入待连接集合
                     tcpCenter.WaiteConnetctTcp.Add(tcpClient.Token, tcpClient);
-                    //发送p2p申请
+                    //发送消息给服务端，开始内网穿透
                     Send_0x0201_Apply packet = new Send_0x0201_Apply(tcpClient.Token, item.RemoteAddress, item.RemotePort, item.P2PType);
                     LogUtils.Debug(string.Format("正在建立{0}隧道 token:{1} client:{2} port:{3}", item.P2PType == 0 ? "中转模式" : "P2P模式", tcpClient.Token, item.RemoteAddress, item.RemotePort));
 
@@ -202,6 +232,7 @@ namespace P2PSocket.Client
                         tcpCenter.P2PServerTcp.BeginSend(dataAr);
                     }, () =>
                     {
+                        //等待指定超时时间后，判断是否连接成功
                         Thread.Sleep(AppConfig.P2PTimeout);
                         if (tcpCenter.WaiteConnetctTcp.ContainsKey(tcpClient.Token))
                         {
@@ -259,6 +290,11 @@ namespace P2PSocket.Client
             listener.BeginAcceptSocket(AcceptSocket_Ip, listenSt);
             return true;
         }
+
+        /// <summary>
+        /// 直接转发类型的端口监听，接收新tcp回调方法
+        /// </summary>
+        /// <param name="ar"></param>
         public void AcceptSocket_Ip(IAsyncResult ar)
         {
             ListenSt st = (ListenSt)ar.AsyncState;

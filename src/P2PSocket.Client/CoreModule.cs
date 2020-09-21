@@ -122,6 +122,7 @@ namespace P2PSocket.Client
 
         public void Restart(AppConfig config)
         {
+            //关闭所有端口监听
             CloseTcp();
             Thread.Sleep(2000);
             if (config == null)

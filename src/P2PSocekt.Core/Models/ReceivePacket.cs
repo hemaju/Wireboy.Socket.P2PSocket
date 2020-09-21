@@ -39,7 +39,7 @@ namespace P2PSocket.Core.Models
             Init();
         }
 
-        public void Init()
+        public virtual void Init()
         {
             CurStep = 0;
             DataBuffer.Clear();
