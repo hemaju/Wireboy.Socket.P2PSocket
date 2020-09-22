@@ -17,7 +17,7 @@ namespace P2PSocket.Client
 
         private void Init()
         {
-            SoftVerSion = "3.1.0 Beta4";
+            SoftVerSion = "3.1.0";
             RuntimePath = AppDomain.CurrentDomain.BaseDirectory;
             ConfigFile = Path.Combine(RuntimePath, "P2PSocket", "Client.ini");
             CommandDict = new Dictionary<P2PCommandType, Type>();
