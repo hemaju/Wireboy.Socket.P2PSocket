@@ -28,7 +28,7 @@
 
 ## 赞助名单（[>>点这里赞助](Images/alipay.md)）
 
-[白纸坊（200RMB）](Images/Donates/2020091601.md)
+[白纸坊（200RMB）](Images/Donates/2020091601.md) | [小谷哥哥（200RMB）](Images/Donates/2020091601.md)
 
 ## 视频教程
 
