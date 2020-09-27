@@ -32,16 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="P2PSocket.StartUp_Windows（install）.lnk">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="windows服务脚本\DeleteServer.bat">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="windows服务脚本\RegisterServer.bat">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="windows服务脚本\StartServer.bat">
+    <None Update="P2PSocket.StartUp_Windows（服务安装示例）.lnk">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
