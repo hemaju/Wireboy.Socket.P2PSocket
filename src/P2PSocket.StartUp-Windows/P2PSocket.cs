@@ -23,7 +23,10 @@ namespace P2PSocket.StartUp_Windows
         {
             try
             {
-                bool flag = StartServer(AppDomain.CurrentDomain) | StartClient(AppDomain.CurrentDomain);
+                if (!StartServer(AppDomain.CurrentDomain))
+                {
+                    StartClient(AppDomain.CurrentDomain);
+                }
             }
             catch (Exception ex)
             {

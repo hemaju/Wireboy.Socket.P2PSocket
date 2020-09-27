@@ -7,6 +7,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Globalization;
 
 namespace P2PSocket.StartUp_Windows
 {
@@ -16,25 +17,28 @@ namespace P2PSocket.StartUp_Windows
         {
             if (args.Length > 0)
             {
-                if (args.Any(t => t.ToLower() == "-install"))
+                if (args[0] == "-install")
                 {
+                    string serviceName = "P2PSocket";
+                    if (args.Length > 1) serviceName = args[1];
                     try
                     {
+                        Console.WriteLine("服务名 >> " + serviceName);
                         ServiceIO service = new ServiceIO();
                         //service.InstallService(AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(t => t.FullName.Contains("P2PSocket.StartUp_Windows")).Location);
                         //Console.ReadKey();
                         //return;
                         string filePath = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(t => t.FullName.Contains("P2PSocket.StartUp_Windows")).Location.Replace(".dll", ".exe");
                         Console.WriteLine(filePath);
-                        service.ServiceStop("P2PSocket");
+                        service.ServiceStop(serviceName);
                         Console.WriteLine("服务已停止");
-                        service.UninstallService("P2PSocket");
+                        service.UninstallService(serviceName);
                         Thread.Sleep(1000);
                         Console.WriteLine("服务已卸载");
-                        service.InstallService(filePath);
+                        service.InstallService(serviceName, filePath);
                         Thread.Sleep(1000);
                         Console.WriteLine("服务已安装");
-                        service.ServiceStart("P2PSocket");
+                        service.ServiceStart(serviceName);
                         Thread.Sleep(1000);
                         Console.WriteLine("服务已启动");
                     }
@@ -46,6 +50,24 @@ namespace P2PSocket.StartUp_Windows
                 else if (args.Any(t => t.ToLower() == "-ws"))
                 {
                     ServiceBase.Run(new P2PSocket());
+                }
+                else if (args.Any(t => t.ToLower() == "-uninstall"))
+                {
+                    string serviceName = "P2PSocket";
+                    if (args.Length > 1) serviceName = args[1];
+                    try
+                    {
+                        Console.WriteLine("服务名 >> " + serviceName);
+                        ServiceIO service = new ServiceIO();
+                        service.ServiceStop(serviceName);
+                        Console.WriteLine("服务已停止");
+                        service.UninstallService(serviceName);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
+                    }
+
                 }
             }
             else
@@ -88,10 +110,10 @@ namespace P2PSocket.StartUp_Windows
         }
 
         //安装服务
-        public void InstallService(string serviceFilePath)
+        public void InstallService(string serviceName, string serviceFilePath)
         {
             Console.WriteLine(serviceFilePath);
-            ExcuteCmd($"sc create P2PSocket binPath=\"{serviceFilePath} -ws\" start=auto displayname=wireboy内网穿透");
+            ExcuteCmd($"sc create {serviceName} binPath=\"{serviceFilePath} -ws\" start=auto displayname=wireboy内网穿透-" + serviceName);
         }
         public void ServiceStart(string serviceName)
         {

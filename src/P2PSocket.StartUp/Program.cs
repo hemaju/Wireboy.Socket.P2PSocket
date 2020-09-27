@@ -21,7 +21,7 @@ namespace P2PSocket.StartUp
                 method.Invoke(obj, null);
                 flag = true;
             }
-            if (File.Exists($"{AppDomain.CurrentDomain.BaseDirectory}P2PSocket/P2PSocket.Client.dll"))
+            else if (File.Exists($"{AppDomain.CurrentDomain.BaseDirectory}P2PSocket/P2PSocket.Client.dll"))
             {
                 Assembly assembly = Assembly.LoadFrom($"{AppDomain.CurrentDomain.BaseDirectory}P2PSocket/P2PSocket.Client.dll");
                 assembly = AppDomain.CurrentDomain.Load(assembly.FullName);
