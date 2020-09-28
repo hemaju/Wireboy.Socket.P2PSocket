@@ -1,18 +1,18 @@
 # Wireboy.Socket.P2PSocket
 
-这是一个跨平台的项目，支持Windows、Linux、树莓派等操作系统，开发环境：.Net Core2.1
+这是一个跨平台的项目，支持Windows、Linux、树莓派等操作系统，开发环境：.Net Core2.1 + .Net Standard2.0
 
 喜欢此项目的，请点击一下右上角的Star
 
-有任何问题，加入QQ群417159195，与作者共同交流，入群请填写“P2PSocket”
+在使用过程中遇到问题，可加入QQ群417159195，与作者共同交流，入群请填写“P2PSocket”
 
 ## 你好，程序员们
 
-1.无论你对当前项目有什么建议或者发现了什么BUG，欢迎提出来，在Issue和QQ群都可以。
+这些也许是大家想要知道的
 
-2.如果有能力，欢迎大家创建分支，然后提交代码，感谢大家。
+1.用到的技术：反射、多线程、异步任务、TCP通讯、文件IO、命名管道等
 
-3.对于任何建议、BUG反馈、分支代码提交等等与本项目互动的动作，我都会尽快回复，不会置之不理的。
+2.主要的实现：配置文件解析、数据封包拆包、队列日志写入、伪依赖注入（EasyInject类）等
 
 ## 这个项目能做些什么？
 
@@ -42,25 +42,48 @@
 
 ![img1](Images/img1.png)
 
+
+## 配置文件介绍 -> [点此查看](https://github.com/bobowire/Wireboy.Socket.P2PSocket/wiki)
+
 ## 使用方法
 
-1.编译项目StartUp项目.
+### 程序员：
 
-2.编译项目P2PServer与P2PClient.
+```
 
-3.linux系统，输入dotnet StartUp.dll启动。windows系统双击StartUp.exe启动
+1.使用"git clone https://github.com/bobowire/Wireboy.Socket.P2PSocket.git"下载源码
 
-说明：
+2.编译启动器：右键StatUp（非windows系统使用）或者StartUp_Windows（windows系统使用）项目，点击发布
 
-1.P2PServer与P2PClient是standard2.0项目，可直接复制到linux-x64/P2PSocket或者win-x86/P2PSocekt目录下使用.
+3.在发布的publish目录中，建立子目录P2PSocket
 
-2.StartUp在启动时，通过动态加载dll启动P2PSocket目录下的服务端或客户端（先服务端后客户端）.
+4.编译项目编译Client、Core、Server项目
 
-3.如果手动编译，需要在StartUp.dll当前目录中，新建P2PSocket目录，将客户端或者服务端dll复制进去。
+5.将"Client+Core"（客户端）或者"Server+Core"（服务端）的动态库拷贝到步骤3中建立的P2PSocket子目录
 
-![useGuide](Images/useGuide.gif)
+6.在P2PSocket目录中，添加Client.ini（客户端配置）或者Server.ini（服务端配置）文件，并参考上方的“配置文件说明”，添加相关配置项
 
-## 配置文件说明 -> [点此查看](https://github.com/bobowire/Wireboy.Socket.P2PSocket/wiki)
+7.双击StartUp.exe启动应用程序
+
+```
+
+### 普通用户：
+
+[点此下载最新程序](https://github.com/bobowire/Wireboy.Socket.P2PSocket/releases)
+
+```
+1.下载对应平台的客户端或者服务端
+
+2.使用win10 x64系统，以v3.1.0版本为例，在家中电脑和公司电脑下载P2PClient_win_x64.zip文件。
+
+3.在家中电脑和公司，解压缩zip，进入P2PSocket找到Client.ini配置文件，根据需要自行修改(可参考下方的示例)。
+
+4.在家中电脑与公司电脑运行StartUp_Windows.exe
+
+5.打开mstsc，输入127.0.0.1:[xxxx]即可连接公司电脑
+
+```
+
 
 ## 例子：mstsc远程控制（3端）
 
@@ -68,19 +91,73 @@
 
 1.被控制端mstsc设置
 
-![img3](Images/img3.png)
+windows系统：
 
-2.服务端Server配置
+```
+鼠标右键“我的电脑” -> 点击“属性” -> 点击“远程设置” -> 勾选“允许连接到此计算机” -> 点击“确认”
 
-![img4](Images/img4.png)
+```
 
-3.主控制端Client配置
+2.服务端Server配置（假设服务器ip地址为10.10.10.10）
 
-![img5](Images/img5.png)
+``` ini
+#服务端设置
+[Common]
+#服务端口
+Port=3488
 
-4.被控制端Client配置
+[PortMapItem]
+#将服务器端口12345当做客户端ClientA的3389端口使用(转发模式)
+#12345->[ClientA]:3389
 
-![img6](Images/img6.png)
+#将服务器端口12345当做客户端ClientA的3389端口使用(打洞模式)
+#12345->1@[ClientA]:3389
+
+```
+
+3.家中电脑ClientA配置
+
+``` ini
+
+#客户端ClientA配置
+[Common]
+#服务端地址
+ServerAddress=10.10.10.10:3488
+#当前客户端名称
+ClientName=ClientA
+#允许被连接的端口，0-0表示无限制
+AllowPort=0-0
+
+[PortMapItem]
+#将服务器端口3588当做客户端ClientB的3389端口使用(转发模式)
+3588->[ClientB]:3389
+
+#将服务器端口3588当做客户端ClientB的3389端口使用(打洞模式)
+#3588->1@[ClientB]:3389
+
+```
+
+4.公司电脑ClientB配置
+
+``` ini
+
+#客户端ClientA配置
+[Common]
+#服务端地址
+ServerAddress=10.10.10.10:3488
+#当前客户端名称
+ClientName=ClientB
+#允许被连接的端口，0-0表示无限制
+AllowPort=0-0
+
+[PortMapItem]
+#将服务器端口3588当做客户端ClientA的3389端口使用(转发模式)
+#3588->[ClientA]:3389
+
+#将服务器端口3588当做客户端ClientA的3389端口使用(打洞模式)
+#3588->1@[ClientA]:3389
+
+```
 
 5.在主控端启动mstsc，输入127.0.0.1:3588即可
 
