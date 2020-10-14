@@ -207,55 +207,54 @@ namespace P2PSocket.Client
                 LogUtils.Error(ex.ToString());
                 return;
             }
-            try
+
+            EasyOp.Do(() =>
             {
                 listener.BeginAcceptSocket(AcceptSocket_Server, st);
-            }
-            catch (Exception ex)
+            }, () =>
+            {
+                EasyOp.Do(() => {
+                    if (tcpCenter.P2PServerTcp != null && tcpCenter.P2PServerTcp.Connected)
+                    {
+                        P2PTcpClient tcpClient = new P2PTcpClient(socket);
+                        //加入待连接集合
+                        tcpCenter.WaiteConnetctTcp.Add(tcpClient.Token, tcpClient);
+                        //发送消息给服务端，开始内网穿透
+                        Send_0x0201_Apply packet = new Send_0x0201_Apply(tcpClient.Token, item.RemoteAddress, item.RemotePort, item.P2PType);
+                        LogUtils.Debug(string.Format("正在建立{0}隧道 token:{1} client:{2} port:{3}", item.P2PType == 0 ? "中转模式" : "P2P模式", tcpClient.Token, item.RemoteAddress, item.RemotePort));
+
+                        byte[] dataAr = packet.PackData();
+                        EasyOp.Do(() =>
+                        {
+                            tcpCenter.P2PServerTcp.BeginSend(dataAr);
+                        }, () =>
+                        {
+                            //等待指定超时时间后，判断是否连接成功
+                            Thread.Sleep(AppConfig.P2PTimeout);
+                            if (tcpCenter.WaiteConnetctTcp.ContainsKey(tcpClient.Token))
+                            {
+                                LogUtils.Debug($"建立隧道失败：token:{tcpClient.Token} {item.LocalPort}->{item.RemoteAddress}:{item.RemotePort} {AppConfig.P2PTimeout / 1000}秒无响应，已超时.");
+                                tcpCenter.WaiteConnetctTcp[tcpClient.Token]?.SafeClose();
+                                tcpCenter.WaiteConnetctTcp.Remove(tcpClient.Token);
+                            }
+                        }, ex =>
+                        {
+                            EasyOp.Do(tcpClient.SafeClose);
+                            LogUtils.Debug($"建立隧道失败,无法连接服务器：token:{tcpClient.Token} {item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}.");
+                        });
+                    }
+                    else
+                    {
+                        LogUtils.Debug($"建立隧道失败：未连接到服务器!");
+                        socket.Close();
+                    }
+                }, ex => {
+                    LogUtils.Debug("处理新tcp连接时发生错误：" + Environment.NewLine + ex.ToString());
+                });
+            }, ex =>
             {
                 LogUtils.Error("监听端口发生错误：" + listener.LocalEndpoint.ToString() + Environment.NewLine + ex.ToString());
-            }
-            try
-            {
-                if (tcpCenter.P2PServerTcp != null && tcpCenter.P2PServerTcp.Connected)
-                {
-                    P2PTcpClient tcpClient = new P2PTcpClient(socket);
-                    //加入待连接集合
-                    tcpCenter.WaiteConnetctTcp.Add(tcpClient.Token, tcpClient);
-                    //发送消息给服务端，开始内网穿透
-                    Send_0x0201_Apply packet = new Send_0x0201_Apply(tcpClient.Token, item.RemoteAddress, item.RemotePort, item.P2PType);
-                    LogUtils.Debug(string.Format("正在建立{0}隧道 token:{1} client:{2} port:{3}", item.P2PType == 0 ? "中转模式" : "P2P模式", tcpClient.Token, item.RemoteAddress, item.RemotePort));
-
-                    byte[] dataAr = packet.PackData();
-                    EasyOp.Do(() =>
-                    {
-                        tcpCenter.P2PServerTcp.BeginSend(dataAr);
-                    }, () =>
-                    {
-                        //等待指定超时时间后，判断是否连接成功
-                        Thread.Sleep(AppConfig.P2PTimeout);
-                        if (tcpCenter.WaiteConnetctTcp.ContainsKey(tcpClient.Token))
-                        {
-                            LogUtils.Debug($"建立隧道失败：token:{tcpClient.Token} {item.LocalPort}->{item.RemoteAddress}:{item.RemotePort} {AppConfig.P2PTimeout / 1000}秒无响应，已超时.");
-                            tcpCenter.WaiteConnetctTcp[tcpClient.Token]?.SafeClose();
-                            tcpCenter.WaiteConnetctTcp.Remove(tcpClient.Token);
-                        }
-                    }, ex =>
-                    {
-                        EasyOp.Do(tcpClient.SafeClose);
-                        LogUtils.Debug($"建立隧道失败,无法连接服务器：token:{tcpClient.Token} {item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}.");
-                    });
-                }
-                else
-                {
-                    LogUtils.Debug($"建立隧道失败：未连接到服务器!");
-                    socket.Close();
-                }
-            }
-            catch (Exception ex)
-            {
-                LogUtils.Debug("处理新tcp连接时发生错误：" + Environment.NewLine + ex.ToString());
-            }
+            });
         }
 
         struct ListenSt
@@ -270,25 +269,29 @@ namespace P2PSocket.Client
         /// <param name="item"></param>
         private bool ListenPortMapPort_Ip(PortMapItem item)
         {
+            bool ret = true;
             TcpListener listener = null;
-            try
+            EasyOp.Do(() =>
             {
                 listener = new TcpListener(string.IsNullOrEmpty(item.LocalAddress) ? IPAddress.Any : IPAddress.Parse(item.LocalAddress), item.LocalPort);
                 listener.Start();
-            }
-            catch (Exception ex)
+            },
+            () =>
+            {
+                tcpCenter.ListenerList.Add((item.LocalAddress, item.LocalPort), listener);
+                LogUtils.Info($"添加端口映射成功：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}", false);
+
+                ListenSt listenSt = new ListenSt();
+                listenSt.listener = listener;
+                listenSt.item = item;
+                listener.BeginAcceptSocket(AcceptSocket_Ip, listenSt);
+            },
+            ex =>
             {
                 LogUtils.Error($"添加端口映射失败：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}{Environment.NewLine}{ex.ToString()}");
-                return false;
-            }
-            tcpCenter.ListenerList.Add((item.LocalAddress, item.LocalPort), listener);
-            LogUtils.Info($"添加端口映射成功：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}", false);
-
-            ListenSt listenSt = new ListenSt();
-            listenSt.listener = listener;
-            listenSt.item = item;
-            listener.BeginAcceptSocket(AcceptSocket_Ip, listenSt);
-            return true;
+                ret = false;
+            });
+            return ret;
         }
 
         /// <summary>
@@ -301,46 +304,53 @@ namespace P2PSocket.Client
             TcpListener listener = st.listener;
             PortMapItem item = st.item;
             Socket socket = null;
-            try
+            EasyOp.Do(() =>
             {
                 socket = listener.EndAcceptSocket(ar);
-            }
-            catch (Exception ex)
+            }, () =>
+            {
+                listener.BeginAcceptSocket(AcceptSocket_Ip, st);
+                P2PTcpClient tcpClient = new P2PTcpClient(socket);
+                P2PTcpClient ipClient = null;
+                EasyOp.Do(() =>
+                {
+                    ipClient = new P2PTcpClient(item.RemoteAddress, item.RemotePort);
+                },
+                () =>
+                {
+                    if (ipClient.Connected)
+                    {
+                        tcpClient.ToClient = ipClient;
+                        ipClient.ToClient = tcpClient;
+                        RelationTcp toRelation = new RelationTcp();
+                        toRelation.readTcp = tcpClient;
+                        toRelation.readSs = tcpClient.GetStream();
+                        toRelation.writeTcp = tcpClient.ToClient;
+                        toRelation.writeSs = tcpClient.ToClient.GetStream();
+                        toRelation.buffer = new byte[P2PGlobal.P2PSocketBufferSize];
+                        RelationTcp fromRelation = new RelationTcp();
+                        fromRelation.readTcp = toRelation.writeTcp;
+                        fromRelation.readSs = toRelation.writeSs;
+                        fromRelation.writeTcp = toRelation.readTcp;
+                        fromRelation.writeSs = toRelation.readSs;
+                        fromRelation.buffer = new byte[P2PGlobal.P2PSocketBufferSize];
+                        StartTransferTcp_Ip(toRelation);
+                        StartTransferTcp_Ip(fromRelation);
+                    }
+                },
+                ex =>
+                {
+                    tcpClient?.SafeClose();
+                    LogUtils.Debug($"建立隧道失败：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}{Environment.NewLine}{ex}");
+                });
+
+            }, ex =>
             {
                 LogUtils.Error(ex.ToString());
-                return;
-            }
-            listener.BeginAcceptSocket(AcceptSocket_Ip, st);
-            P2PTcpClient tcpClient = new P2PTcpClient(socket);
-            P2PTcpClient ipClient = null;
-            try
-            {
-                ipClient = new P2PTcpClient(item.RemoteAddress, item.RemotePort);
-            }
-            catch (Exception ex)
-            {
-                tcpClient?.SafeClose();
-                LogUtils.Debug($"建立隧道失败：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}{Environment.NewLine}{ex}");
-            }
-            if (ipClient.Connected)
-            {
-                tcpClient.ToClient = ipClient;
-                ipClient.ToClient = tcpClient;
-                RelationTcp toRelation = new RelationTcp();
-                toRelation.readTcp = tcpClient;
-                toRelation.readSs = tcpClient.GetStream();
-                toRelation.writeTcp = tcpClient.ToClient;
-                toRelation.writeSs = tcpClient.ToClient.GetStream();
-                toRelation.buffer = new byte[P2PGlobal.P2PSocketBufferSize];
-                RelationTcp fromRelation = new RelationTcp();
-                fromRelation.readTcp = toRelation.writeTcp;
-                fromRelation.readSs = toRelation.writeSs;
-                fromRelation.writeTcp = toRelation.readTcp;
-                fromRelation.writeSs = toRelation.readSs;
-                fromRelation.buffer = new byte[P2PGlobal.P2PSocketBufferSize];
-                StartTransferTcp_Ip(toRelation);
-                StartTransferTcp_Ip(fromRelation);
-            }
+            });
+
+
+
         }
 
         private void StartTransferTcp_Ip(RelationTcp tcp)

@@ -58,6 +58,7 @@ namespace P2PSocket.Client.Commands
                                 Global_Func.ListenTcp<Models.Receive.Packet_0x0212>(portClient);
                                 Global_Func.ListenTcp<Models.Receive.Packet_ToPort>(serverClient);
                                 isError = false;
+                                LogUtils.Debug($"命令：0x0211 成功绑定内网穿透（2端）通道 {portClient.RemoteEndPoint}->服务器->{remoteEndPoint}{Environment.NewLine}token:{token} ");
                             }, ex =>
                             {
                                 LogUtils.Debug($"命令：0x0211 接收数据发生错误:{Environment.NewLine}{ex}");
