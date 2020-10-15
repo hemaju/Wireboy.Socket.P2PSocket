@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\P2PSocekt.Core\P2PSocket.Core.csproj" />
+    <ProjectReference Include="..\P2PSocket.Client\P2PSocket.Client.csproj" />
+  </ItemGroup>
+
+</Project>
