@@ -10,8 +10,8 @@ namespace P2PSocket.Client.Commands
     [CommandFlag(Core.P2PCommandType.Login0x0102)]
     public class Cmd_0x0102 : P2PCommand
     {
-        readonly P2PTcpClient m_tcpClient;
-        byte[] m_data { get; }
+        protected readonly P2PTcpClient m_tcpClient;
+        protected byte[] m_data { get; }
         public Cmd_0x0102(P2PTcpClient tcpClient, byte[] data)
         {
             LogUtils.Trace($"开始处理消息：0x0102");

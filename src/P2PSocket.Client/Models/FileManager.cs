@@ -26,7 +26,7 @@ namespace P2PSocket.Client.Models
                     }
                 case IFileManager.Log:
                     {
-                        path = Path.Combine(appCenter.RuntimePath,"P2PSocket","Logs", $"Client_{DateTime.Now:yyyy-MM-dd}.log");
+                        path = Path.Combine(appCenter.RuntimePath,"Logs", $"Client_{DateTime.Now:yyyy-MM-dd}.log");
                         break;
                     }
             }

@@ -19,10 +19,10 @@ namespace P2PSocket.Client.Commands
     [CommandFlag(Core.P2PCommandType.P2P0x0201)]
     public class Cmd_0x0201 : P2PCommand
     {
-        readonly P2PTcpClient m_tcpClient;
-        TcpCenter tcpCenter = EasyInject.Get<TcpCenter>();
-        AppConfig appCenter = EasyInject.Get<AppCenter>().Config;
-        BinaryReader data { get; }
+        protected readonly P2PTcpClient m_tcpClient;
+        protected TcpCenter tcpCenter = EasyInject.Get<TcpCenter>();
+        protected AppConfig appCenter = EasyInject.Get<AppCenter>().Config;
+        protected BinaryReader data { get; }
         public Cmd_0x0201(P2PTcpClient tcpClient, byte[] data)
         {
             m_tcpClient = tcpClient;
@@ -71,7 +71,7 @@ namespace P2PSocket.Client.Commands
             return true;
         }
 
-        public void TryBindP2PTcp()
+        protected virtual void TryBindP2PTcp()
         {
             string ip = BinaryUtils.ReadString(data);
             int port = BinaryUtils.ReadInt(data);
@@ -133,7 +133,7 @@ namespace P2PSocket.Client.Commands
              });
         }
 
-        public void P2PBind_DirectConnect(P2PTcpClient p2pClient, string token)
+        protected virtual void P2PBind_DirectConnect(P2PTcpClient p2pClient, string token)
         {
             if (m_tcpClient.P2PLocalPort > 0)
             {
@@ -216,7 +216,7 @@ namespace P2PSocket.Client.Commands
             }
         }
 
-        public void CreateTcpFromDest_DirectConnect(string token)
+        protected virtual void CreateTcpFromDest_DirectConnect(string token)
         {
             int port = BinaryUtils.ReadInt(data);
             Utils.LogUtils.Debug($"命令：0x0201  正尝试建立P2P模式隧道 token:{token}");
@@ -260,7 +260,7 @@ namespace P2PSocket.Client.Commands
 
 
         }
-        public void CreateTcpFromSource_DirectConnect(string token)
+        protected virtual void CreateTcpFromSource_DirectConnect(string token)
         {
             Models.Send.Send_0x0201_Bind sendPacket = new Models.Send.Send_0x0201_Bind(token);
             Utils.LogUtils.Debug($"命令：0x0201  正尝试建立P2P模式隧道 token:{token}");
@@ -312,7 +312,7 @@ namespace P2PSocket.Client.Commands
         ///     从目标端创建与服务器的tcp连接
         /// </summary>
         /// <param name="token"></param>
-        public void CreateTcpFromDest(string token)
+        protected virtual void CreateTcpFromDest(string token)
         {
             Utils.LogUtils.Debug($"命令：0x0201  正在连接中转模式隧道通道 token:{token}");
             int port = BinaryUtils.ReadInt(data);
@@ -377,7 +377,7 @@ namespace P2PSocket.Client.Commands
         ///     从发起端创建与服务器的tcp连接
         /// </summary>
         /// <param name="token"></param>
-        public void CreateTcpFromSource(string token)
+        protected virtual void CreateTcpFromSource(string token)
         {
             Utils.LogUtils.Debug($"命令：0x0201  正尝试建立中转模式隧道token:{token}");
             if (tcpCenter.WaiteConnetctTcp.ContainsKey(token))
@@ -431,7 +431,7 @@ namespace P2PSocket.Client.Commands
         /// <summary>
         ///     监听连接外部程序的端口
         /// </summary>
-        public void ListenPort()
+        protected virtual void ListenPort()
         {
             EasyOp.Do(() =>
             {

@@ -32,17 +32,20 @@ namespace P2PSocket.Client
         /// <summary>
         ///     初始化全局变量
         /// </summary>
-        protected void InitGlobal()
+        protected virtual void InitGlobal()
         {
             InitRegister();
-            InitSelf();
+            InitInterface();
             InitCommandList();
+            LoadConfig();
+            pipeServer.Start();
+            LoadPlugs();
         }
 
         /// <summary>
         ///     初始化命令
         /// </summary>
-        protected void InitCommandList()
+        protected virtual void InitCommandList()
         {
             Type[] commandList = Assembly.GetExecutingAssembly().GetTypes()
                 .Where(t => typeof(P2PCommand).IsAssignableFrom(t) && !t.IsAbstract)
@@ -61,7 +64,7 @@ namespace P2PSocket.Client
                 }
             }
         }
-        protected void InitRegister()
+        protected virtual void InitRegister()
         {
             EasyInject.Put<AppCenter, AppCenter>().Singleton();
             EasyInject.Put<TcpCenter, TcpCenter>().Singleton();
@@ -71,17 +74,63 @@ namespace P2PSocket.Client
             EasyInject.Put<IPipeServer, PipeServer>().Singleton();
             EasyInject.Put<P2PClient, P2PClient>().Singleton();
         }
-        protected void InitSelf()
+        protected virtual void InitInterface()
         {
             appCenter = EasyInject.Get<AppCenter>();
             tcpCenter = EasyInject.Get<TcpCenter>();
             configManager = EasyInject.Get<IConfig>();
             P2PClient = EasyInject.Get<P2PClient>();
             pipeServer = EasyInject.Get<IPipeServer>();
-            pipeServer.Start();
         }
 
-        public void Start()
+        /// <summary>
+        /// 加载插件
+        /// </summary>
+        protected virtual void LoadPlugs()
+        {
+            DirectoryInfo plugDir = new DirectoryInfo(Path.Combine(appCenter.RuntimePath, "Plugs"));
+            if (plugDir != null)
+            {
+                foreach (string file in plugDir.GetFiles().Select(t => t.FullName).Where(t => t.ToLower().EndsWith(".dll")))
+                {
+                    EasyOp.Do(() =>
+                    {
+                    //载入dll
+                    bool flag = false;
+                        Assembly ab = Assembly.LoadFrom(file);
+                        Type[] types = ab.GetTypes();
+                        foreach (Type curInstance in types)
+                        {
+                            if (curInstance.GetInterface("IP2PSocketPlug") != null)
+                            {
+                                IP2PSocketPlug instance = Activator.CreateInstance(curInstance) as IP2PSocketPlug;
+                                LogUtils.Info($"成功加载插件 {instance.GetPlugName()}");
+                                instance.Init();
+                                break;
+                            }
+                        }
+                    },
+                    ex =>
+                    {
+                        LogUtils.Warning($"加载插件失败 >> {ex}");
+                    });
+                }
+            }
+        }
+
+        public virtual void Start()
+        {
+            //启动服务
+            appCenter.CurrentGuid = Guid.NewGuid();
+            //连接服务器
+            P2PClient.ConnectServer();
+            appCenter.StartNewTask(() => P2PClient.TestAndReconnectServer());
+            //启动端口映射
+            P2PClient.StartPortMap();
+            Thread.Sleep(1000);
+        }
+
+        protected virtual void LoadConfig()
         {
             LogUtils.Info($"客户端版本:{appCenter.SoftVerSion} 作者：wireboy", false);
             LogUtils.Info($"github地址：https://github.com/bobowire/Wireboy.Socket.P2PSocket", false);
@@ -92,7 +141,7 @@ namespace P2PSocket.Client
                 try
                 {
                     appCenter.Config = configManager.LoadFromFile() as AppConfig;
-                    FileSystemWatcher fw = new FileSystemWatcher(Path.Combine(appCenter.RuntimePath, "P2PSocket"), "Client.ini")
+                    FileSystemWatcher fw = new FileSystemWatcher(appCenter.RuntimePath, "Client.ini")
                     {
                         NotifyFilter = NotifyFilters.LastWrite
                     };
@@ -110,17 +159,9 @@ namespace P2PSocket.Client
                 LogUtils.Error($"找不到配置文件.{appCenter.ConfigFile}");
                 return;
             }
-            //启动服务
-            appCenter.CurrentGuid = Guid.NewGuid();
-            //连接服务器
-            P2PClient.ConnectServer();
-            appCenter.StartNewTask(() => P2PClient.TestAndReconnectServer());
-            //启动端口映射
-            P2PClient.StartPortMap();
-            Thread.Sleep(1000);
         }
 
-        public void Restart(AppConfig config)
+        public virtual void Restart(AppConfig config)
         {
             //关闭所有端口监听
             CloseTcp();
@@ -157,7 +198,7 @@ namespace P2PSocket.Client
         }
 
         object fwObj = new object();
-        private void Fw_Changed(object sender, FileSystemEventArgs e)
+        protected virtual void Fw_Changed(object sender, FileSystemEventArgs e)
         {
             DateTime curTime = DateTime.Now;
             lock (fwObj)
@@ -168,7 +209,7 @@ namespace P2PSocket.Client
             }
         }
 
-        public void CloseTcp()
+        public virtual void CloseTcp()
         {
             appCenter.CurrentGuid = Guid.NewGuid();
             tcpCenter.P2PServerTcp?.SafeClose();

@@ -16,10 +16,10 @@ namespace P2PSocket.Client.Commands
     [CommandFlag(Core.P2PCommandType.P2P0x0211)]
     public class Cmd_0x0211 : P2PCommand
     {
-        readonly P2PTcpClient m_tcpClient;
-        TcpCenter tcpCenter = EasyInject.Get<TcpCenter>();
-        AppConfig appCenter = EasyInject.Get<AppCenter>().Config;
-        BinaryReader data { get; }
+        protected readonly P2PTcpClient m_tcpClient;
+        protected TcpCenter tcpCenter = EasyInject.Get<TcpCenter>();
+        protected AppConfig appCenter = EasyInject.Get<AppCenter>().Config;
+        protected BinaryReader data { get; }
         public Cmd_0x0211(P2PTcpClient tcpClient, byte[] data)
         {
             m_tcpClient = tcpClient;
@@ -92,7 +92,7 @@ namespace P2PSocket.Client.Commands
             }
             return true;
         }
-        private void SendError(string token, string msg)
+        protected virtual void SendError(string token, string msg)
         {
             EasyOp.Do(() =>
             {

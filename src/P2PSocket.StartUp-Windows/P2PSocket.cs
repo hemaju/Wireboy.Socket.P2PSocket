@@ -31,7 +31,7 @@ namespace P2PSocket.StartUp_Windows
             catch (Exception ex)
             {
                 StreamWriter ss = new StreamWriter($"{AppDomain.CurrentDomain.BaseDirectory}P2PSocket/Error.log");
-                ss.WriteLine(ex.Message);
+                ss.WriteLine(ex);
                 ss.Close();
                 throw ex;
             }

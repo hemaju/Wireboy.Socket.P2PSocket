@@ -9,8 +9,8 @@ namespace P2PSocket.Client.Commands
     [CommandFlag(Core.P2PCommandType.Heart0x0052)]
     public class Cmd_0x0052 : P2PCommand
     {
-        readonly P2PTcpClient m_tcpClient;
-        byte[] m_data { get; }
+        protected readonly P2PTcpClient m_tcpClient;
+        protected byte[] m_data { get; }
         public Cmd_0x0052(P2PTcpClient tcpClient,byte[] data)
         {
             m_tcpClient = tcpClient;

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,8 +19,8 @@ namespace P2PSocket.Client
         private void Init()
         {
             SoftVerSion = "3.1.0";
-            RuntimePath = AppDomain.CurrentDomain.BaseDirectory;
-            ConfigFile = Path.Combine(RuntimePath, "P2PSocket", "Client.ini");
+            RuntimePath = FindRootDir();
+            ConfigFile = Path.Combine(RuntimePath, "Client.ini");
             CommandDict = new Dictionary<P2PCommandType, Type>();
             CurrentGuid = new Guid();
             Config = new AppConfig();
@@ -29,6 +30,38 @@ namespace P2PSocket.Client
             AllowAnonymous.Add(P2PCommandType.P2P0x0211);
             AllowAnonymous.Add(P2PCommandType.P2P0x0201);
             LastUpdateConfig = DateTime.Now;
+        }
+
+        protected virtual string FindRootDir()
+        {
+            DirectoryInfo rootDir = DoFindRootDir(new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory));
+            if(rootDir == null)
+            {
+                throw new DllNotFoundException($"在目录{AppDomain.CurrentDomain.BaseDirectory}中，未能找到p2psocket.client.dll");
+            }
+            else
+            {
+                return rootDir.FullName;
+            }
+        }
+
+        protected virtual DirectoryInfo DoFindRootDir(DirectoryInfo pDir)
+        {
+            if(pDir.GetFiles().FirstOrDefault(file=>file.Name.ToLower() == "p2psocket.client.dll") != null)
+            {
+                return pDir;
+            }
+            else
+            {
+                foreach(DirectoryInfo dir in pDir.GetDirectories())
+                {
+                    DirectoryInfo result = DoFindRootDir(dir);
+                    if (result != null)
+                        return result;
+                    
+                }
+                return null;
+            }
         }
         /// <summary>
         ///     软件版本

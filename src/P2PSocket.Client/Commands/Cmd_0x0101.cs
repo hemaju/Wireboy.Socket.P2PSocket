@@ -15,10 +15,10 @@ namespace P2PSocket.Client.Commands
     [CommandFlag(Core.P2PCommandType.Login0x0101)]
     public class Cmd_0x0101 : P2PCommand
     {
-        readonly P2PTcpClient m_tcpClient;
-        TcpCenter tcpCenter = EasyInject.Get<TcpCenter>();
-        AppConfig appCenter = EasyInject.Get<AppCenter>().Config;
-        BinaryReader m_data { get; }
+        protected readonly P2PTcpClient m_tcpClient;
+        protected TcpCenter tcpCenter = EasyInject.Get<TcpCenter>();
+        protected AppConfig appCenter = EasyInject.Get<AppCenter>().Config;
+        protected BinaryReader m_data { get; }
         public Cmd_0x0101(P2PTcpClient tcpClient, byte[] data)
         {
             m_tcpClient = tcpClient;
@@ -34,12 +34,12 @@ namespace P2PSocket.Client.Commands
             return true;
         }
 
-        public bool IsSuccess()
+        public virtual bool IsSuccess()
         {
             return m_data.ReadBoolean();
         }
 
-        public void DoSuccess()
+        public virtual void DoSuccess()
         {
             //  身份验证成功
             string msg = BinaryUtils.ReadString(m_data);
