@@ -38,7 +38,7 @@ namespace P2PSocket.Client
             InitInterface();
             InitCommandList();
             LoadConfig();
-            pipeServer.Start();
+            pipeServer.Start("P2PSocket.Client");
             LoadPlugs();
         }
 
@@ -66,12 +66,19 @@ namespace P2PSocket.Client
         }
         protected virtual void InitRegister()
         {
+            //应用中心，用于存放配置、全局变量等信息
             EasyInject.Put<AppCenter, AppCenter>().Singleton();
+            //Tcp管理，用于保存当前tcp连接和端口监听实例
             EasyInject.Put<TcpCenter, TcpCenter>().Singleton();
+            //文件IO接口，不同系统的文件读写方式有区别，可重载此接口实现定制
             EasyInject.Put<IFileManager, FileManager>().Common();
+            //日志接口，用于日志写入
             EasyInject.Put<ILogger, Logger>().Singleton();
+            //配置管理，用于读写配置文件
             EasyInject.Put<IConfig, ConfigManager>().Singleton();
+            //命名管道，用于与第三方进程通讯
             EasyInject.Put<IPipeServer, PipeServer>().Singleton();
+            //内网穿透客户端实例
             EasyInject.Put<P2PClient, P2PClient>().Singleton();
         }
         protected virtual void InitInterface()
@@ -95,8 +102,7 @@ namespace P2PSocket.Client
                 {
                     EasyOp.Do(() =>
                     {
-                    //载入dll
-                    bool flag = false;
+                        //载入dll
                         Assembly ab = Assembly.LoadFrom(file);
                         Type[] types = ab.GetTypes();
                         foreach (Type curInstance in types)

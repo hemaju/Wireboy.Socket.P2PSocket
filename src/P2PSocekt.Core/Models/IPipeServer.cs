@@ -6,6 +6,6 @@ namespace P2PSocket.Core.Models
 {
     public interface IPipeServer
     {
-        void Start();
+        void Start(string pipeName = "");
     }
 }

@@ -17,7 +17,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "P2PSocket.StartUp_Windows",
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugs", "Plugs", "{CAEE407A-0140-4CC1-B177-4A770521A51E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TransferEncryption_Plug", "TransferEncryption_Plug\TransferEncryption_Plug.csproj", "{AE420D5E-1D50-4D56-B26B-0F89E57E65FB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TransferEncryption_Plug", "TransferEncryption_Plug\TransferEncryption_Plug.csproj", "{AE420D5E-1D50-4D56-B26B-0F89E57E65FB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documents", "Documents", "{BF09210E-04CE-412F-95BE-B0254AE98ED7}"
+	ProjectSection(SolutionItems) = preProject
+		开发计划.txt = 开发计划.txt
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
