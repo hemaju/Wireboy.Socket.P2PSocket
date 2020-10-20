@@ -50,13 +50,9 @@ namespace P2PSocket.Server
                         if (length > 0)
                         {
                             byte[] refData = relation.buffer.Take(length).ToArray();
-                            bool parseDataResult = false;
                             EasyOp.Do(() =>
                             {
-                                parseDataResult = relation.msgReceive.ParseData(ref refData);
-                            }, () =>
-                            {
-                                while (parseDataResult)
+                                while (relation.msgReceive.ParseData(ref refData))
                                 {
                                     // 执行command
                                     using (P2PCommand command = FindCommand(relation.readTcp, relation.msgReceive))
