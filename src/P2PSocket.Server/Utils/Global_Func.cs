@@ -50,52 +50,64 @@ namespace P2PSocket.Server
                         if (length > 0)
                         {
                             byte[] refData = relation.buffer.Take(length).ToArray();
-                            while (relation.msgReceive.ParseData(ref refData))
+                            bool parseDataResult = false;
+                            EasyOp.Do(() =>
                             {
-                                // 执行command
-                                using (P2PCommand command = FindCommand(relation.readTcp, relation.msgReceive))
+                                parseDataResult = relation.msgReceive.ParseData(ref refData);
+                            }, () =>
+                            {
+                                while (parseDataResult)
                                 {
-                                    //LogUtils.Trace($"命令类型:{relation.msgReceive.CommandType}");
-                                    if (command != null)
+                                    // 执行command
+                                    using (P2PCommand command = FindCommand(relation.readTcp, relation.msgReceive))
                                     {
-                                        bool isSuccess = false;
-                                        EasyOp.Do(() =>
+                                        //LogUtils.Trace($"命令类型:{relation.msgReceive.CommandType}");
+                                        if (command != null)
                                         {
-                                            isSuccess = command.Excute();
-                                        },
-                                        e =>
-                                        {
-                                            LogUtils.Error($"执行命令{relation.msgReceive.CommandType}时发生异常:{e}");
-                                        });
-                                        if (!isSuccess)
+                                            bool isSuccess = false;
+                                            EasyOp.Do(() =>
+                                            {
+                                                isSuccess = command.Excute();
+                                            },
+                                            e =>
+                                            {
+                                                LogUtils.Error($"执行命令{relation.msgReceive.CommandType}时发生异常:{e}");
+                                            });
+                                            if (!isSuccess)
+                                            {
+                                                EasyOp.Do(() => { relation.readTcp?.SafeClose(); });
+                                                EasyOp.Do(() => { relation.readTcp.ToClient?.SafeClose(); });
+                                                return;
+                                            }
+                                        }
+                                        else
                                         {
                                             EasyOp.Do(() => { relation.readTcp?.SafeClose(); });
                                             EasyOp.Do(() => { relation.readTcp.ToClient?.SafeClose(); });
                                             return;
                                         }
                                     }
-                                    else
-                                    {
-                                        EasyOp.Do(() => { relation.readTcp?.SafeClose(); });
-                                        EasyOp.Do(() => { relation.readTcp.ToClient?.SafeClose(); });
-                                        return;
-                                    }
+                                    //重置msgReceive
+                                    relation.msgReceive.Reset();
+                                    if (refData.Length <= 0) break;
                                 }
-                                //重置msgReceive
-                                relation.msgReceive.Reset();
-                                if (refData.Length <= 0) break;
-                            }
-                            if (relation.readTcp.Connected)
+                                if (relation.readTcp.Connected)
+                                {
+                                    EasyOp.Do(() =>
+                                    {
+                                        relation.readTcp.GetStream().BeginRead(relation.buffer, 0, relation.buffer.Length, ReadTcp_Server, relation);
+                                    }, ex =>
+                                    {
+                                        LogUtils.Debug($"Tcp连接已被断开 {relation.readTcp.RemoteEndPoint}");
+                                        EasyOp.Do(() => { relation.readTcp.ToClient?.SafeClose(); });
+                                    });
+                                }
+
+                            }, ex =>
                             {
-                                EasyOp.Do(() =>
-                                {
-                                    relation.readTcp.GetStream().BeginRead(relation.buffer, 0, relation.buffer.Length, ReadTcp_Server, relation);
-                                }, ex =>
-                                {
-                                    LogUtils.Debug($"Tcp连接已被断开 {relation.readTcp.RemoteEndPoint}");
-                                    EasyOp.Do(() => { relation.readTcp.ToClient?.SafeClose(); });
-                                });
-                            }
+                                EasyOp.Do(() => { relation.readTcp?.SafeClose(); });
+                                EasyOp.Do(() => { relation.readTcp.ToClient?.SafeClose(); });
+                            });
                         }
                         else
                         {
