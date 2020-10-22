@@ -38,6 +38,7 @@ namespace P2PSocket.Client
             InitInterface();
             InitCommandList();
             LoadConfig();
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             pipeServer.Start("P2PSocket.Client");
             LoadPlugs();
         }
@@ -138,6 +139,11 @@ namespace P2PSocket.Client
             //启动端口映射
             P2PClient.StartPortMap();
             Thread.Sleep(1000);
+        }
+
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            LogUtils.Fatal($"发生未处理的异常：{e}");
         }
 
         protected virtual void LoadConfig()

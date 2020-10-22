@@ -78,7 +78,14 @@ namespace P2PSocket.Server
             InitRegister();
             InitSelf();
             InitCommandList();
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         }
+
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            LogUtils.Fatal($"发生未处理的异常：{e}");
+        }
+
         protected void InitRegister()
         {
             EasyInject.Put<AppCenter, AppCenter>().Singleton();
