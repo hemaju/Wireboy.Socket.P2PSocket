@@ -95,31 +95,35 @@ namespace P2PSocket.Client
         /// </summary>
         protected virtual void LoadPlugs()
         {
-            DirectoryInfo plugDir = new DirectoryInfo(Path.Combine(appCenter.RuntimePath, "Plugs"));
-            if (plugDir != null)
+            string plugPath = Path.Combine(appCenter.RuntimePath, "Plugs");
+            if (Directory.Exists(plugPath))
             {
-                foreach (string file in plugDir.GetFiles().Select(t => t.FullName).Where(t => t.ToLower().EndsWith(".dll")))
+                DirectoryInfo plugDir = new DirectoryInfo(plugPath);
+                if (plugDir != null)
                 {
-                    EasyOp.Do(() =>
+                    foreach (string file in plugDir.GetFiles().Select(t => t.FullName).Where(t => t.ToLower().EndsWith(".dll")))
                     {
+                        EasyOp.Do(() =>
+                        {
                         //载入dll
                         Assembly ab = Assembly.LoadFrom(file);
-                        Type[] types = ab.GetTypes();
-                        foreach (Type curInstance in types)
-                        {
-                            if (curInstance.GetInterface("IP2PSocketPlug") != null)
+                            Type[] types = ab.GetTypes();
+                            foreach (Type curInstance in types)
                             {
-                                IP2PSocketPlug instance = Activator.CreateInstance(curInstance) as IP2PSocketPlug;
-                                LogUtils.Info($"成功加载插件 {instance.GetPlugName()}");
-                                instance.Init();
-                                break;
+                                if (curInstance.GetInterface("IP2PSocketPlug") != null)
+                                {
+                                    IP2PSocketPlug instance = Activator.CreateInstance(curInstance) as IP2PSocketPlug;
+                                    LogUtils.Info($"成功加载插件 {instance.GetPlugName()}");
+                                    instance.Init();
+                                    break;
+                                }
                             }
-                        }
-                    },
-                    ex =>
-                    {
-                        LogUtils.Warning($"加载插件失败 >> {ex}");
-                    });
+                        },
+                        ex =>
+                        {
+                            LogUtils.Warning($"加载插件失败 >> {ex}");
+                        });
+                    }
                 }
             }
         }
