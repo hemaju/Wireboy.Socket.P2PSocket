@@ -103,7 +103,7 @@ namespace P2PSocket.Server.Commands
                 }
                 else if (item.AllowPorts.Any(t => t.Match(clientPort, m_tcpClient.ClientName)))
                 {
-                    LogUtils.Debug($"通知客户端开始建立中转模式隧道 token{token}");
+                    LogUtils.Debug($"通知客户端开始建立{(p2pType==1?"打洞":"中转")}模式隧道 token{token}");
                     Send_0x0201_Success sendDPacket = new Send_0x0201_Success(token, clientPort, p2pType);
                     Send_0x0201_Success sendSPacket = new Send_0x0201_Success(token, p2pType);
                     clientCenter.TcpMap[clientName].TcpClient.BeginSend(sendDPacket.PackData());
