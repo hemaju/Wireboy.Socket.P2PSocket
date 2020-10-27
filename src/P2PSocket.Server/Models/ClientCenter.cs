@@ -2,6 +2,7 @@
 using P2PSocket.Core.Utils;
 using P2PSocket.Server.Models;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 
@@ -16,11 +17,11 @@ namespace P2PSocket.Server
         /// <summary>
         ///     等待中的tcp连接
         /// </summary>
-        public Dictionary<string, P2PTcpClient> WaiteConnetctTcp = new Dictionary<string, P2PTcpClient>();
+        public ConcurrentDictionary<string, P2PTcpClient> WaiteConnetctTcp = new ConcurrentDictionary<string, P2PTcpClient>();
         /// <summary>
         ///     客户端的tcp映射<服务名,tcp>
         /// </summary>
-        public Dictionary<string, P2PTcpItem> TcpMap = new Dictionary<string, P2PTcpItem>();
+        public ConcurrentDictionary<string, P2PTcpItem> TcpMap = new ConcurrentDictionary<string, P2PTcpItem>();
 
 
         public string GetClientName(string macAddress)
