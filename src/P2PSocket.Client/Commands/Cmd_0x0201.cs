@@ -158,7 +158,7 @@ namespace P2PSocket.Client.Commands
                     }
                 }, ex =>
                 {
-                    LogUtils.Debug($"{ex.Message}");
+                    LogUtils.Trace($"{ex.Message}");
                 });
             };
             for (int i = 1; i <= 8; i++)
