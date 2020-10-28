@@ -33,13 +33,16 @@ namespace P2PSocket.Core.CoreImpl
         }
         protected virtual void DoExcute()
         {
-            Thread.Sleep(500);
             do
             {
-                if (!queue.IsEmpty && queue.TryDequeue(out Action func))
+                do
                 {
-                    func();
-                }
+                    if (!queue.IsEmpty && queue.TryDequeue(out Action func))
+                    {
+                        func();
+                    }
+                } while (queue.Count > 0);
+                Thread.Sleep(100);
             } while (queue.Count > 0);
             m_curTask = null;
         }
@@ -66,12 +69,15 @@ namespace P2PSocket.Core.CoreImpl
         }
         protected virtual void DoExcute()
         {
-            Thread.Sleep(500);
             do
             {
-                if (!queue.IsEmpty && queue.TryDequeue(out T func))
+                do
                 {
-                }
+                    if (!queue.IsEmpty && queue.TryDequeue(out T func))
+                    {
+                    }
+                } while (queue.Count > 0);
+                Thread.Sleep(100);
             } while (queue.Count > 0);
             m_curTask = null;
         }
@@ -95,7 +101,8 @@ namespace P2PSocket.Core.CoreImpl
 
         public virtual void WriteLine(LogInfo log)
         {
-            pipeTask.Excute(()=> {
+            pipeTask.Excute(() =>
+            {
                 OnWriteLog?.Invoke(this, log);
             });
             if (filterAction != null && filterAction(log))
@@ -136,13 +143,16 @@ namespace P2PSocket.Core.CoreImpl
         }
         protected virtual void BatchWrite(Action<string> writeOneFunc)
         {
-            Thread.Sleep(500);
             do
             {
-                if (!m_logList.IsEmpty && m_logList.TryDequeue(out LogInfo logInfo))
+                do
                 {
-                    writeOneFunc($"{logInfo.Time:HH:mm:ss:ffff} >> {logInfo.Msg}");
-                }
+                    if (!m_logList.IsEmpty && m_logList.TryDequeue(out LogInfo logInfo))
+                    {
+                        writeOneFunc($"{logInfo.Time:HH:mm:ss:ffff} >> {logInfo.Msg}");
+                    }
+                } while (m_logList.Count > 0);
+                Thread.Sleep(100);
             } while (m_logList.Count > 0);
         }
         public void SetFilter(Func<LogInfo, bool> filter)
