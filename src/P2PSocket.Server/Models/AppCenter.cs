@@ -17,7 +17,7 @@ namespace P2PSocket.Server
 
         private void Init()
         {
-            SoftVerSion = "3.1.1";
+            SoftVerSion = "3.2.1";
             RuntimePath = AppDomain.CurrentDomain.BaseDirectory;
             ConfigFile = Path.Combine(RuntimePath, "P2PSocket", "Server.ini");
             MacMapFile = Path.Combine(RuntimePath, "P2PSocket", "Server_mac.cfc");

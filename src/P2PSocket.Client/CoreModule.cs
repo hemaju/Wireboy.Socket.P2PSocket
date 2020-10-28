@@ -143,7 +143,7 @@ namespace P2PSocket.Client
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            LogUtils.Fatal($"发生未处理的异常：{e}");
+            LogUtils.Fatal($"发生未处理的异常：{e.ExceptionObject}");
         }
 
         protected virtual void LoadConfig()

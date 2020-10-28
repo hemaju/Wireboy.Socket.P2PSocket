@@ -92,20 +92,28 @@ namespace P2PSocket.Client.Commands
                      {
                          p2pClient.Connect(ip, port);
                          p2pClient.UpdateEndPoint();
-                     },ex=> {
+                     }, ex =>
+                     {
                          LogUtils.Trace($"命令：0x0201 P2P模式隧道,端口打洞错误{ex}");
                      });
                      tryCount--;
                  }
-                 if (p2pClient.Connected)
+                 if (p2pClient == null || !p2pClient.Connected)
                  {
-                     LogUtils.Debug($"命令：0x0201 P2P模式隧道，端口复用成功 port:{bindPort} token:{token}");
+                     LogUtils.Trace($"命令：0x0201 P2P模式隧道,端口复用打洞失败");
+                     LogUtils.Trace($"命令：0x0201 P2P模式隧道,开始端口预测打洞");
+                     p2pClient = TryRadomPort(ip, port);
+                 }
+
+                 if (p2pClient != null && p2pClient.Connected)
+                 {
+                     LogUtils.Debug($"命令：0x0201 P2P模式隧道，打洞成功 port:{bindPort} token:{token}");
                      P2PBind_DirectConnect(p2pClient, token);
                  }
                  else
                  {
                      LogUtils.Debug($"命令：0x0201 P2P模式隧道，打洞失败 token:{token}");
-                     EasyOp.Do(p2pClient.SafeClose);
+                     EasyOp.Do(() => { p2pClient.SafeClose(); });
                      //如果是发起端，清空集合
                      if (m_tcpClient.P2PLocalPort <= 0)
                      {
@@ -131,6 +139,40 @@ namespace P2PSocket.Client.Commands
                      }
                  }
              });
+        }
+
+        protected virtual P2PTcpClient TryRadomPort(string ip, int port)
+        {
+            P2PTcpClient ret = null;
+            AsyncCallback action = ar =>
+            {
+                P2PTcpClient tcp = ar.AsyncState as P2PTcpClient;
+                EasyOp.Do(() =>
+                {
+                    tcp.EndConnect(ar);
+                }, () =>
+                {
+                    if (tcp != null && tcp.Connected)
+                    {
+                        ret = tcp;
+                    }
+                }, ex =>
+                {
+                    LogUtils.Debug($"{ex.Message}");
+                });
+            };
+            for (int i = 1; i <= 8; i++)
+            {
+                P2PTcpClient tcp = new P2PTcpClient();
+                tcp.BeginConnect(ip, port + 6, action, tcp);
+            }
+            int cTime = 0;
+            while (ret == null && cTime < 3000)
+            {
+                Thread.Sleep(100);
+                cTime += 100;
+            }
+            return ret;
         }
 
         protected virtual void P2PBind_DirectConnect(P2PTcpClient p2pClient, string token)
