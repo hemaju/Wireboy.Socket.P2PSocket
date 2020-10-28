@@ -100,8 +100,8 @@ namespace P2PSocket.Client.Commands
                  }
                  if (p2pClient == null || !p2pClient.Connected)
                  {
-                     LogUtils.Trace($"命令：0x0201 P2P模式隧道,端口复用打洞失败");
-                     LogUtils.Trace($"命令：0x0201 P2P模式隧道,开始端口预测打洞");
+                     LogUtils.Debug($"命令：0x0201 P2P模式隧道,端口复用打洞失败");
+                     LogUtils.Debug($"命令：0x0201 P2P模式隧道,开始端口预测打洞");
                      p2pClient = TryRadomPort(ip, port);
                  }
 
