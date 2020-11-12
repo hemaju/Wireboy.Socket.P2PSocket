@@ -136,39 +136,35 @@ namespace P2PSocket.Client
             //TcpCenter.Instance.ConnectedTcpList.Add(toTcp);
             bool ret = true;
             RelationTcp_Ip toRelation = new RelationTcp_Ip();
+            RelationTcp_Ip fromRelation = new RelationTcp_Ip();
             EasyOp.Do(() =>
             {
-                toRelation.readTcp = readTcp;
-                toRelation.readSs = readTcp.GetStream();
-                toRelation.writeTcp = toTcp;
-                toRelation.writeSs = toTcp.GetStream();
+                fromRelation.writeTcp = toRelation.readTcp = readTcp;
+                fromRelation.writeSs = toRelation.readSs = readTcp.GetStream();
+                fromRelation.readTcp = toRelation.writeTcp = toTcp;
+                fromRelation.readSs = toRelation.writeSs = toTcp.GetStream();
                 toRelation.buffer = new byte[P2PGlobal.P2PSocketBufferSize];
+                fromRelation.buffer = new byte[P2PGlobal.P2PSocketBufferSize];
                 StartTransferTcp_Ip(toRelation);
             },
             () =>
             {
                 EasyOp.Do(() =>
                 {
-                    RelationTcp_Ip fromRelation = new RelationTcp_Ip();
-                    fromRelation.readTcp = toRelation.writeTcp;
-                    fromRelation.readSs = toRelation.writeSs;
-                    fromRelation.writeTcp = toRelation.readTcp;
-                    fromRelation.writeSs = toRelation.readSs;
-                    fromRelation.buffer = new byte[P2PGlobal.P2PSocketBufferSize];
                     StartTransferTcp_Ip(fromRelation);
                 },
                 ex =>
                 {
                     LogUtils.Debug($"绑定Tcp失败:{Environment.NewLine}{ex}");
-                    EasyOp.Do(readTcp.SafeClose);
+                    EasyOp.Do(() => { readTcp.SafeClose(); });
                     ret = false;
                 });
             },
             ex =>
             {
                 LogUtils.Debug($"绑定Tcp失败:{Environment.NewLine}{ex}");
-                EasyOp.Do(readTcp.SafeClose);
-                EasyOp.Do(toTcp.SafeClose);
+                EasyOp.Do(() => { readTcp.SafeClose(); });
+                EasyOp.Do(() => { toTcp.SafeClose(); });
                 ret = false;
             });
             return ret;
@@ -187,7 +183,7 @@ namespace P2PSocket.Client
                 int length = 0;
                 EasyOp.Do(() =>
                 {
-                    length = relation.readSs.EndRead(ar);
+                    length = relation.readTcp.GetStream().EndRead(ar);
                 }, () =>
                 {
                     EasyOp.Do(() =>
@@ -200,7 +196,7 @@ namespace P2PSocket.Client
                         {
                             EasyOp.Do(() =>
                             {
-                                relation.writeSs.Write(relation.buffer.Take(length).ToArray(), 0, length);
+                                relation.writeTcp.GetStream().Write(relation.buffer.Take(length).ToArray(), 0, length);
                             }, () =>
                             {
                                 EasyOp.Do(() =>
@@ -208,11 +204,12 @@ namespace P2PSocket.Client
                                     StartTransferTcp_Ip(relation);
                                 }, ex =>
                                 {
-                                    LogUtils.Debug($"Tcp连接已被断开 {relation.readTcp.RemoteEndPoint}");
+                                    LogUtils.Debug($"Tcp连接已被断开，读取next数据包失败 {relation.readTcp.RemoteEndPoint}");
                                     relation.writeTcp?.SafeClose();
                                 });
                             }, ex =>
                             {
+                                LogUtils.Debug($"Tcp连接已被断开,发送数据包失败 {relation.writeTcp.RemoteEndPoint}");
                                 relation.readTcp?.SafeClose();
                             });
 
@@ -220,12 +217,12 @@ namespace P2PSocket.Client
                     }
                     else
                     {
-                        LogUtils.Debug($"Tcp连接已被断开 {relation.readTcp.RemoteEndPoint}");
+                        LogUtils.Debug($"Tcp连接已被断开，接收tcp断开信号 {relation.readTcp.RemoteEndPoint}");
                         relation.writeTcp?.SafeClose();
                     }
                 }, ex =>
                 {
-                    LogUtils.Debug($"Tcp连接已被断开 {relation.readTcp.RemoteEndPoint}");
+                    LogUtils.Debug($"数据包读取发生异常 {relation.readTcp.RemoteEndPoint} {ex}");
                     relation.writeTcp?.SafeClose();
                 });
             }

@@ -23,7 +23,7 @@ namespace P2PSocket.Client.Commands
         }
         public override bool Excute()
         {
-            LogUtils.Trace($"开始处理消息：0x0201 From:{m_tcpClient.ToClient.RemoteEndPoint} Length:{((MemoryStream)m_data.BaseStream).Length}");
+            LogUtils.Trace($"开始处理消息：0x0201 From:{m_tcpClient.RemoteEndPoint} Length:{((MemoryStream)m_data.BaseStream).Length}");
             bool ret = true;
             //是否来自端口
             if (BinaryUtils.ReadBool(m_data))
