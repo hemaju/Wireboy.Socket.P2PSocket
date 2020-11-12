@@ -91,6 +91,7 @@ namespace P2PSocket.Client.Commands
              {
                  if (tcpCenter.WaiteConnetctTcp.ContainsKey(token))
                  {
+                     LogUtils.Debug($"命令：0x0201 P2P模式隧道，开始端口复用打洞");
 
                      if (tcpCenter.WaiteConnetctTcp[token].P2PType == 1)
                      {
@@ -103,14 +104,14 @@ namespace P2PSocket.Client.Commands
                                  p2pClient.UpdateEndPoint();
                              }, ex =>
                              {
-                                 LogUtils.Trace($"命令：0x0201 P2P模式隧道,端口打洞错误{ex}");
+                                 LogUtils.Trace($"命令：0x0201 P2P模式隧道，端口打洞错误{ex}");
                              });
                              tryCount--;
                          }
                      }
                      else if (tcpCenter.WaiteConnetctTcp[token].P2PType == 2)
                      {
-                         LogUtils.Debug($"命令：0x0201 P2P模式隧道,开始端口预测打洞");
+                         LogUtils.Debug($"命令：0x0201 P2P模式隧道，开始端口预测打洞");
                          p2pClient = TryRadomPort(ip, port);
                      }
                  }
