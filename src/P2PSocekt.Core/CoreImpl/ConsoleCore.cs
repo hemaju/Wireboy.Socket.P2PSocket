@@ -59,9 +59,9 @@ namespace P2PSocket.Core.Utils
             } while (m_consoleLogList.Count > 0);
             m_curConsoleTask = null;
         }
-        public void WriteLine(string log, object arg0 = null, object arg1 = null, object arg2 = null)
+        public void WriteLine(string log)
         {
-            WriteConsole(string.Format(log, arg0, arg1, arg2));
+            WriteConsole(log);
         }
     }
 }

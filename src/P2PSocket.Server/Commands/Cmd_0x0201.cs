@@ -56,7 +56,7 @@ namespace P2PSocket.Server.Commands
                 string token = BinaryUtils.ReadString(m_data);
                 if (clientCenter.WaiteConnetctTcp.ContainsKey(token))
                 {
-                    if (p2pTypeDict.ContainsKey(token) && p2pTypeDict[token] == 1)
+                    if (p2pTypeDict.ContainsKey(token) && p2pTypeDict[token] >= 1)
                     {
                         P2PBind_DirectConnect(token);
                     }
@@ -103,7 +103,7 @@ namespace P2PSocket.Server.Commands
                 }
                 else if (item.AllowPorts.Any(t => t.Match(clientPort, m_tcpClient.ClientName)))
                 {
-                    LogUtils.Debug($"通知客户端开始建立{(p2pType==1?"打洞":"中转")}模式隧道 token{token}");
+                    LogUtils.Debug($"通知客户端开始建立{(p2pType >= 1 ? "打洞" : "中转")}模式隧道 token{token}");
                     Send_0x0201_Success sendDPacket = new Send_0x0201_Success(token, clientPort, p2pType);
                     Send_0x0201_Success sendSPacket = new Send_0x0201_Success(token, p2pType);
                     clientCenter.TcpMap[clientName].TcpClient.BeginSend(sendDPacket.PackData());
@@ -131,7 +131,7 @@ namespace P2PSocket.Server.Commands
             client.IsAuth = m_tcpClient.IsAuth = true;
             client.ToClient = m_tcpClient;
             m_tcpClient.ToClient = client;
-            Send_0x0201_Success sendPacket = new Send_0x0201_Success(4);
+            Send_0x0201_Success sendPacket = new Send_0x0201_Success(4, token);
             EasyOp.Do(() => client.BeginSend(sendPacket.PackData()));
             EasyOp.Do(() => m_tcpClient.BeginSend(sendPacket.PackData()));
             LogUtils.Debug($"成功建立中转模式隧道 token:{token}");

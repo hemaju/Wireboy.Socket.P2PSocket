@@ -17,7 +17,7 @@ namespace P2PSocket.Client
         {
             ListenerList = new Dictionary<(string, int), TcpListener>();
             ConnectedTcpList = new List<P2PTcpClient>();
-            WaiteConnetctTcp = new ConcurrentDictionary<string, P2PTcpClient>();
+            WaiteConnetctTcp = new ConcurrentDictionary<string, P2PResult>();
         }
         /// <summary>
         ///     服务器Tcp连接
@@ -28,6 +28,6 @@ namespace P2PSocket.Client
         /// <summary>
         ///     等待中的tcp连接
         /// </summary>
-        public ConcurrentDictionary<string, P2PTcpClient> WaiteConnetctTcp { get; private set; }
+        public ConcurrentDictionary<string, P2PResult> WaiteConnetctTcp { get; private set; }
     }
 }

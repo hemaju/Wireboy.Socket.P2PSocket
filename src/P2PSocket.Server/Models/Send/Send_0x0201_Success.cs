@@ -26,6 +26,11 @@ namespace P2PSocket.Server.Models.Send
             BinaryUtils.Write(Data, token);
             BinaryUtils.Write(Data, p2pType);
         }
+        public Send_0x0201_Success(int step, string token) : base(P2PCommandType.P2P0x0201)
+        {
+            BinaryUtils.Write(Data, step);
+        }
+
         public Send_0x0201_Success(int step) : base(P2PCommandType.P2P0x0201)
         {
             BinaryUtils.Write(Data, step);
