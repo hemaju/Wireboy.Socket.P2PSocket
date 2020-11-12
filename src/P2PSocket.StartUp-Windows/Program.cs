@@ -88,10 +88,9 @@ namespace P2PSocket.StartUp_Windows
             }
 
             object block = new object();
-            new Task(() =>
-            {
-                Monitor.Wait(block);
-            }).Wait();
+            Monitor.Enter(block);
+            Monitor.Wait(block);
+            Monitor.Exit(block);
         }
     }
     public class ServiceIO

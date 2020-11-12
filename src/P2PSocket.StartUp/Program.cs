@@ -35,10 +35,9 @@ namespace P2PSocket.StartUp
                 Console.WriteLine($"在目录{AppDomain.CurrentDomain.BaseDirectory}P2PSocket中，未找到P2PSocket.Client.dll和P2PSocket.Server.dll.");
             }
             object block = new object();
-            new Task(() =>
-            {
-                Monitor.Wait(block);
-            }).Wait();
+            Monitor.Enter(block);
+            Monitor.Wait(block);
+            Monitor.Exit(block);
         }
     }
 }
