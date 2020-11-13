@@ -251,7 +251,6 @@ namespace P2PSocket.Client
                                     tcpClient.ToClient = destTcp;
                                     if (item.P2PType == 0)
                                     {
-                                        Global_Func.ListenTcp<ReceivePacket>(destTcp);
                                         Global_Func.ListenTcp<Packet_0x0202>(tcpClient);
                                         LogUtils.Debug($"中转模式隧道，连接成功 token:{tcpClient.Token}");
                                     }
