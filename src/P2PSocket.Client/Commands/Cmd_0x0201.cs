@@ -50,7 +50,6 @@ namespace P2PSocket.Client.Commands
                         }
                         else
                         {
-
                             if (isDestClient) CreateTcpFromDest_DirectConnect(token);
                             else CreateTcpFromSource_DirectConnect(token);
                         }
@@ -88,8 +87,8 @@ namespace P2PSocket.Client.Commands
              {
                  if (tcpCenter.WaiteConnetctTcp.ContainsKey(token))
                  {
-
-                     if (tcpCenter.WaiteConnetctTcp[token].P2PType == 1)
+                     int p2pMode = tcpCenter.WaiteConnetctTcp[token].P2PType;
+                     if ((p2pMode & 0x01) > 0)
                      {
                          LogUtils.Debug($"命令：0x0201 P2P模式隧道，开始端口复用打洞");
                          int tryCount = 3;
@@ -106,7 +105,7 @@ namespace P2PSocket.Client.Commands
                              tryCount--;
                          }
                      }
-                     else if (tcpCenter.WaiteConnetctTcp[token].P2PType == 2)
+                     if ((p2pMode & 0x10) > 0)
                      {
                          LogUtils.Debug($"命令：0x0201 P2P模式隧道，开始端口预测打洞");
                          p2pClient = TryRadomPort(ip, port);
@@ -161,10 +160,7 @@ namespace P2PSocket.Client.Commands
             AsyncCallback action = ar =>
             {
                 P2PTcpClient tcp = ar.AsyncState as P2PTcpClient;
-                EasyOp.Do(() =>
-                {
-                    tcp.EndConnect(ar);
-                }, () =>
+                EasyOp.Do(() => tcp.EndConnect(ar), () =>
                 {
                     if (tcp != null && tcp.Connected)
                     {
@@ -175,9 +171,11 @@ namespace P2PSocket.Client.Commands
                     LogUtils.Trace($"{ex.Message}");
                 });
             };
+            List<P2PTcpClient> tcpList = new List<P2PTcpClient>();
             for (int i = 1; i <= 8; i++)
             {
                 P2PTcpClient tcp = new P2PTcpClient();
+                tcpList.Add(tcp);
                 tcp.BeginConnect(ip, port + 6, action, tcp);
             }
             int cTime = 0;
@@ -186,6 +184,14 @@ namespace P2PSocket.Client.Commands
                 Thread.Sleep(100);
                 cTime += 100;
             }
+            tcpList.ForEach(t =>
+            {
+                if (t != ret)
+                {
+                    EasyOp.Do(() => t.Close());
+                    EasyOp.Do(() => t.Dispose());
+                }
+            });
             return ret;
         }
 
