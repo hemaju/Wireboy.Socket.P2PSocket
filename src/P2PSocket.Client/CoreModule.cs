@@ -149,7 +149,7 @@ namespace P2PSocket.Client
         protected virtual void LoadConfig()
         {
             LogUtils.Info($"客户端版本:{appCenter.SoftVerSion} 作者：wireboy", false);
-            LogUtils.Info($"github地址：https://github.com/bobowire/Wireboy.Socket.P2PSocket", false);
+            LogUtils.Info($"github地址：https://github.com/hemaju/Wireboy.Socket.P2PSocket", false);
             //读取配置文件
             if (configManager.IsExistConfig())
             {
