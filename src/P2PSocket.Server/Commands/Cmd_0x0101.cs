@@ -54,6 +54,7 @@ namespace P2PSocket.Server.Commands
                     clientCenter.TcpMap.Add(clientName, item);
                 if (isSuccess)
                 {
+                    m_tcpClient.IsAuth = true;
                     m_tcpClient.ClientName = clientName;
                     Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, true, $"客户端{clientName}认证通过", clientName);
                     m_tcpClient.BeginSend(sendPacket.PackData());

@@ -380,6 +380,7 @@ namespace P2PSocket.Client
                         fromRelation.writeTcp = toRelation.readTcp;
                         fromRelation.writeSs = toRelation.readSs;
                         fromRelation.buffer = new byte[P2PGlobal.P2PSocketBufferSize];
+                        tcpClient.IsAuth = ipClient.IsAuth = true;
                         StartTransferTcp_Ip(toRelation);
                         StartTransferTcp_Ip(fromRelation);
                     }

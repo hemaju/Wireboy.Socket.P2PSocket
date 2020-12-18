@@ -32,6 +32,14 @@ namespace P2PSocket.Client
             relationSt.msgReceive = Activator.CreateInstance(typeof(T)) as ReceivePacket;
             relationSt.guid = EasyInject.Get<AppCenter>().CurrentGuid;
             relationSt.readTcp.GetStream().BeginRead(relationSt.buffer, 0, relationSt.buffer.Length, ReadTcp_Server, relationSt);
+            //如果20秒仍未授权，则关闭
+            TimerUtils.Instance.AddJob(() =>
+            {
+                if (!tcpClient.IsAuth)
+                {
+                    EasyOp.Do(() => tcpClient?.SafeClose());
+                }
+            }, 20000);
         }
 
         private static void ReadTcp_Server(IAsyncResult ar)
