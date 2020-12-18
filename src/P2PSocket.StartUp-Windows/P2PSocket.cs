@@ -13,7 +13,6 @@ namespace P2PSocket.StartUp_Windows
 {
     partial class P2PSocket : ServiceBase
     {
-        List<Object> ModuleList = new List<object>();
         public P2PSocket()
         {
             InitializeComponent();
@@ -39,18 +38,7 @@ namespace P2PSocket.StartUp_Windows
 
         protected override void OnStop()
         {
-            // TODO: 在此处添加代码以执行停止服务所需的关闭操作。
-            foreach (Object obj in ModuleList)
-            {
-                try
-                {
-                    MethodInfo method = obj.GetType().GetMethod("Stop");
-                    method.Invoke(obj, null);
-                }
-                catch (Exception ex)
-                {
-                }
-            }
+            Environment.Exit(0);
         }
         public static bool StartClient(AppDomain appDomain)
         {

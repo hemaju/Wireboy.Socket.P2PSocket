@@ -62,6 +62,7 @@ namespace P2PSocket.StartUp_Windows
                         service.ServiceStop(serviceName);
                         Console.WriteLine("服务已停止");
                         service.UninstallService(serviceName);
+                        Console.WriteLine("服务已删除");
                     }
                     catch (Exception ex)
                     {
@@ -112,7 +113,8 @@ namespace P2PSocket.StartUp_Windows
         public void InstallService(string serviceName, string serviceFilePath)
         {
             Console.WriteLine(serviceFilePath);
-            ExcuteCmd($"sc create {serviceName} binPath=\"{serviceFilePath} -ws\" start=auto displayname=wireboy内网穿透-" + serviceName);
+            //ExcuteCmd($"sc create {serviceName} binPath=\"{serviceFilePath} -ws\" start=auto displayname=wireboy内网穿透-" + serviceName);
+            ExcuteCmd($"New-Service -Name \"{serviceName}\" -DisplayName \"{serviceName}\" -BinaryPathName \"{serviceFilePath} -ws\" -StartupType 2");
         }
         public void ServiceStart(string serviceName)
         {
@@ -126,7 +128,8 @@ namespace P2PSocket.StartUp_Windows
         }
         public void UninstallService(string serviceName)
         {
-            ExcuteCmd($"sc delete {serviceName}");
+            //ExcuteCmd($"sc delete {serviceName}");
+            ExcuteCmd($"sc.exe delete \"{serviceName}\"");
         }
         public void ServiceStop(string serviceName)
         {
@@ -146,7 +149,7 @@ namespace P2PSocket.StartUp_Windows
 
             Process p = new Process();
             //设置要启动的应用程序
-            p.StartInfo.FileName = "cmd.exe";
+            p.StartInfo.FileName = "powershell.exe";
             //是否使用操作系统shell启动
             p.StartInfo.UseShellExecute = false;
             // 接受来自调用程序的输入信息
@@ -160,11 +163,12 @@ namespace P2PSocket.StartUp_Windows
             //启动程序
             p.Start();
 
+            p.StandardInput.AutoFlush = true;
             //向cmd窗口发送输入信息
-            p.StandardInput.WriteLine(cmdMsg + "&exit");
+            p.StandardInput.WriteLine($"{cmdMsg}{Environment.NewLine}exit");
+            //p.StandardInput.WriteLine("exit");
             //p.StandardInput.WriteLine(cmdMsg);
 
-            p.StandardInput.AutoFlush = true;
 
             //获取输出信息
             string strOuput = p.StandardOutput.ReadToEnd();

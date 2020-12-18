@@ -30,6 +30,8 @@
         {
             components = new System.ComponentModel.Container();
             this.ServiceName = "P2PSocket";
+            this.CanStop = true;
+            this.AutoLog = true;
         }
 
         #endregion
