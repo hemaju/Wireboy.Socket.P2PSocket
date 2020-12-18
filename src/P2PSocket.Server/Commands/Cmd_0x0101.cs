@@ -46,6 +46,7 @@ namespace P2PSocket.Server.Commands
                     {
                         isSuccess = false;
                         Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, false, $"ClientName:{clientName} 已被使用", clientName);
+                        LogUtils.Info($"客户端【{clientName}】接入被拒绝，名称被使用,ip:{m_tcpClient.RemoteEndPoint}");
                         EasyOp.Do(() => m_tcpClient.BeginSend(sendPacket.PackData()));
                         ret = false;
                     }
@@ -58,11 +59,13 @@ namespace P2PSocket.Server.Commands
                     m_tcpClient.ClientName = clientName;
                     Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, true, $"客户端{clientName}认证通过", clientName);
                     m_tcpClient.BeginSend(sendPacket.PackData());
+                    LogUtils.Info($"客户端【{clientName}】成功接入,ip:{m_tcpClient.RemoteEndPoint}");
                 }
             }
             else
             {
                 Send_0x0101 sendPacket = new Send_0x0101(m_tcpClient, false, $"客户端{clientName}认证失败", clientName);
+                LogUtils.Info($"客户端【{clientName}】接入被拒绝，授权码错误或客户端名称不在AllowClient内，ip:{m_tcpClient.RemoteEndPoint}");
                 m_tcpClient.BeginSend(sendPacket.PackData());
                 ret = false;
             }
