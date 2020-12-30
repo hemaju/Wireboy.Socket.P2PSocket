@@ -13,6 +13,7 @@ namespace P2PSocket.StartUp_Windows
 {
     partial class P2PSocket : ServiceBase
     {
+        static string RunDirName = "P2PSocket";
         public P2PSocket()
         {
             InitializeComponent();
@@ -29,7 +30,7 @@ namespace P2PSocket.StartUp_Windows
             }
             catch (Exception ex)
             {
-                StreamWriter ss = new StreamWriter($"{AppDomain.CurrentDomain.BaseDirectory}P2PSocket/Error.log");
+                StreamWriter ss = new StreamWriter(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, RunDirName, "Error.log"));
                 ss.WriteLine(ex);
                 ss.Close();
                 throw ex;
@@ -43,10 +44,11 @@ namespace P2PSocket.StartUp_Windows
         public static bool StartClient(AppDomain appDomain)
         {
             bool ret = false;
-
-            if (File.Exists($"{appDomain.BaseDirectory}P2PSocket/P2PSocket.Client.dll"))
+            AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
+            string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, RunDirName, "P2PSocket.Client.dll");
+            if (File.Exists(filePath))
             {
-                Assembly assembly = Assembly.LoadFrom($"{appDomain.BaseDirectory}P2PSocket/P2PSocket.Client.dll");
+                Assembly assembly = Assembly.LoadFrom(filePath);
                 assembly = appDomain.Load(assembly.FullName);
                 object obj = assembly.CreateInstance("P2PSocket.Client.CoreModule");
                 MethodInfo method = obj.GetType().GetMethod("Start");
@@ -55,12 +57,24 @@ namespace P2PSocket.StartUp_Windows
             }
             return ret;
         }
+
+        private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+        {
+            AssemblyName assemblyName = new AssemblyName(args.Name);
+            if (assemblyName.Name.ToLower().Contains("p2psocket.") || assemblyName.Name.ToLower().Contains("wireboy."))
+            {
+                return Assembly.LoadFrom(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "P2PSocket"), assemblyName.Name + ".dll"));
+            }
+            return null;
+        }
+
         public static bool StartServer(AppDomain appDomain)
         {
             bool ret = false;
-            if (File.Exists($"{appDomain.BaseDirectory}P2PSocket/P2PSocket.Server.dll"))
+            string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, RunDirName, "P2PSocket.Server.dll");
+            if (File.Exists(filePath))
             {
-                Assembly assembly = Assembly.LoadFrom($"{appDomain.BaseDirectory}P2PSocket/P2PSocket.Server.dll");
+                Assembly assembly = Assembly.LoadFrom(filePath);
                 assembly = appDomain.Load(assembly.FullName);
                 object obj = assembly.CreateInstance("P2PSocket.Server.CoreModule");
                 MethodInfo method = obj.GetType().GetMethod("Start");
