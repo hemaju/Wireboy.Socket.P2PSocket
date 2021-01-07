@@ -224,14 +224,18 @@ namespace P2PSocket.Server
                             {
                                 LogUtils.Debug($"建立隧道失败{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}，{appCenter.Config.P2PTimeout / 1000}秒无响应，已超时.");
                                 EasyOp.Do(() => tcpClient?.SafeClose());
-                                clientCenter.WaiteConnetctTcp[token]?.SafeClose();
+                                EasyOp.Do(() => clientCenter.WaiteConnetctTcp[token]?.SafeClose());
                                 clientCenter.WaiteConnetctTcp.Remove(token);
                             }
                         }, ex =>
                         {
                             LogUtils.Debug($"建立隧道失败{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}，目标客户端已断开连接!");
                             EasyOp.Do(() => tcpClient?.SafeClose());
-                            EasyOp.Do(() => clientCenter.TcpMap[item.RemoteAddress].TcpClient?.SafeClose());
+                            if (clientCenter.WaiteConnetctTcp.ContainsKey(token))
+                            {
+                                EasyOp.Do(() => clientCenter.WaiteConnetctTcp[token]?.SafeClose());
+                                clientCenter.WaiteConnetctTcp.Remove(token);
+                            }
                         });
                     }
                     else
