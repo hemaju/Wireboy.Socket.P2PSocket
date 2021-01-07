@@ -24,6 +24,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documents", "Documents", "{
 		开发计划.txt = 开发计划.txt
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "P2PClientPipe_Plug", "P2PClientPipe_Plug\P2PClientPipe_Plug.csproj", "{20D29936-B8D2-4D17-B770-C0B3DD7CE24D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -58,12 +60,17 @@ Global
 		{AE420D5E-1D50-4D56-B26B-0F89E57E65FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AE420D5E-1D50-4D56-B26B-0F89E57E65FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AE420D5E-1D50-4D56-B26B-0F89E57E65FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20D29936-B8D2-4D17-B770-C0B3DD7CE24D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20D29936-B8D2-4D17-B770-C0B3DD7CE24D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20D29936-B8D2-4D17-B770-C0B3DD7CE24D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20D29936-B8D2-4D17-B770-C0B3DD7CE24D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{AE420D5E-1D50-4D56-B26B-0F89E57E65FB} = {CAEE407A-0140-4CC1-B177-4A770521A51E}
+		{20D29936-B8D2-4D17-B770-C0B3DD7CE24D} = {CAEE407A-0140-4CC1-B177-4A770521A51E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C98B54D6-A1F1-4562-BD8C-8EE18546B12B}

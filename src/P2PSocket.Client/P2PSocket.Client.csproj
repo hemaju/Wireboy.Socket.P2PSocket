@@ -14,6 +14,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="wireboy.net.pipe" Version="1.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\P2PSocekt.Core\P2PSocket.Core.csproj" />
   </ItemGroup>
 

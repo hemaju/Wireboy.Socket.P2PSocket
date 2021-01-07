@@ -22,20 +22,58 @@ using System.Threading.Tasks;
 using System.IO;
 using P2PSocket.Core.Models;
 using P2PSocket.Core.Utils;
+using pipe = wireboy.net.pipe;
 
 namespace PipeClient
 {
     class Program
     {
+        //static void Main(string[] args)
+        //{
+        //    PipeClient client = new PipeClient();
+        //    while (true)
+        //    {
+        //        Console.Write(":");
+        //        client.WriteLine(Console.ReadLine());
+        //    }
+        //}
+
         static void Main(string[] args)
         {
-            PipeClient client = new PipeClient();
+            pipe.PipeClient pClient = new pipe.PipeClient();
+            pClient.Connect("P2PSocket.Client");
+            pClient.RegisterHandler<string>("GetListenPorts_R", (msg, pipe) =>
+            {
+                Console.WriteLine($"当前监听的端口：{msg}");
+            });
+            pClient.RegisterHandler<string>("GetVersionInfo_R", (msg, pipe) =>
+            {
+                Console.WriteLine($"当前版本：{msg}");
+            });
+            pClient.RegisterHandler<string>("ExcuteCmd_R", (msg, pipe) =>
+            {
+                Console.WriteLine(msg);
+            });
+
             while (true)
             {
                 Console.Write(":");
-                client.WriteLine(Console.ReadLine());
+                string input = Console.ReadLine();
+                if (input == "Listen")
+                {
+                    pClient.SendMsg("GetListenPorts", "");
+                }
+                else if (input == "Version")
+                {
+                    pClient.SendMsg("GetVersionInfo", "");
+                }
+                else
+                {
+                    pClient.SendMsg("ExcuteCmd", input);
+                }
             }
         }
+
         class PipeSt
         {
             public NamedPipeClientStream pipe;

@@ -19,7 +19,6 @@ namespace P2PSocket.Client
         AppCenter appCenter { set; get; }
         TcpCenter tcpCenter { set; get; }
         IConfig configManager { set; get; }
-        IPipeServer pipeServer { set; get; }
         public CoreModule()
         {
             int minWorker, minIOC;
@@ -39,7 +38,6 @@ namespace P2PSocket.Client
             InitCommandList();
             LoadConfig();
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-            pipeServer.Start("P2PSocket.Client");
             LoadPlugs();
         }
 
@@ -77,8 +75,6 @@ namespace P2PSocket.Client
             EasyInject.Put<ILogger, Logger>().Singleton();
             //配置管理，用于读写配置文件
             EasyInject.Put<IConfig, ConfigManager>().Singleton();
-            //命名管道，用于与第三方进程通讯
-            EasyInject.Put<IPipeServer, PipeServer>().Singleton();
             //内网穿透客户端实例
             EasyInject.Put<P2PClient, P2PClient>().Singleton();
         }
@@ -88,7 +84,6 @@ namespace P2PSocket.Client
             tcpCenter = EasyInject.Get<TcpCenter>();
             configManager = EasyInject.Get<IConfig>();
             P2PClient = EasyInject.Get<P2PClient>();
-            pipeServer = EasyInject.Get<IPipeServer>();
         }
 
         /// <summary>
@@ -106,23 +101,25 @@ namespace P2PSocket.Client
                     {
                         EasyOp.Do(() =>
                         {
-                        //载入dll
-                        Assembly ab = Assembly.LoadFrom(file);
+                            //载入dll
+                            Assembly ab = Assembly.LoadFrom(file);
                             Type[] types = ab.GetTypes();
                             foreach (Type curInstance in types)
                             {
                                 if (curInstance.GetInterface("IP2PSocketPlug") != null)
                                 {
-                                    IP2PSocketPlug instance = Activator.CreateInstance(curInstance) as IP2PSocketPlug;
-                                    LogUtils.Info($"成功加载插件 {instance.GetPlugName()}");
-                                    instance.Init();
-                                    break;
+                                    if(EasyOp.Do(() => {
+                                        IP2PSocketPlug instance = Activator.CreateInstance(curInstance) as IP2PSocketPlug;
+                                        LogUtils.Info($"加载插件：{instance.GetPlugName()}");
+                                        instance.Init();
+                                    }, ex => {
+                                        LogUtils.Warning($"加载插件失败：{ex}");
+                                    }))
+                                    {
+                                        break;
+                                    }
                                 }
                             }
-                        },
-                        ex =>
-                        {
-                            LogUtils.Warning($"加载插件失败 >> {ex}");
                         });
                     }
                 }
