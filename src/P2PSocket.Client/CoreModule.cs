@@ -91,8 +91,10 @@ namespace P2PSocket.Client
         /// </summary>
         protected virtual void LoadPlugs()
         {
-            string plugPath = Path.Combine(appCenter.RuntimePath, "Plugs");
-            if (Directory.Exists(plugPath))
+            string rootPath = Path.Combine(appCenter.RuntimePath, "Plugs");
+            if (!Directory.Exists(rootPath)) return;
+
+            foreach (string plugPath in Directory.GetDirectories(rootPath))
             {
                 DirectoryInfo plugDir = new DirectoryInfo(plugPath);
                 if (plugDir != null)
@@ -108,11 +110,13 @@ namespace P2PSocket.Client
                             {
                                 if (curInstance.GetInterface("IP2PSocketPlug") != null)
                                 {
-                                    if(EasyOp.Do(() => {
+                                    if (EasyOp.Do(() =>
+                                    {
                                         IP2PSocketPlug instance = Activator.CreateInstance(curInstance) as IP2PSocketPlug;
                                         LogUtils.Info($"加载插件：{instance.GetPlugName()}");
                                         instance.Init();
-                                    }, ex => {
+                                    }, ex =>
+                                    {
                                         LogUtils.Warning($"加载插件失败：{ex}");
                                     }))
                                     {
@@ -125,7 +129,6 @@ namespace P2PSocket.Client
                 }
             }
         }
-
         public virtual void Start()
         {
             //启动服务

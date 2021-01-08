@@ -63,7 +63,11 @@ namespace P2PSocket.StartUp_Windows
             AssemblyName assemblyName = new AssemblyName(args.Name);
             if (assemblyName.Name.ToLower().Contains("p2psocket.") || assemblyName.Name.ToLower().Contains("wireboy."))
             {
-                return Assembly.LoadFrom(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "P2PSocket"), assemblyName.Name + ".dll"));
+                string path = Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "P2PSocket"), assemblyName.Name + ".dll");
+                if (File.Exists(path))
+                {
+                    return Assembly.LoadFrom(path);
+                }
             }
             return null;
         }
