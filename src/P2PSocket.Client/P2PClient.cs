@@ -216,82 +216,9 @@ namespace P2PSocket.Client
             {
                 EasyOp.Do(() =>
                 {
-                    if (tcpCenter.P2PServerTcp != null && tcpCenter.P2PServerTcp.Connected)
+                    if(!CreateP2PConnect(item, socket))
                     {
-                        P2PTcpClient tcpClient = new P2PTcpClient(socket);
-                        //加入待连接集合
-                        P2PResult result = new P2PResult();
-                        tcpCenter.WaiteConnetctTcp.Add(tcpClient.Token, result);
-                        //tcpCenter.WaiteConnetctTcp.Add(tcpClient.Token, tcpClient);
-                        //发送消息给服务端，开始内网穿透
-                        Send_0x0201_Apply packet = new Send_0x0201_Apply(tcpClient.Token, item.RemoteAddress, item.RemotePort, item.P2PType);
-                        LogUtils.Debug(string.Format("正在建立{0}隧道 token:{1} client:{2} port:{3}", item.P2PType == 0 ? "中转模式" : "P2P模式", tcpClient.Token, item.RemoteAddress, item.RemotePort));
-
-                        byte[] dataAr = packet.PackData();
-                        EasyOp.Do(() =>
-                        {
-                            tcpCenter.P2PServerTcp.BeginSend(dataAr);
-                        }, () =>
-                        {
-                            //等待指定超时时间后，判断是否连接成功
-
-                            Monitor.Enter(result.block);
-                            if (Monitor.Wait(result.block, AppConfig.P2PTimeout))
-                            {
-                                if (tcpCenter.WaiteConnetctTcp[tcpClient.Token].IsError)
-                                {
-                                    LogUtils.Debug(tcpCenter.WaiteConnetctTcp[tcpClient.Token].ErrorMsg);
-                                    tcpClient.SafeClose();
-                                }
-                                else
-                                {
-                                    P2PTcpClient destTcp = tcpCenter.WaiteConnetctTcp[tcpClient.Token].Tcp;
-                                    tcpClient.IsAuth = destTcp.IsAuth = true;
-                                    destTcp.ToClient = tcpClient;
-                                    tcpClient.ToClient = destTcp;
-                                    if (item.P2PType == 0)
-                                    {
-                                        Global_Func.ListenTcp<Packet_0x0202>(tcpClient);
-                                        LogUtils.Debug($"中转模式隧道，连接成功 token:{tcpClient.Token}");
-                                    }
-                                    else
-                                    {
-                                        if (Global_Func.BindTcp(tcpClient, destTcp))
-                                        {
-                                            LogUtils.Debug($"P2P模式隧道，连接成功 token:{tcpClient.Token}");
-                                        }
-                                        else
-                                        {
-                                            LogUtils.Debug($"P2P模式隧道，连接失败 token:{tcpClient.Token}");
-                                            EasyOp.Do(tcpClient.SafeClose);
-                                            EasyOp.Do(destTcp.SafeClose);
-                                        }
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                LogUtils.Debug($"建立隧道失败：token:{tcpClient.Token} {item.LocalPort}->{item.RemoteAddress}:{item.RemotePort} {AppConfig.P2PTimeout / 1000}秒无响应，已超时.");
-                                EasyOp.Do(tcpClient.SafeClose);
-                            }
-                            tcpCenter.WaiteConnetctTcp.Remove(tcpClient.Token);
-                            Monitor.Exit(result.block);
-                            //if (tcpCenter.WaiteConnetctTcp.ContainsKey(tcpClient.Token))
-                            //{
-                            //    LogUtils.Debug($"建立隧道失败：token:{tcpClient.Token} {item.LocalPort}->{item.RemoteAddress}:{item.RemotePort} {AppConfig.P2PTimeout / 1000}秒无响应，已超时.");
-                            //    tcpCenter.WaiteConnetctTcp[tcpClient.Token].tcp?.SafeClose();
-                            //    tcpCenter.WaiteConnetctTcp.Remove(tcpClient.Token);
-                            //}
-                        }, ex =>
-                        {
-                            EasyOp.Do(tcpClient.SafeClose);
-                            LogUtils.Debug($"建立隧道失败,无法连接服务器：token:{tcpClient.Token} {item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}.");
-                        });
-                    }
-                    else
-                    {
-                        LogUtils.Debug($"建立隧道失败：未连接到服务器!");
-                        socket.Close();
+                        EasyOp.Do(socket.SafeClose);
                     }
                 }, ex =>
                 {
@@ -301,6 +228,79 @@ namespace P2PSocket.Client
             {
                 LogUtils.Error("监听端口发生错误：" + listener.LocalEndpoint.ToString() + Environment.NewLine + ex.ToString());
             });
+        }
+
+        public bool CreateP2PConnect(PortMapItem item, Socket socket)
+        {
+            bool ret = false;
+            if (tcpCenter.P2PServerTcp != null && tcpCenter.P2PServerTcp.Connected)
+            {
+                P2PTcpClient tcpClient = new P2PTcpClient(socket);
+                //加入待连接集合
+                P2PResult result = new P2PResult();
+                tcpCenter.WaiteConnetctTcp.Add(tcpClient.Token, result);
+                //tcpCenter.WaiteConnetctTcp.Add(tcpClient.Token, tcpClient);
+                //发送消息给服务端，开始内网穿透
+                Send_0x0201_Apply packet = new Send_0x0201_Apply(tcpClient.Token, item.RemoteAddress, item.RemotePort, item.P2PType);
+                LogUtils.Debug(string.Format("正在建立{0}隧道 token:{1} client:{2} port:{3}", item.P2PType == 0 ? "中转模式" : "P2P模式", tcpClient.Token, item.RemoteAddress, item.RemotePort));
+
+                byte[] dataAr = packet.PackData();
+                EasyOp.Do(() =>
+                {
+                    tcpCenter.P2PServerTcp.BeginSend(dataAr);
+                }, () =>
+                {
+                    Monitor.Enter(result.block);
+                    if (Monitor.Wait(result.block, AppConfig.P2PTimeout))
+                    {
+                        if (tcpCenter.WaiteConnetctTcp[tcpClient.Token].IsError)
+                        {
+                            LogUtils.Debug(tcpCenter.WaiteConnetctTcp[tcpClient.Token].ErrorMsg);
+                            //tcpClient.SafeClose();
+                        }
+                        else
+                        {
+                            P2PTcpClient destTcp = tcpCenter.WaiteConnetctTcp[tcpClient.Token].Tcp;
+                            tcpClient.IsAuth = destTcp.IsAuth = true;
+                            destTcp.ToClient = tcpClient;
+                            tcpClient.ToClient = destTcp;
+                            if (item.P2PType == 0)
+                            {
+                                Global_Func.ListenTcp<Packet_0x0202>(tcpClient);
+                                ret = true;
+                                LogUtils.Debug($"中转模式隧道，连接成功 token:{tcpClient.Token}");
+                            }
+                            else
+                            {
+                                if (Global_Func.BindTcp(tcpClient, destTcp))
+                                {
+                                    ret = true;
+                                    LogUtils.Debug($"P2P模式隧道，连接成功 token:{tcpClient.Token}");
+                                }
+                                else
+                                {
+                                    LogUtils.Debug($"P2P模式隧道，连接失败 token:{tcpClient.Token}");
+                                    EasyOp.Do(destTcp.SafeClose);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        LogUtils.Debug($"建立隧道失败：token:{tcpClient.Token} {item.LocalPort}->{item.RemoteAddress}:{item.RemotePort} {AppConfig.P2PTimeout / 1000}秒无响应，已超时.");
+                    }
+                    tcpCenter.WaiteConnetctTcp.Remove(tcpClient.Token);
+                    Monitor.Exit(result.block);
+                }, ex =>
+                {
+                    LogUtils.Debug($"建立隧道失败,无法连接服务器：token:{tcpClient.Token} {item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}.");
+                });
+            }
+            else
+            {
+                LogUtils.Debug($"建立隧道失败：未连接到服务器!");
+            }
+            return ret;
         }
 
         struct ListenSt

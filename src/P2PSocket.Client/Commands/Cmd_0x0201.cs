@@ -43,6 +43,14 @@ namespace P2PSocket.Client.Commands
                         {
                             tcpCenter.WaiteConnetctTcp[token].P2PType = p2pType;
                         }
+                        else
+                        {
+                            tcpCenter.WaiteConnetctTcp.Add(token, new P2PResult() { P2PType = p2pType });
+                            TimerUtils.Instance.AddJob(() =>
+                            {
+                                tcpCenter.WaiteConnetctTcp.Remove(token);
+                            }, 30000);
+                        }
                         if (p2pType == 0)
                         {
                             if (isDestClient) CreateTcpFromDest(token);
@@ -100,7 +108,7 @@ namespace P2PSocket.Client.Commands
                                  p2pClient.UpdateEndPoint();
                              }, ex =>
                              {
-                                 LogUtils.Trace($"命令：0x0201 P2P模式隧道，端口打洞错误{ex}");
+                                 LogUtils.Trace($"命令：0x0201 P2P模式隧道，端口打洞错误:{p2pClient.Client.LocalEndPoint} -> {ip}:{port}{Environment.NewLine}{ex}");
                              });
                              tryCount--;
                          }
