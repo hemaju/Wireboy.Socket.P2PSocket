@@ -28,7 +28,7 @@
 
 ## 赞助名单（[>>点这里赞助](Images/alipay.md)）
 
-[白嘎力（1000RMB）](Images/Donates/2020121801.md) [白纸坊（200RMB）](Images/Donates/2020091601.md)  [小谷哥哥（200RMB）](Images/Donates/2020091601.md)
+[白嘎力（1000RMB）](Images/Donates/2020121801.md) [白纸坊（200RMB）](Images/Donates/2020091601.md)  [小谷哥哥（200RMB）](Images/Donates/2020091601.md)  [天狐幻空（150RMB）](Images/Donates/2021020701.md)
 
 ## 视频教程
 
