@@ -64,6 +64,11 @@ namespace P2PSocket.Server
                 listener.Stop();
             }
             P2PServer.ListenerList.Clear();
+            foreach (var listener in P2PServer.HoneyListenList)
+            {
+                listener.Stop();
+            }
+            P2PServer.HoneyListenList.Clear();
             foreach (var tcpItem in clientCenter.TcpMap)
             {
                 tcpItem.Value.TcpClient.Close();

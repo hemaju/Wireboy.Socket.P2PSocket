@@ -23,6 +23,7 @@ namespace P2PSocket.Server
             PortMapList = new List<PortMapItem>();
             ClientAuthList = new List<ClientItem>();
             MacAddressMap = new Dictionary<string, string>();
+            HoneyPort = new List<int>();
         }
 
         public string RegisterMacAddress(string mac)
@@ -62,5 +63,9 @@ namespace P2PSocket.Server
         ///     mac与客户端地址映射
         /// </summary>
         public Dictionary<string, string> MacAddressMap { set; get; }
+        /// <summary>
+        ///     蜜罐端口（连入次端口的ip会被加入黑名单）
+        /// </summary>
+        public List<int> HoneyPort { set; get; }
     }
 }

@@ -20,6 +20,8 @@ namespace P2PSocket.Server
     public class P2PServer
     {
         public List<TcpListener> ListenerList { set; get; } = new List<TcpListener>();
+        public List<TcpListener> HoneyListenList { set; get; } = new List<TcpListener>();
+        public List<string> BlackIpList = new List<string>();
         AppCenter appCenter = EasyInject.Get<AppCenter>();
         ClientCenter clientCenter = EasyInject.Get<ClientCenter>();
         public P2PServer()
@@ -32,10 +34,61 @@ namespace P2PSocket.Server
         /// </summary>
         public void StartServer()
         {
+            ListenHoneyPort();
             ListenMessagePort();
             StartPortMap();
         }
 
+        /// <summary>
+        ///     启动蜜罐端口
+        /// </summary>
+        private void ListenHoneyPort()
+        {
+            foreach (int port in appCenter.Config.HoneyPort)
+            {
+                try
+                {
+                    TcpListener listener = new TcpListener(IPAddress.Any, port);
+                    listener.Start();
+                    HoneyListenList.Add(listener);
+                    listener.BeginAcceptSocket(ListenHoneyPortCallBack, listener);
+                }
+                catch (Exception ex)
+                {
+                    LogUtils.Error($"蜜罐端口监听失败：{ex}");
+                }
+            }
+        }
+
+        private void ListenHoneyPortCallBack(IAsyncResult ar)
+        {
+            TcpListener listener = ar.AsyncState as TcpListener;
+            try
+            {
+                Socket socket = listener.EndAcceptSocket(ar);
+                string ip = (socket.RemoteEndPoint as IPEndPoint).Address.ToString();
+                if (!BlackIpList.Contains(ip))
+                    BlackIpList.Add(ip);
+                socket.Close();
+            }
+            catch (Exception ex)
+            {
+                LogUtils.Error($"处理蜜罐请求出错：{ex}");
+            }
+            listener.BeginAcceptSocket(ListenHoneyPortCallBack, listener);
+        }
+
+        private bool IsBlackIp(IPEndPoint ip)
+        {
+            try
+            {
+                return BlackIpList.Contains((ip as IPEndPoint).Address.ToString());
+            }
+            catch
+            {
+                return true;
+            }
+        }
 
         /// <summary>
         ///     监听映射端口
@@ -111,6 +164,22 @@ namespace P2PSocket.Server
                     EasyOp.Do(() => listener.Stop());
                     ListenerList.Remove(listener);
                 });
+
+                try
+                {
+                    if (IsBlackIp(socket.RemoteEndPoint as IPEndPoint))
+                    {
+                        socket.SafeClose();
+                        return;
+                    }
+                }
+                catch
+                {
+                    socket.SafeClose();
+                    return;
+                }
+
+
                 P2PTcpClient tcpClient = null;
                 EasyOp.Do(() =>
                 {
@@ -198,6 +267,19 @@ namespace P2PSocket.Server
                     LogUtils.Error($"端口监听失败:{Environment.NewLine}{exx}");
                 });
 
+                try
+                {
+                    if (IsBlackIp(socket.RemoteEndPoint as IPEndPoint))
+                    {
+                        socket.SafeClose();
+                        return;
+                    }
+                }
+                catch
+                {
+                    socket.SafeClose();
+                    return;
+                }
                 LogUtils.Debug($"开始内网穿透：{item.LocalPort}->{item.RemoteAddress}:{item.RemotePort}", false);
                 P2PTcpClient tcpClient = null;
                 EasyOp.Do(() =>
@@ -320,6 +402,21 @@ namespace P2PSocket.Server
                 {
                     LogUtils.Error($"端口监听失败:{Environment.NewLine}{ex}");
                 });
+                try
+                {
+                    if (IsBlackIp(socket.RemoteEndPoint as IPEndPoint))
+                    {
+                        socket.SafeClose();
+                        return;
+                    }
+                }
+                catch
+                {
+                    socket.SafeClose();
+                    return;
+                }
+
+
                 P2PTcpClient tcpClient = null;
                 EasyOp.Do(() =>
                 {

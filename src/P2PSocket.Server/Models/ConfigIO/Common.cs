@@ -123,6 +123,20 @@ namespace P2PSocket.Server.Models.ConfigIO
                 config.ClientAuthList.Add(item);
             }
         }
+        [ConfigMethodAttr("HoneyPort")]
+        public void Read04(string data)
+        {
+            string[] portList = data.Split(',');
+            for (int i = 0; i < portList.Length; i++)
+            {
+                int port;
+                if(int.TryParse(portList[i], out port))
+                {
+                    config.HoneyPort.Add(port);
+                }
+            }
+
+        }
         public string GetItemString<T>(T item)
         {
             (string, string)? cItem;
