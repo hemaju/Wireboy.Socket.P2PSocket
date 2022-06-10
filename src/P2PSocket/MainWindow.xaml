@@ -1,0 +1,19 @@
+﻿<Window x:Name="window" x:Class="P2PSocket.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:P2PSocket"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="250" Width="400">
+    <Grid>
+        <TextBox Text="{Binding LogText,Mode=TwoWay}" Margin="0 0 100 0" DataContext="{Binding ElementName=window, Mode=OneWay}"></TextBox>
+        <StackPanel HorizontalAlignment="Right" Width="80" Margin="10">
+            <Button Content="开始监听" Margin="0 0 0 10" Click="BtnClick_StartListen"></Button>
+            <Button Content="建立连接" Margin="0 0 0 10" Click="BtnClick_NewConnect"></Button>
+            <Button Content="发送消息" Margin="0 0 0 10" Click="BtnClick_SendData"></Button>
+            <Button Content="启动客户端" Margin="0 0 0 10" Click="BtnClick_StartClient"></Button>
+            <Button Content="启动服务端" Margin="0 0 0 10" Click="BtnClick_StartServer"></Button>
+        </StackPanel>
+    </Grid>
+</Window>
