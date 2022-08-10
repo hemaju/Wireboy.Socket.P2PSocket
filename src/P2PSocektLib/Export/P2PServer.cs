@@ -33,11 +33,11 @@ namespace P2PSocektLib.Export
         /// <summary>
         /// 命令请求实例
         /// </summary>
-        internal RequestService Bus_Request { set; get; }
+        internal Request_S_Service Bus_Request { set; get; }
         /// <summary>
         /// 命令请求实例
         /// </summary>
-        internal ResponseService Bus_Response { set; get; }
+        internal Response_S_Service Bus_Response { set; get; }
         /// <summary>
         /// 有效的Token信息
         /// </summary>
@@ -57,8 +57,8 @@ namespace P2PSocektLib.Export
             Port = port;
             PortMap = new Dictionary<int, PortMapItem>();
             ExcuteMap = new Dictionary<RequestEnum, IServerExcute>();
-            Bus_Request = new RequestService();
-            Bus_Response = new ResponseService();
+            Bus_Request = new Request_S_Service();
+            Bus_Response = new Response_S_Service();
             TokenList = new ConcurrentBag<string>();
             ListenerMap = new Dictionary<int, P2PListener>();
             PipeMap = new ConcurrentDictionary<string, P2PPipe>();
@@ -128,9 +128,12 @@ namespace P2PSocektLib.Export
                 while (true)
                 {
                     byte[] buffer = await packet.ReadOne();
-                    if (ExcuteMap.ContainsKey(packet.RequestType))
+                    if (packet.IsRequest)
                     {
-                        await ExcuteMap[packet.RequestType].Handle(this, clientConn, buffer, packet.Token);
+                        if (ExcuteMap.ContainsKey(packet.RequestType))
+                        {
+                            await ExcuteMap[packet.RequestType].Handle(this, clientConn, buffer, packet.Token);
+                        }
                     }
                 }
             }
@@ -186,7 +189,7 @@ namespace P2PSocektLib.Export
                             }
                         case P2PMode.服务器中转:
                             {
-                                Transfer_Server(conn, item);
+                                Transfer_ServerPort(conn, item);
                                 break;
                             }
                         default:
@@ -243,8 +246,8 @@ namespace P2PSocektLib.Export
         }
         #endregion
 
-        #region 服务器中转
-        private async Task Transfer_Server(INetworkConnect conn, PortMapItem item)
+        #region 服务器端口转发
+        private async void Transfer_ServerPort(INetworkConnect conn, PortMapItem item)
         {
             string pipeKey = $"{item.RemoteAddress}_{item.RemotePort}";
             P2PPipe? pipe = null;
@@ -262,12 +265,17 @@ namespace P2PSocektLib.Export
             }
             // 创建管道
             if (createPipe)
-                pipe = await CreateClientPipe(item.RemoteAddress);
+            {
+                pipe = await CreatePipeToClient(item.RemoteAddress);
+                PipeMap.TryAdd(pipeKey, pipe);
+            }
+            // 申请建立连接（暂时不做）
+
             // 开始转发数据
             pipe.AddConnect(conn, item);
         }
 
-        private async Task<P2PPipe> CreateClientPipe(string clientName)
+        private async Task<P2PPipe> CreatePipeToClient(string clientName)
         {
             if (ClientMap.ContainsKey(clientName))
             {
@@ -282,6 +290,7 @@ namespace P2PSocektLib.Export
                     await Bus_Request.NotifyCreatePipe(conn.SendData, model);
                 }, TimeSpan.FromSeconds(5));
                 P2PPipe pipe = new P2PPipe(clientName, pipeConn);
+                pipe.Token = token;
                 // 打开管道
                 await pipe.Open();
                 return pipe;

@@ -22,8 +22,13 @@ namespace P2PSocektLib
         /// <summary>
         /// 使用管道的网络连接
         /// </summary>
-        public ConcurrentBag<INetworkConnect> networkConnects { set; get; }
+        public ConcurrentBag<PipeConnect> networkConnects { set; get; }
+        /// <summary>
+        /// 命名管道唯一标识
+        /// </summary>
+        public string? Token { set; get; }
 
+        private int connId { set; get; }
         /// <summary>
         /// 网络管道
         /// </summary>
@@ -31,9 +36,10 @@ namespace P2PSocektLib
         /// <param name="conn">网络连接（与服务端或者其它客户端的连接）</param>
         public P2PPipe(string name, P2PConnect conn)
         {
-            networkConnects = new ConcurrentBag<INetworkConnect>();
+            networkConnects = new ConcurrentBag<PipeConnect>();
             Name = name;
             Conn = conn;
+            connId = 0;
         }
 
         /// <summary>
@@ -62,9 +68,82 @@ namespace P2PSocektLib
         /// <param name="item"></param>
         public void AddConnect(INetworkConnect conn, PortMapItem item)
         {
-            // 发送新的连接申请
+            connId = (connId + 1) % int.MaxValue;
+            int curId = connId;
             // 加入networkConnects
+            PipeConnect pipeConnect = new PipeConnect(curId, conn, item.RemotePort);
+            networkConnects.Add(pipeConnect);
             // 开始转发数据
+            _ = StartLocalTransfer(pipeConnect);
+        }
+
+        /// <summary>
+        /// 开始转发本地连接数据到远端
+        /// </summary>
+        /// <param name="st">本地连接实例</param>
+        /// <returns></returns>
+        private async Task StartLocalTransfer(PipeConnect st)
+        {
+            // 发送开始消息
+            byte[] buffer = new byte[1024];
+            int length;
+            do
+            {
+                try
+                {
+                    length = await st.Connect.ReadData(buffer, 1024);
+                }
+                catch
+                {
+                    // 发送断开控制消息
+                    Control_ConnClosed(st);
+                    break;
+                }
+                if (length != 0)
+                {
+                    Console.WriteLine(Encoding.UTF8.GetString(buffer, 0, length));
+                    try
+                    {
+                        await SendData(buffer, length);
+                    }
+                    catch (Exception ex)
+                    {
+                        // 关闭本地连接
+                        st.Close();
+                        break;
+                    }
+                }
+                else
+                {
+                    // 发送断开控制消息
+                    Control_ConnClosed(st);
+                }
+            } while (length != 0);
+        }
+
+        /// <summary>
+        /// 发送连接控制消息（准备连接，断开）
+        /// </summary>
+        /// <param name="st"></param>
+        /// <exception cref="NotImplementedException"></exception>
+        private async void Control_ConnClosed(PipeConnect st)
+        {
+            // 发送连接断开消息
+
+
+            await Conn.SendData();
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// 向远端发送数据
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        private async Task SendData(byte[] buffer, int length)
+        {
+            //[命令][id][port][数据]
         }
     }
 }

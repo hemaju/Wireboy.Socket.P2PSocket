@@ -6,16 +6,12 @@ using System.Threading.Tasks;
 
 namespace P2PSocektLib.Command
 {
-    /// <summary>
-    /// 通知建立管道
-    /// </summary>
-    internal class ApiModel_NotifyCreatePipe
+    internal class ApiModel_CreatePipe
     {
         public string PipeToken { set; get; }
-        public ApiModel_NotifyCreatePipe(string token)
+        public ApiModel_CreatePipe(string token)
         {
             PipeToken = token;
         }
     }
-
 }

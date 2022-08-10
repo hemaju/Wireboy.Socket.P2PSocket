@@ -21,7 +21,7 @@ namespace P2PSocektLib.Command.Excute.Server
             {
                 ApiModel_Login_R res = new ApiModel_Login_R();
                 res.LoginToken = server.NewClientToken();
-                res.ClientCode = DateTime.Now.ToString("yyyyMMddHHmmssfff");
+                res.ClientCode = DateTime.Now.ToString("客户端A");
                 await server.Bus_Response.Login(conn.SendData, token, res);
             }
         }

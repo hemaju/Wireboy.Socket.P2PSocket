@@ -54,13 +54,15 @@ namespace P2PSocektLib.Utils
         /// </summary>
         /// <param name="token">请求的token</param>
         /// <param name="data">返回的数据</param>
-        public void Finish(uint token, T data)
+        public bool Finish(uint token, T data)
         {
             if (TaskDict.ContainsKey(token))
             {
                 TaskDict[token].SetResult(data);
                 TaskDict.Remove(token);
+                return true;
             }
+            return false;
         }
     }
 }

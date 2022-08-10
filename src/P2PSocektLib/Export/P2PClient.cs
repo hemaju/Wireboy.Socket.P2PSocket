@@ -40,7 +40,7 @@ namespace P2PSocektLib.Export
         /// <summary>
         /// 登录token
         /// </summary>
-        internal string LoginToken { set; get; }
+        internal string? LoginToken { set; get; }
         /// <summary>
         /// 与服务端通讯的连接
         /// </summary>
@@ -49,10 +49,11 @@ namespace P2PSocektLib.Export
         /// 命令处理字典
         /// </summary>
         internal Dictionary<RequestEnum, IClientExcute> ExcuteMap;
+        internal List<P2PPipe> InPipeList { set; get; }
         /// <summary>
         /// 命令请求实例
         /// </summary>
-        internal RequestService Bus { set; get; }
+        internal Request_C_Service Bus { set; get; }
 
         public P2PClient(string address, int port)
         {
@@ -62,7 +63,7 @@ namespace P2PSocektLib.Export
             ListenerMap = new Dictionary<int, P2PListener>();
             clientCode = "";
             ExcuteMap = new Dictionary<RequestEnum, IClientExcute>();
-            Bus = new RequestService();
+            Bus = new Request_C_Service();
             InitExcute();
         }
 
@@ -173,6 +174,7 @@ namespace P2PSocektLib.Export
                             }
                         case P2PMode.服务器中转:
                             {
+                                Transfer_Server(conn, item);
                                 break;
                             }
                         case P2PMode.Tcp端口复用:
@@ -204,8 +206,11 @@ namespace P2PSocektLib.Export
                 while (true)
                 {
                     byte[] buffer = await packet.ReadOne();
-                    Bus.TaskUtil.Finish(packet.Token, buffer);
-                    if (ExcuteMap.ContainsKey(packet.RequestType))
+                    if (!packet.IsRequest)
+                    {
+                        Bus.TaskUtil.Finish(packet.Token, buffer);
+                    }
+                    else if (ExcuteMap.ContainsKey(packet.RequestType))
                     {
                         await ExcuteMap[packet.RequestType].Handle(this, conn, buffer, packet.Token);
                     }
@@ -267,6 +272,8 @@ namespace P2PSocektLib.Export
         private void Transfer_Server(INetworkConnect conn, PortMapItem item)
         {
             // 查询权限
+            // 创建数据传输管道
+            // 开始转发数据
         }
         #endregion
 

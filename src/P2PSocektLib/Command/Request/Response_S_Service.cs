@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace P2PSocektLib.Command
 {
-    internal class ResponseService : BaseService
+    internal class Response_S_Service : BaseService
     {
         /// <summary>
         /// 登录（匿名）
@@ -17,7 +17,7 @@ namespace P2PSocektLib.Command
         public async Task Login(Func<byte[], int, Task> sendFunc, uint token, ApiModel_Login_R model)
         {
             byte[] data = ModelToBytes(model);
-            byte[] packData = CmdPacket.PackOne(data, token, RequestEnum.客户端认证);
+            byte[] packData = CmdPacket.PackOne(data, token, RequestEnum.客户端认证, false);
             await sendFunc(packData, packData.Length);
         }
     }

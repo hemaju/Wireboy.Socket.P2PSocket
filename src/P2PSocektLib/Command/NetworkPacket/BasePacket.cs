@@ -1,40 +1,32 @@
-﻿using P2PSocektLib.Command;
-using P2PSocektLib.Utils;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using P2PSocektLib.Command;
 
 namespace P2PSocektLib
-{
-    internal class CmdPacket : INetworkPacket
+{ 
+    internal class BasePacket : INetworkPacket
     {
-        byte[] packetBuffer = new byte[4];
-        byte[] data = new byte[0];
-        public uint Token { set; get; }
+        protected byte[] packetBuffer = new byte[4];
+        protected byte[] data = new byte[0];
         public RequestEnum RequestType { set; get; }
-        INetworkConnect Conn { set; get; }
-        public bool IsRequest { set; get; }
-        public CmdPacket(INetworkConnect conn)
+        protected INetworkConnect Conn { set; get; }
+        public BasePacket(INetworkConnect conn)
         {
             Conn = conn;
         }
 
-        public static byte[] PackOne(byte[] data, uint token, RequestEnum cmdType, bool isRequest = true)
+        protected static byte[] PackOne(byte[] data)
         {
             byte[] packet = new byte[data.Length + 2 + 4 + 1 + 2 + 1];
             // 写入包头
             packet[0] = packet[1] = 55;
-            packet[2] = isRequest ? (byte)1 : (byte)0;
-            // 写入token
-            BitConverter.GetBytes(token).CopyTo(packet, 3);
-            // 写入命令
-            packet[7] = (byte)cmdType;
             // 写入长度
-            BitConverter.GetBytes((ushort)data.Length).CopyTo(packet, 8);
+            BitConverter.GetBytes((ushort)data.Length).CopyTo(packet, 2);
             // 写入数据
-            data.CopyTo(packet, 10);
+            data.CopyTo(packet, 4);
             // 写入包尾
             packet[packet.Length - 1] = 77;
             return packet;
@@ -45,7 +37,7 @@ namespace P2PSocektLib
         /// </summary>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task<byte[]> ReadOne()
+        public virtual async Task<byte[]> ReadOne()
         {
             // 读取包头
             int length = await Conn.ReadData(packetBuffer, 2);
@@ -54,18 +46,6 @@ namespace P2PSocektLib
             {
                 throw new Exception("数据包校验失败");
             }
-            // 读取isRequest
-            await Conn.ReadData(packetBuffer, 1);
-            IsRequest = packetBuffer[0] == 1;
-            // 读取token
-            length = await Conn.ReadData(packetBuffer, 4);
-            if (length != 4) throw new Exception("数据读取失败");
-            Token = BitConverter.ToUInt32(packetBuffer);
-
-            // 读取命令类型
-            length = await Conn.ReadData(packetBuffer, 1);
-            if (length != 1) throw new Exception("读取数据失败");
-            RequestType = (RequestEnum)packetBuffer[0];
 
             // 读取数据长度
             length = await Conn.ReadData(packetBuffer, 2);
