@@ -30,17 +30,12 @@ namespace P2PSocektLib.Export
         /// 连接类型（服务器中转、P2P端口复用...）
         /// </summary>
         public P2PMode ConnectType { set; get; }
-        /// <summary>
-        /// 是否单通道模式
-        /// </summary>
-        public bool IsSingle { set; get; }
-        public PortMapItem(int localPort, int remotePort, string remoteAddress, P2PMode connectType = P2PMode.服务器中转, bool isSignle = true, NetworkType portType = NetworkType.Tcp)
+        public PortMapItem(int localPort, int remotePort, string remoteAddress, P2PMode connectType = P2PMode.服务器中转, NetworkType portType = NetworkType.Tcp)
         {
             this.LocalPort = localPort;
             this.RemoteAddress = remoteAddress;
             this.RemotePort = remotePort;
             this.ConnectType = connectType;
-            this.IsSingle = isSignle;
             this.PortType = portType;
         }
     }

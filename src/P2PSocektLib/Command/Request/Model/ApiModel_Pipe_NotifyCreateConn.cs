@@ -12,17 +12,12 @@ namespace P2PSocektLib.Command
     internal class ApiModel_Pipe_NotifyCreateConn
     {
         /// <summary>
-        /// 本地连接id
+        /// 远端端口
         /// </summary>
-        public int LocalId { set; get; }
-        /// <summary>
-        /// 请求的token
-        /// </summary>
-        public string PipeToken { set; get; }
-        public ApiModel_Pipe_NotifyCreateConn(string token, int localId)
+        public int RemotePort { set; get; }
+        public ApiModel_Pipe_NotifyCreateConn(int remotePort)
         {
-            PipeToken = token;
-            LocalId = localId;
+            RemotePort = remotePort;
         }
     }
 
@@ -32,14 +27,11 @@ namespace P2PSocektLib.Command
     /// </summary>
     internal class ApiModel_Pipe_NotifyCreateConn_R
     {
-        /// <summary>
-        /// 远端连接id
-        /// </summary>
-        public int? RemoteId { set; get; }
-        /// <summary>
-        /// 本地连接id
-        /// </summary>
-
-        public int? LocalId { set; get; }
+        public bool IsSuccess { set;get; }
+        public string? Message { set; get; }
+        public ApiModel_Pipe_NotifyCreateConn_R(bool isSuccess)
+        {
+            IsSuccess = isSuccess;
+        }
     }
 }

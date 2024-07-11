@@ -23,7 +23,6 @@ namespace P2PSocektLib.Command.Excute.Client
             newTcp.Connect(client.Host, client.Port);
             // 建立管道
             P2PPipe pipe = new P2PPipe("Server", newTcp);
-            _ = pipe.Open();
             // 发送创建消息
             Request_C_Service bus = new Request_C_Service();
             await bus.CreatePipe(conn.SendData, new ApiModel_CreatePipe(model.PipeToken) { });

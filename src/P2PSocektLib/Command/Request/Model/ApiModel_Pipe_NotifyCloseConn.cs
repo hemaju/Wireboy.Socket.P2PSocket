@@ -8,5 +8,8 @@ namespace P2PSocektLib.Command
 {
     internal class ApiModel_Pipe_NotifyCloseConn
     {
+        public ApiModel_Pipe_NotifyCloseConn()
+        {
+        }
     }
 }

@@ -45,7 +45,7 @@ namespace P2PSocektLib.Export
         /// <summary>
         /// 管道字典
         /// </summary>
-        ConcurrentDictionary<string, P2PPipe> PipeMap;
+        ConcurrentDictionary<string, P2PPipe> FreePipeMap;
         /// <summary>
         /// 客户端连接字典
         /// </summary>
@@ -61,7 +61,7 @@ namespace P2PSocektLib.Export
             Bus_Response = new Response_S_Service();
             TokenList = new ConcurrentBag<string>();
             ListenerMap = new Dictionary<int, P2PListener>();
-            PipeMap = new ConcurrentDictionary<string, P2PPipe>();
+            FreePipeMap = new ConcurrentDictionary<string, P2PPipe>();
             ClientMap = new ConcurrentDictionary<string, P2PConnect>();
             PipeCreatTask = new Utils_T_AsyncTask<string, P2PConnect>();
             InitExcute();
@@ -249,30 +249,36 @@ namespace P2PSocektLib.Export
         #region 服务器端口转发
         private async void Transfer_ServerPort(INetworkConnect conn, PortMapItem item)
         {
-            string pipeKey = $"{item.RemoteAddress}_{item.RemotePort}";
-            P2PPipe? pipe = null;
-            bool createPipe = true;
-            //判断是否单通道
-            if (item.IsSingle)
-            {
-                // 查询通道
-                if (PipeMap.ContainsKey(pipeKey))
-                {
-                    pipe = PipeMap[pipeKey];
-                    createPipe = false;
-                }
-                else createPipe = true;
-            }
-            // 创建管道
-            if (createPipe)
+            string pipeKey = $"{item.RemoteAddress}";
+            // 获取空闲的管道
+            P2PPipe? pipe = await GetFreeP2pPipe(pipeKey);
+            // 如果没有拿到空闲的管道，则新建一个
+            if (pipe == null)
             {
                 pipe = await CreatePipeToClient(item.RemoteAddress);
-                PipeMap.TryAdd(pipeKey, pipe);
             }
-            // 申请建立连接（暂时不做）
-
             // 开始转发数据
-            pipe.AddConnect(conn, item);
+            await pipe.TransferLocalConn(conn, item);
+        }
+
+        private async Task<P2PPipe?> GetFreeP2pPipe(string pipeKey)
+        {
+            P2PPipe? pipe;
+            int tryCount = 1;
+            while (tryCount >= 0)
+            {
+                if (FreePipeMap.TryGetValue(pipeKey, out pipe))
+                {
+                    FreePipeMap.TryRemove(pipeKey, out pipe);
+                    return pipe;
+                }
+                else
+                {
+                    tryCount--;
+                    await Task.Delay(100);
+                }
+            }
+            return null;
         }
 
         private async Task<P2PPipe> CreatePipeToClient(string clientName)
@@ -290,9 +296,6 @@ namespace P2PSocektLib.Export
                     await Bus_Request.NotifyCreatePipe(conn.SendData, model);
                 }, TimeSpan.FromSeconds(5));
                 P2PPipe pipe = new P2PPipe(clientName, pipeConn);
-                pipe.Token = token;
-                // 打开管道
-                await pipe.Open();
                 return pipe;
             }
             else

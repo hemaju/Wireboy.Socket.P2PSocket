@@ -16,6 +16,10 @@ namespace P2PSocektLib.Command
         /// </summary>
         object token_block = new object();
         uint _token = 0;
+        /// <summary>
+        /// 1 - uint.MaxValue
+        /// </summary>
+        /// <returns></returns>
         public uint GetNewToken()
         {
             uint ret = 0;

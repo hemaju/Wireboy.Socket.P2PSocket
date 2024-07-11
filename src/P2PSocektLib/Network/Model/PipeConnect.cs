@@ -9,14 +9,6 @@ namespace P2PSocektLib
     internal class PipeConnect
     {
         /// <summary>
-        /// 本地连接位移标识
-        /// </summary>
-        public int LocalId { set; get; }
-        /// <summary>
-        /// 远端连接唯一标识
-        /// </summary>
-        public int RemoteId { set; get; }
-        /// <summary>
         /// 要连接的远端端口
         /// </summary>
         public int RemotePort { set; get; }
@@ -24,11 +16,9 @@ namespace P2PSocektLib
         /// 本地连接
         /// </summary>
         public INetworkConnect Connect { set;get; }
-        public PipeConnect(int id, INetworkConnect conn, int remotePort)
+        public PipeConnect(INetworkConnect conn, int remotePort)
         {
-            LocalId = id;
             Connect = conn;
-            RemoteId = -1;
             RemotePort = remotePort;
         }
 

@@ -6,7 +6,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+/*
+ * 1.在接收到新的请求时
+ * 
+ * 
+ */
 namespace P2PSocektLib
 {
     internal class P2PPipe
@@ -20,15 +24,28 @@ namespace P2PSocektLib
         /// </summary>
         public P2PConnect Conn { set; get; }
         /// <summary>
-        /// 使用管道的网络连接
+        /// 本地连接
         /// </summary>
-        public ConcurrentBag<PipeConnect> networkConnects { set; get; }
+        public PipeConnect? LocalConn { set; get; }
         /// <summary>
-        /// 命名管道唯一标识
+        /// 管道是否已关闭
         /// </summary>
-        public string? Token { set; get; }
+        public bool IsClosed { set; get; }
+        /// <summary>
+        /// 对比数字（用于双方同时请求使用时比较，大的一方拥有使用权）
+        /// </summary>
+        public int CmpareNum { set; get; }
+        /// <summary>
+        /// 数据发送实例
+        /// </summary>
+        Request_Pipe_Service bus = new Request_Pipe_Service();
+        /// <summary>
+        /// 在远端连接关闭时触发
+        /// </summary>
+        Action<P2PPipe>? OnPipeDestConnClosed { set; get; }
 
-        private int connId { set; get; }
+
+
         /// <summary>
         /// 网络管道
         /// </summary>
@@ -36,10 +53,11 @@ namespace P2PSocektLib
         /// <param name="conn">网络连接（与服务端或者其它客户端的连接）</param>
         public P2PPipe(string name, P2PConnect conn)
         {
-            networkConnects = new ConcurrentBag<PipeConnect>();
+            IsClosed = true;
+            CmpareNum = 0;
             Name = name;
             Conn = conn;
-            connId = 0;
+            _ = Open();
         }
 
         /// <summary>
@@ -48,17 +66,78 @@ namespace P2PSocektLib
         /// <returns></returns>
         public async Task Open()
         {
+            IsClosed = false;
             // 开始监听数据
+            PipePacket packet = new PipePacket(Conn.Conn);
+            try
+            {
+                while (true)
+                {
+                    byte[] buffer = await packet.ReadOne();
+                    if (!packet.IsRequest)
+                    {
+                        bus.TaskUtil.Finish(packet.Token, buffer);
+                    }
+                    else
+                    {
+                        // 处理Request命令
+
+                        switch (packet.RequestType)
+                        {
+                            case RequestEnum.管道_新建连接:
+                                {
+                                    if (LocalConn != null)
+                                    {
+                                        LocalConn.Close();
+                                        LocalConn = null;
+                                    }
+                                    break;
+                                }
+                            case RequestEnum.管道_转发数据:
+                                {
+                                    if (LocalConn != null)
+                                    {
+                                        await LocalConn.Connect.SendData(buffer, buffer.Length);
+                                    }
+                                    break;
+                                }
+                            case RequestEnum.管道_断开连接:
+                                {
+                                    if (LocalConn != null)
+                                    {
+                                        LocalConn.Close();
+                                        LocalConn = null;
+                                    }
+                                    break;
+                                }
+                            case RequestEnum.心跳:
+                                {
+                                    break;
+                                }
+                            default:
+                                {
+                                    // 异常数据
+                                    break;
+                                }
+                        }
+
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+            }
+            IsClosed = true;
         }
 
         /// <summary>
         /// 关闭管道
         /// </summary>
         /// <returns></returns>
-        public async Task Close()
+        public void Close()
         {
-            // 关闭连接
-            // 关闭数据监听
+            // 关闭数据监听（关闭管道后，会自动断开本地连接，不用特别处理）
+            Conn.Close();
         }
 
         /// <summary>
@@ -66,15 +145,24 @@ namespace P2PSocektLib
         /// </summary>
         /// <param name="conn">外部连接（原始的tcp或者udp连接）</param>
         /// <param name="item"></param>
-        public void AddConnect(INetworkConnect conn, PortMapItem item)
+        public async Task<bool> TransferLocalConn(INetworkConnect conn, PortMapItem item)
         {
-            connId = (connId + 1) % int.MaxValue;
-            int curId = connId;
-            // 加入networkConnects
-            PipeConnect pipeConnect = new PipeConnect(curId, conn, item.RemotePort);
-            networkConnects.Add(pipeConnect);
-            // 开始转发数据
-            _ = StartLocalTransfer(pipeConnect);
+            PipeConnect pipeConnect = new PipeConnect(conn, item.RemotePort);
+            try
+            {
+                // 申请连接
+                ApiModel_Pipe_NotifyCreateConn_R? result = await bus.NotifyCreateConn(Conn.SendData, new ApiModel_Pipe_NotifyCreateConn(item.RemotePort));
+                if (result != null && !result.IsSuccess)
+                {
+                    // 开始转发数据
+                    _ = StartLocalTransfer(pipeConnect);
+                    return true;
+                }
+            }
+            catch (Exception)
+            {
+            }
+            return false;
         }
 
         /// <summary>
@@ -104,7 +192,7 @@ namespace P2PSocektLib
                     Console.WriteLine(Encoding.UTF8.GetString(buffer, 0, length));
                     try
                     {
-                        await SendData(buffer, length);
+                        await bus.TransferData(Conn.SendData, buffer, length);
                     }
                     catch (Exception ex)
                     {
@@ -128,22 +216,13 @@ namespace P2PSocektLib
         /// <exception cref="NotImplementedException"></exception>
         private async void Control_ConnClosed(PipeConnect st)
         {
-            // 发送连接断开消息
-
-
-            await Conn.SendData();
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// 向远端发送数据
-        /// </summary>
-        /// <param name="buffer"></param>
-        /// <param name="length"></param>
-        /// <returns></returns>
-        private async Task SendData(byte[] buffer, int length)
-        {
-            //[命令][id][port][数据]
+            try
+            {
+                // 发送连接断开消息
+                await bus.NotifyCloseConn(Conn.SendData, new ApiModel_Pipe_NotifyCloseConn());
+                OnPipeDestConnClosed?.Invoke(this);
+            }
+            catch (Exception) { }
         }
     }
 }
