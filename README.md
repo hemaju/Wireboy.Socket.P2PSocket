@@ -26,6 +26,8 @@
 
 2.dev分支版本为开发者活跃版本，dev版本稳定后，将与master分支合并。
 
+3.4.0版本已迁移至新仓库[P2PSocket_AI](https://github.com/bobowire/P2PSocket_AI)进行重构开发，详情请前往新仓库查看。
+
 ## 赞助名单（[>>点这里赞助](Images/alipay.md)）
 
 [白嘎力（1000RMB）](Images/Donates/2020121801.md) [白纸坊（200RMB）](Images/Donates/2020091601.md)  [小谷哥哥（200RMB）](Images/Donates/2020091601.md)  [天狐幻空（150RMB）](Images/Donates/2021020701.md)
